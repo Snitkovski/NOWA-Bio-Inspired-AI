@@ -1,0 +1,460 @@
+role_id: procurement
+display_name: Procurement Manager
+mcp_capabilities:
+- &id001
+  tool_id: mcp__1c__get_stock_levels
+  server_name: 1c_erp
+  display_name: Get stock levels
+  description: READ stock
+  risk_level: read_only
+  domain_tags:
+  - procurement
+  requires_approval: false
+- &id002
+  tool_id: mcp__1c__get_suppliers
+  server_name: 1c_erp
+  display_name: Get suppliers
+  description: READ suppliers
+  risk_level: read_only
+  domain_tags:
+  - procurement
+  requires_approval: false
+- &id003
+  tool_id: mcp__1c__get_budget
+  server_name: 1c_erp
+  display_name: Get budget
+  description: READ budget
+  risk_level: read_only
+  domain_tags:
+  - finance
+  requires_approval: false
+- &id004
+  tool_id: mcp__1c__create_purchase_order
+  server_name: 1c_erp
+  display_name: Create purchase order
+  description: WRITE purchase order
+  risk_level: medium_write
+  domain_tags:
+  - procurement
+  requires_approval: true
+  input_schema:
+    type: object
+    required:
+    - supplier_id
+    - sku
+    - qty
+    properties:
+      supplier_id:
+        type: string
+      sku:
+        type: string
+      qty:
+        type: number
+  action_types:
+  - mcp__drivemcp__create_purchase_order
+- &id010
+  tool_id: mcp__drivemcp__get_stock_levels
+  server_name: drivemcp
+  display_name: get_stock_levels
+  description: 'READ: остатки номенклатуры Drive (InventoryInWarehouses + ReorderPointSettings
+    + входящие PurchaseOrders). Envelope NOWA: status, stock.{sku}.{quantity,reorder_point,below_reorder_point,inbound,projected_quantity,base_demand_per_day}.'
+  risk_level: read_only
+  domain_tags: []
+  requires_approval: false
+  action_types: []
+  input_schema:
+    type: object
+    properties: &id005
+      sku:
+        type: string
+        description: Фильтр по SKU / коду / наименованию номенклатуры. Пусто — все
+          позиции.
+      maxItems:
+        type: number
+        description: Максимальное количество SKU в ответе
+        default: 200
+- &id011
+  tool_id: mcp__drivemcp__get_suppliers
+  server_name: drivemcp
+  display_name: get_suppliers
+  description: 'READ: поставщики Drive (Counterparties.Supplier) и цены (CounterpartyPrices).
+    Envelope NOWA: status, suppliers.{id}.{reliability,unit_price,lead_time_days,reputation,is_defaulted,status,offers}.'
+  risk_level: read_only
+  domain_tags: []
+  requires_approval: false
+  action_types: []
+  input_schema:
+    type: object
+    properties: &id006
+      supplier_id:
+        type: string
+        description: Фильтр по коду / наименованию / UUID контрагента-поставщика.
+          Пусто — все поставщики.
+      maxItems:
+        type: number
+        description: Максимальное количество поставщиков в ответе
+        default: 200
+- &id012
+  tool_id: mcp__drivemcp__get_budget
+  server_name: drivemcp
+  display_name: get_budget
+  description: 'READ: свободные деньги Drive (CashAssets.Amount) и загрузка бюджета
+    (CashBudget за период). Envelope NOWA: status, remaining, utilization_ratio.'
+  risk_level: read_only
+  domain_tags: []
+  requires_approval: false
+  action_types: []
+  input_schema:
+    type: object
+    properties: &id007
+      period_start:
+        type: string
+        description: Начало периода оборотов CashBudget (ISO-дата). По умолчанию —
+          начало текущего месяца.
+      period_end:
+        type: string
+        description: Конец периода оборотов CashBudget (ISO-дата). По умолчанию —
+          конец текущего месяца.
+- &id013
+  tool_id: mcp__drivemcp__create_purchase_order
+  server_name: drivemcp
+  display_name: create_purchase_order
+  description: 'WRITE: создаёт Document.PurchaseOrder в 1C:Drive. Envelope NOWA: status=accepted|error,
+    params, document_number, document_ref.'
+  risk_level: medium_write
+  domain_tags: []
+  requires_approval: true
+  action_types:
+  - mcp__drivemcp__create_purchase_order
+  input_schema:
+    type: object
+    properties: &id008
+      supplier_id:
+        type: string
+        description: Код / наименование / UUID контрагента-поставщика
+      product_id:
+        type: string
+        description: SKU / код / наименование / UUID номенклатуры. Синоним параметра
+          sku.
+      sku:
+        type: string
+        description: Синоним product_id (как в role config NOWA).
+      qty:
+        type: number
+        description: Количество заказа
+      strategy:
+        type: string
+        description: Метаданные решения NOWA (пишется в Comment, Drive не интерпретирует).
+      confidence:
+        type: number
+        description: Уверенность решения NOWA (пишется в Comment).
+      post:
+        type: boolean
+        description: Провести документ после записи. По умолчанию false — только запись.
+        default: false
+    required: &id009
+    - supplier_id
+    - qty
+affective_mapping:
+  stock_critical_low:
+    valence: -0.7
+    arousal: 0.8
+    tags:
+    - procurement
+    - urgency
+    - risk
+  supplier_defaulted:
+    valence: -0.5
+    arousal: 0.6
+    tags:
+    - procurement
+    - risk
+  deal_closed_favorable:
+    valence: 0.8
+    arousal: 0.6
+    tags:
+    - procurement
+    - success
+  budget_exceeded:
+    valence: -0.8
+    arousal: 0.7
+    tags:
+    - finance
+    - risk
+mcp_servers:
+- server_id: 1c_erp
+  display_name: 1C ERP
+  transport: mock
+  enabled: true
+  command: ''
+  args: []
+  url: ''
+  tools:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  username: ''
+  password: ''
+  catalog: []
+- server_id: drivemcp
+  display_name: Drive MCP
+  transport: http
+  enabled: true
+  command: ''
+  args: []
+  url: http://localhost/DriveDemo/hs/mcp
+  username: suport
+  password: ''
+  catalog:
+  - tool_id: mcp__drivemcp__list_metadata_objects
+    server_name: drivemcp
+    display_name: list_metadata_objects
+    description: Получение списка объектов метаданных конфигурации с возможностью
+      фильтрации по типу и имени
+    input_schema:
+      type: object
+      properties:
+        metaType:
+          type: string
+          description: Тип объекта метаданных
+          enum:
+          - Catalogs
+          - Documents
+          - InformationRegisters
+          - AccumulationRegisters
+          - AccountingRegisters
+          - CalculationRegisters
+          - ChartsOfCharacteristicTypes
+          - ChartsOfAccounts
+          - ChartsOfCalculationTypes
+          - BusinessProcesses
+          - Tasks
+          - ExchangePlans
+          - FilterCriteria
+          - Reports
+          - DataProcessors
+          - Enums
+          - CommonModules
+          - SessionParameters
+          - CommonTemplates
+          - CommonPictures
+          - XDTOPackages
+          - WebServices
+          - HTTPServices
+          - WSReferences
+          - Styles
+          - Languages
+          - FunctionalOptions
+          - FunctionalOptionsParameters
+          - DefinedTypes
+          - CommonAttributes
+          - CommonCommands
+          - CommandGroups
+          - Constants
+          - CommonForms
+          - Roles
+          - Subsystems
+          - EventSubscriptions
+          - ScheduledJobs
+          - SettingsStorages
+          - Sequences
+          - DocumentJournals
+          - ExternalDataSources
+          - Interfaces
+        nameMask:
+          type: string
+          description: Маска имени объекта. Проверяется на вхождение подстроки в имя
+            или синоним объекта.
+        maxItems:
+          type: number
+          description: Максимальное количество возвращаемых результатов
+          default: 100
+      required:
+      - metaType
+    domain_tags: []
+  - tool_id: mcp__drivemcp__get_metadata_structure
+    server_name: drivemcp
+    display_name: get_metadata_structure
+    description: 'Структура объекта метаданных: поля, ТЧ, владельцы, предопределенные,
+      значения перечисления. Для документов — список регистров движений. Опционально
+      (секция subsystems) — список подсистем объекта.'
+    input_schema:
+      type: object
+      properties:
+        metaType:
+          type: string
+          description: Тип объекта метаданных
+          enum:
+          - Catalogs
+          - Documents
+          - InformationRegisters
+          - AccumulationRegisters
+          - AccountingRegisters
+          - CalculationRegisters
+          - Reports
+          - DataProcessors
+          - ChartsOfCharacteristicTypes
+          - ChartsOfAccounts
+          - ChartsOfCalculationTypes
+          - BusinessProcesses
+          - Tasks
+          - ExchangePlans
+          - Enums
+        name:
+          type: string
+          description: Точное имя объекта метаданных (без учета регистра)
+        sections:
+          type: array
+          description: Секции вывода. fields=поля (стандартные+реквизиты+измерения+ресурсы),
+            tabular_sections=ТЧ, predefined=предопределенные, owners=владельцы, register_records=регистры
+            движений (только для документов), subsystems=подсистемы прямого вхождения.
+            По умолчанию все, кроме predefined и subsystems. Для Enums применяется
+            только subsystems.
+          items:
+            type: string
+            enum:
+            - fields
+            - tabular_sections
+            - predefined
+            - owners
+            - register_records
+            - subsystems
+        maxTypesInComposite:
+          type: number
+          description: Лимит типов составного реквизита (0 - без лимита)
+          default: 10
+      required:
+      - metaType
+      - name
+    domain_tags: []
+  - tool_id: mcp__drivemcp__get_stock_levels
+    server_name: drivemcp
+    display_name: get_stock_levels
+    description: 'READ: остатки номенклатуры Drive (InventoryInWarehouses + ReorderPointSettings
+      + входящие PurchaseOrders). Envelope NOWA: status, stock.{sku}.{quantity,reorder_point,below_reorder_point,inbound,projected_quantity,base_demand_per_day}.'
+    input_schema:
+      type: object
+      properties: *id005
+    domain_tags: []
+  - tool_id: mcp__drivemcp__get_suppliers
+    server_name: drivemcp
+    display_name: get_suppliers
+    description: 'READ: поставщики Drive (Counterparties.Supplier) и цены (CounterpartyPrices).
+      Envelope NOWA: status, suppliers.{id}.{reliability,unit_price,lead_time_days,reputation,is_defaulted,status,offers}.'
+    input_schema:
+      type: object
+      properties: *id006
+    domain_tags: []
+  - tool_id: mcp__drivemcp__get_budget
+    server_name: drivemcp
+    display_name: get_budget
+    description: 'READ: свободные деньги Drive (CashAssets.Amount) и загрузка бюджета
+      (CashBudget за период). Envelope NOWA: status, remaining, utilization_ratio.'
+    input_schema:
+      type: object
+      properties: *id007
+    domain_tags: []
+  - tool_id: mcp__drivemcp__create_purchase_order
+    server_name: drivemcp
+    display_name: create_purchase_order
+    description: 'WRITE: создаёт Document.PurchaseOrder в 1C:Drive. Envelope NOWA:
+      status=accepted|error, params, document_number, document_ref.'
+    input_schema:
+      type: object
+      properties: *id008
+      required: *id009
+    domain_tags: []
+  tools:
+  - *id010
+  - *id011
+  - *id012
+  - *id013
+action_vocabulary:
+  mcp__drivemcp__create_purchase_order:
+    display_name: Mcp  drivemcp  create purchase order
+    description: ''
+field_aliases: {}
+param_bindings: {}
+seed_corpus:
+- context_tokens:
+  - event:stock_critical_low
+  - valence:very_negative
+  - arousal:high
+  - domain:procurement
+  - domain:urgency
+  - domain:risk
+  action: mcp__drivemcp__create_purchase_order
+  consequence: stock_restored
+  reward: 0.8
+  intensity: 0.8
+  reinforce: true
+- context_tokens:
+  - event:stock_critical_low
+  - valence:very_negative
+  - arousal:high
+  - domain:procurement
+  - domain:urgency
+  - domain:risk
+  action: mcp__drivemcp__create_purchase_order
+  consequence: budget_preserved
+  reward: 0.6
+  intensity: 0.6
+  reinforce: false
+- context_tokens:
+  - event:supplier_defaulted
+  - valence:negative
+  - arousal:medium
+  - domain:procurement
+  - domain:risk
+  action: mcp__drivemcp__create_purchase_order
+  consequence: risk_reduced
+  reward: 0.7
+  intensity: 0.7
+  reinforce: true
+- context_tokens:
+  - event:order_arrived_on_time
+  - domain:trust
+  - valence:positive
+  action: mcp__1c__create_purchase_order
+  consequence: reliable_delivery
+  reward: 0.5
+  intensity: 0.5
+  reinforce: false
+- context_tokens:
+  - event:quiet_day
+  - domain:neutral
+  - valence:neutral
+  action: wait_and_monitor
+  consequence: no_action_needed
+  reward: 0.1
+  intensity: 0.2
+  reinforce: false
+- context_tokens:
+  - event:demand_shock
+  - domain:procurement
+  - arousal:high
+  - valence:negative
+  action: mcp__1c__create_purchase_order
+  consequence: demand_met
+  reward: 0.75
+  intensity: 0.85
+  reinforce: true
+- context_tokens:
+  - budget:high_utilization
+  - domain:finance
+  - valence:negative
+  action: wait_and_monitor
+  consequence: budget_protected
+  reward: 0.4
+  intensity: 0.6
+  reinforce: false
+- context_tokens:
+  - event:order_arrived_late
+  - domain:risk
+  - valence:negative
+  action: mcp__1c__create_purchase_order
+  consequence: supplier_risk_reduced
+  reward: 0.6
+  intensity: 0.7
+  reinforce: true

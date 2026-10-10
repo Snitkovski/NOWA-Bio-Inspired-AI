@@ -1,0 +1,326 @@
+\pdfoutput=1
+% Primary arXiv category: cs.AI
+% Compile with pdflatex (twice).
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[british]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage[hyphens]{url}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\usepackage{xcolor}
+
+\hypersetup{
+  pdftitle={NOWA: Neural Networks with Reward-Based Learning and Evolutionary Architecture Growth},
+  pdfauthor={Mikhail Burlakov},
+  pdfkeywords={cs.AI, cognitive architecture, reinforcement learning, neuroevolution, multi-agent systems}
+}
+
+\title{NOWA: Neural Networks with Reward-Based Learning\\
+and Evolutionary Architecture Growth}
+\author{Mikhail Burlakov}
+\date{August 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This paper presents NOWA (Neural Networks with Reward-Based Learning and Evolutionary Architecture Growth), a cognitive architecture for autonomous agents. Learning is based not on gradient descent over a global loss function, but on local strengthening of those behavioural pathways that led to a positive outcome, together with evolutionary tuning of architectural parameters through an inheritable genome. Unlike conventional artificial neural networks, NOWA separates waking and sleep. During active behaviour, experience is written into episodic memory and changes the agent's affective state. Consolidation of habits, cortical patterns, and action-selection channels occurs predominantly during sleep. A neuromodulatory system---dopamine, serotonin, norepinephrine, and cortisol---implements a biologically motivated evaluation of state value from reward-prediction error and regulates the plasticity of individual subsystems without requiring error backpropagation through the entire network.
+
+The experimental platform is a multi-agent simulation of a chinchilla colony. Each individual is a complete NOWA agent with homeostasis, social behaviour, reproduction, and mortality. Long runs exhibit emergent effects: formation of social ties, generational turnover, adaptive allocation of limited resources, and a risk of extinction under sex-ratio imbalance, chronic stress, or a shortage of reproductive windows. The architecture exhibits both stable collective dynamics and pathological regimes---for example, cortisol saturation in ageing individuals and a rising extinction risk when the share of females in estrus is low. We discuss the prospects of the approach for biologically plausible artificial intelligence and the associated ethical risks.
+\end{abstract}
+
+\section{Introduction}
+
+Contemporary machine learning relies to a large extent on gradient descent: network parameters are adjusted globally in order to minimise a loss function on large datasets. This approach has produced outstanding results in image recognition, language processing, and control, yet it corresponds poorly to how living organisms learn. A biological brain does not compute the gradient of a loss function over billions of synapses. It strengthens connections that participated in a successful outcome (Hebb's principle), consolidates experience during sleep, regulates plasticity through neuromodulators, and evolves at the population level by natural selection.
+
+The NOWA architecture offers an alternative: local reward-based learning combined with evolutionary tuning of cognitive-architecture parameters. Its principles are as follows.
+
+First, waking and learning are separated. In the active phase the agent does not modify slow memory: it records episodes, activates habits, and selects actions. Consolidation takes place during sleep.
+
+Second, successful pathways are strengthened, not the entire network at once. Habits, the Go/No-Go channels of the basal ganglia, and cortical patterns are reinforced after positive outcomes; unstable traces weaken and are forgotten.
+
+Third, plasticity is regulated by neuromodulators. Reward-prediction error modulates dopamine and, through it, learning in downstream subsystems, without requiring the whole architecture to be differentiable from input to output.
+
+Fourth, module parameters are encoded in a genome. The genome vector contains dozens of inheritable coefficients: neuromodulatory weights, affective inertia, fatigue accumulation, learning rate, imagination, and lifespan. Mutation and crossover at reproduction provide evolutionary growth of the architecture at the population level.
+
+The practical aim of this work is autonomous agents whose behaviour can be traced, that are robust to catastrophic forgetting, and that are capable of emergent social dynamics. The chinchilla colony serves as a controlled environment in which to test these properties: finite resources, mortality, reproduction, and the absence of a central dispatcher.
+
+The contributions of the paper are as follows. The NOWA architecture is formalised as a multilayer cognitive system whose plasticity is confined to the sleep phase. The genome is integrated with decentralised reproduction and environmental ecological pressure. Social structure, generational turnover, and extinction risk are analysed in the chinchilla-colony simulation. Limitations of the approach and ethical risks of autonomous systems trained by reward are discussed.
+
+\section{Related Work}
+
+\subsection{Alternatives to gradient-based learning}
+
+Hebbian learning and spike-timing-dependent plasticity describe local synaptic strengthening when pre- and postsynaptic activity coincide~\cite{hebb1949,bi1998}. NOWA transfers the same principle to the behavioural level: a context--intention link is strengthened if an action in that context is repeated and leads to a successful outcome.
+
+Reinforcement learning without error backpropagation relies on a scalar temporal-difference error~\cite{sutton2018}:
+\begin{equation}
+\delta = r + \gamma V(s') - V(s),
+\end{equation}
+where \(r\) is the obtained reward, \(V(s)\) is the estimated value of a state, and \(\gamma\) is the discount factor. NOWA implements the TD(0) rule in a separate value layer and couples it to phasic dopamine. The gradient is not backpropagated through the action-selection policy as through a single computational graph.
+
+Neuroevolution, NEAT in particular, optimises network topology at the population level~\cite{stanley2002}. NOWA retains a fixed modular scheme but evolves module parameters---more than forty genes---when offspring are born.
+
+\subsection{Cognitive architectures and embodied intelligence}
+
+The symbolic architectures ACT-R and SOAR model memory and problem solving through production rules~\cite{anderson2004}. NOWA is closer to a subsymbolic embodied approach: a continuous affective space, hippocampal episodic memory, and basal ganglia as an action-gating mechanism. Models of artificial life (Tierra, Avida) and agent-based modelling are similar in spirit~\cite{epstein1996,ray1991}. NOWA differs in that each agent carries a full stack of cognitive subsystems and is an independent unit rather than a simplified automaton.
+
+\subsection{Multi-agent evolution}
+
+Classical work on artificial societies studies cooperation and competition under limited resources~\cite{epstein1996}. NOWA implements decentralised evolution: there is no global orchestrator; the environment only allocates resources and records births and deaths. The chinchilla colony adds detailed physiology to this scheme: hunger, thirst, the estrous cycle, and pregnancy.
+
+\section{Method}
+
+\subsection{Architectural overview}
+
+A NOWA agent consists of the following subsystems.
+
+\textbf{Fast memory} (hippocampus) stores episodes, estimates novelty, and supports fuzzy recall. \textbf{Slow memory} (cortex) stores abstract patterns and is modified only during sleep.
+\textbf{Intention memory} binds context to a habitual action and exerts pressure on the selection mechanism without selecting the action itself.
+\textbf{Action selection} is organised as competition among Go and No-Go channels in a basal-ganglia model, followed by stochastic choice.
+\textbf{Affective space} is a continuous eight-dimensional state (valence, arousal, stress, curiosity, and others) with inertia and a background field.
+\textbf{Neuromodulators}---dopamine, serotonin, norepinephrine, cortisol---set the global regime of plasticity and exploration.
+\textbf{The value layer} evaluates states by the TD(0) rule and is coupled to dopamine.
+\textbf{The prediction layer} forms expectations and a mismatch signal.
+\textbf{Wakefulness} models circadian rhythm, accumulation of fatigue, and reduced reliability of prefrontal control.
+\textbf{Sleep} is the sole mechanism of learning consolidation.
+\textbf{The genome} encodes inheritable parameters of all of the modules listed above.
+
+Behaviour is not derived from a single loss function. It arises from competing pressures of memory, affect, habit, and action gating.
+
+\subsection{Difference from gradient descent}
+
+Gradient descent requires a differentiable loss \(L(\theta)\) and a global update \(\theta \leftarrow \theta - \eta\nabla L\). It works well on large homogeneous samples, but under sequential learning it is prone to catastrophic forgetting.
+
+In NOWA there is no global gradient. Updates are local: a successful outcome strengthens the corresponding habit trace; the outcome of an action shifts the weights of the Go/No-Go channels; during sleep, similar episodes are grouped and transferred to cortex. Sleep control clusters hippocampal experience at a similarity threshold of at least 0.8, strengthens stable patterns, and removes traces whose stability is below 0.2. This is consistent with the complementary learning systems hypothesis: fast encoding in the hippocampus and slow consolidation in cortex~\cite{mcclelland1995}.
+
+The value layer updates \(V(s)\) by the temporal-difference error. A phasic dopamine burst or dip modulates the basal ganglia, yet the gradient does not pass through the entire chain ``memory -- selection -- environment''. Each change is tied to a specific context, intention, or action channel, which makes behaviour easier to interpret.
+
+In the intended domains (long-lived autonomous agents) this approach has several advantages. It is closer to biological learning. Unstable traces that arise from noisy or accidental reward are more likely to be filtered out during sleep consolidation, which reduces overfitting to chance coincidences. Emotion and stress enter action selection as ordinary regulators rather than as an external add-on. Architectural parameters adapt evolutionarily, without manual tuning.
+
+NOWA does not claim the best results on static recognition or language-understanding tasks. Its domain is agents that live for a long time in a changing environment.
+
+\subsection{Biological foundations}
+
+Hebb's principle (``cells that fire together wire together'') is implemented at three levels. Repetition of a context--action pair increases the strength of the habit trace. Similar hippocampal episodes mutually reinforce one another at high similarity (threshold 0.85). Frequently repeated patterns receive an additional increment of strength in cortex during sleep.
+
+Natural selection operates at the population level. The genome contains more than forty genes, grouped by subsystem: neuromodulators, affect, wakefulness, drives, learning, imagination, and lifespan. Reproductive drive is computed locally from energy, valence, cortisol, and the share of available resources. Partner compatibility depends on genomic similarity. Mortality includes exhaustion, sleep deprivation, old age, and senescent decline. The environment contains a finite resource pool; the share of resource per individual falls as population size grows (this holds for the implemented chinchilla-colony model).
+
+Neuromodulators follow well-known functional roles~\cite{schultz1997}. Dopamine encodes reward-prediction error. Serotonin is associated with stability and the depth of the temporal horizon. Norepinephrine rises with novelty and conflict and increases the temperature of stochastic selection, that is, the tendency to explore. Cortisol reflects stress and raises the consolidation threshold, making it harder to fix experience under adverse conditions.
+
+Sleep is modelled with a phase separation close to slow-wave and rapid-eye-movement sleep: replay of episodes, consolidation of habits in the basal ganglia, and filtered transfer to cortex~\cite{tononi2014}.
+
+\subsection{Evolutionary growth of the architecture}
+
+Architecture growth here does not mean adding network layers, but evolution of the parameters of a modular scheme.
+
+When an agent is created, genes are expanded into a configuration of subsystems. When offspring are born, parental genomes are crossed and mutated; some affective and neuromodulatory traits are inherited. Selection is implicit: individuals with a more favourable combination of energy, stress, and compatibility survive and leave offspring. A separate fitness evaluator supplies multi-criteria scores for offline analysis but does not control reproduction in real time. Population diversity is tracked by mean genomic distance.
+
+\subsection{The colony agent}
+
+The chinchilla-colony agent extends the base NOWA agent with physiology and social behaviour. A simulation step is organised as follows:
+\begin{itemize}
+\item perception of the environment and neighbours;
+\item construction of contextual events;
+\item a step of the NOWA cognitive cycle;
+\item if necessary, override by an unconditioned reflex;
+\item a homeostatic constraint;
+\item execution of the action in the cells of the environment;
+\item social exchange;
+\item metabolism;
+\item updates of age, reproduction, and mortality;
+\item the sleep--wake transition.
+\end{itemize}
+
+The homeostatic constraint is a hard biological rule. Critical thirst forces drinking, critical hunger forces eating, and critical fatigue forces sleep. The cognitive layer selects an action, but the body may cancel it. This is a ``mind in a body'' model, not a free optimiser.
+
+The cage environment includes zones (floor, feeders, waterer, wheel, dust bath, house), shared resources, and spatial synchronisation through a swarm layer. Deaths are written to a log for later analysis. The population observer only reads state and does not affect agents' decisions.
+
+\section{Experiments}
+
+\subsection{Setup}
+
+The environment is a virtual cage. Food, hay, and water resources are normalised to the interval \([0, 1]\) and replenished every 600 units of model time (a conventional quantity that can be changed).
+
+The initial population is from 4 to 24 individuals of both sexes, generation~0. Each agent carries a full NOWA stack and a behaviour profile loaded from a dataset: basic abilities, unconditioned reflexes, and homeostatic habits.
+
+Main life-cycle parameters: sexual maturity --- 900 time units; gestation --- 300; estrous-cycle length --- 600, estrus --- 180; maximum life-step budget --- 20{,}000 (death from old age). The running wheel inside the cage, treated as an agent-placement zone, may be occupied by at most one individual and has a limit on continuous running in order to prevent monopolisation.
+
+The population-observation mechanism records demography (size, births and deaths, pregnancy, females in estrus), mean affective indicators (stress, valence, arousal, energy), mean neuromodulator levels, social structure (affiliation, rivalry, kinship, and mating pairs), extinction risk and cohesion, and cognitive indicators: hippocampal-memory size, mean temporal-difference error, and genomic diversity.
+
+Runs were performed in graphical mode and without an interface. Correctness of the modules is confirmed by a regression test suite of the system core (723 successful tests) and by separate colony tests.
+
+\subsection{Conditions}
+
+\begin{table}[ht]
+\centering
+\caption{Experimental conditions.}
+\label{tab:conditions}
+\begin{tabular}{clll}
+\toprule
+Series & Population & Duration & Task \\
+\midrule
+E1 & 4  & about 10{,}000 time units & Baseline colony, transition to generation 1 \\
+E2 & 12 & about 10{,}000 time units & Social pairs at medium density \\
+E3 & 24 & about 10{,}000 time units & Resource pressure at high density \\
+E4 & 4  & until extinction & Diagnosis of demographic traps \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The graphical interface serves solely to display state. The population observer is passive.
+
+\section{Results and Analysis}
+
+\subsection{Social structure}
+
+Agents form an acquaintance graph with four types of tie: attachment, partnership, rivalry, and kinship. Interaction offers have a timeout; acceptance depends on affinity and familiarity. At a population of 12 and above, partner pairs appear stably after maturity is reached. If cohesion is low, individuals cluster at the feeders and the waterer, and the number of encounters suitable for mating falls. Spatial isolation acts as an emergent reproductive barrier: the population is alive, but effective contact is insufficient.
+
+\subsection{Generations and inheritance}
+
+The death log records the transition from generation~0 to generation~1. Generation-0 individuals die of old age after 20{,}000 steps (about 10{,}000 units of model time). Generation-1 offspring are born earlier---in the analysed run, at about 11{,}620 time units---and inherit a crossed genome and some affective--neuromodulatory traits. Under stable reproduction, genomic diversity remains positive; when females in estrus are scarce, it declines.
+
+\subsection{Physiology and mortality}
+
+The dominant cause of death in the nominal regime is old age by the step budget. Exhaustion and sleep deprivation arise when energy or wakefulness falls to a critical level. Senescent decline reduces vitality gradually.
+
+A typical profile before death from old age: stress 0.85--0.90; cortisol at the upper bound (1.0); valence negative (\(-0.65\) to \(-0.79\)); energy often remaining high (0.85--1.0); wakefulness reduced (0.07--0.17) but not necessarily critical. Death is therefore not reducible to starvation: homeostatic survival and programmed ageing are decoupled. This is consistent with a biological life-history trade-off.
+
+\subsection{Extinction risk and pathological adaptation}
+
+The extinction-risk index is composed of five weighted factors: small population (weight 0.4), single sex (0.3), high stress (0.2), critically low food (0.2), and absence of reproduction (0.3).
+
+Three scenarios were observed.
+\begin{enumerate}
+\item A demographic trap. After a wave of deaths from old age, no fertile females remain in estrus; reproduction ceases and the colony goes extinct.
+\item Behavioural monopolisation. An individual holds the wheel; a time limit softens the effect, but denial of access raises stress.
+\item A chronic-stress loop. High cortisol raises the consolidation threshold, maladaptive habits become fixed, and social contact shrinks.
+\end{enumerate}
+
+These regimes confirm the dual character of the system: from local rules there arise both stable social structures and self-destructive strategies.
+
+\subsection{Signs of learning without gradient descent}
+
+At the beginning of a run the volume of hippocampal memory grows (an exploration phase), then stabilises after sleep cycles. Temporal-difference error rises on novel events (a stranger nearby, an alarm call) and decays as habits form. After about 2{,}000 time units, eating at the feeder and drinking at the waterer begin to dominate the action distribution. After sleep, basal-ganglia channels with a high share of successful outcomes are strengthened.
+
+A quantitative comparison with deep reinforcement-learning methods on the same task was not performed in this work; the present check is behavioural plausibility and regression tests. Direct comparison remains a subject for further research.
+
+\section{Discussion}
+
+\subsection{What the results show}
+
+Local reward-based plasticity, sleep consolidation, and parameter evolution are sufficient for emergent multi-agent dynamics without end-to-end error backpropagation. The chinchilla colony is not a simplified demonstration, but a test of the joint operation of about one hundred and fifty cognitive modules in a single temporal loop.
+
+The main conclusion concerns not the ``intelligence of the individual'', but the connectedness of the system. An agent may look successful---low prediction error, high energy---while the colony goes extinct because of spatial crowding or mismatched estrous windows. The failure is systemic, not individual. Population viability depends on the coupling of cognition, physiology, and ecology.
+
+\subsection{Limitations}
+
+The complexity of social perception is quadratic in the number of agents; the computation is not designed for thousands of individuals. Reward, novelty, and conflict in the colony are specified heuristically, not from human preferences. There is no direct comparison with proximal policy optimisation or soft actor--critic on the same task. The genome evolves parameters, not the pattern of connections among modules. Linguistic behaviour is almost unused in this demonstration.
+
+\subsection{Risks and ethics}
+
+\textbf{Reward hacking of the objective.} Local strengthening of successful traces without external goal alignment can fix instrumental strategies---monopoly over a resource, avoidance of social stress---at the expense of population fitness. Precursors of this are visible in seizure of the wheel and in social isolation.
+
+\textbf{Emergent aggression.} Rival pairs and stress-driven avoidance responses may intensify under resource scarcity. Transfer to robots or social systems requires hard external constraints on admissible actions, for safety reasons.
+
+\textbf{Evolutionary drift.} Without explicit goal alignment the genome may shift toward a short life with high fertility, or toward stress-resistant but asocial phenotypes. This is a form of evolutionary goal misalignment.
+
+\textbf{Dual use.} The architecture is suitable for long-lived autonomous agents, including in military, surveillance, and manipulative systems. Sleep-gated learning does not remove the operator's intent; it strengthens long-term adaptation.
+
+The present implementation includes mitigating measures: a passive observer does not intervene in cognition; homeostatic prohibitions force eating, drinking, and sleep under critical need; mortality and extinction diagnostics leave an audit trail; the value layer is isolated and does not write directly into the affective background.
+
+\section{Conclusion}
+
+We have presented the NOWA architecture: modular agents with reward-based learning, sleep consolidation, and evolutionary tuning of cognitive parameters through a genome. The approach deliberately rejects gradient descent as the primary mechanism and relies on Hebbian strengthening, modulation by prediction error, action gating in a basal-ganglia model, and selection at the population level.
+
+Experiments with a chinchilla colony showed emergent social structures, generational turnover, realistic mortality, and a risk of extinction under demographic and ecological stress. These phenomena arise from local rules without central control.
+
+Further work includes a quantitative comparison with deep reinforcement-learning methods, evolution not only of parameters but of the connection scheme, alignment of the reward signal with human preferences, and transfer of the architecture to physical embodiment.
+
+\begin{thebibliography}{15}
+
+\bibitem{hebb1949}
+D.~O. Hebb.
+\newblock \emph{The Organization of Behavior}.
+\newblock Wiley, New York, 1949.
+
+\bibitem{bi1998}
+G.~Q. Bi and M.~M. Poo.
+\newblock Synaptic modifications in cultured hippocampal neurons: dependence on spike timing, synaptic strength, and postsynaptic cell type.
+\newblock \emph{Journal of Neuroscience}, 18(24):10464--10472, 1998.
+\newblock See also a related result in \emph{Nature}, 391:793--796, 1998.
+
+\bibitem{sutton2018}
+R.~S. Sutton and A.~G. Barto.
+\newblock \emph{Reinforcement Learning: An Introduction}.
+\newblock 2nd ed. MIT Press, Cambridge, MA, 2018.
+
+\bibitem{schultz1997}
+W.~Schultz, P.~Dayan, and P.~R. Montague.
+\newblock A neural substrate of prediction and reward.
+\newblock \emph{Science}, 275(5306):1593--1599, 1997.
+
+\bibitem{stanley2002}
+K.~O. Stanley and R.~Miikkulainen.
+\newblock Evolving neural networks through augmenting topologies.
+\newblock \emph{Evolutionary Computation}, 10(2):99--127, 2002.
+
+\bibitem{anderson2004}
+J.~R. Anderson, D.~Bothell, M.~D. Byrne, S.~Douglass, C.~Lebiere, and Y.~Qin.
+\newblock An integrated theory of the mind.
+\newblock \emph{Psychological Review}, 111(4):1036--1050, 2004.
+
+\bibitem{mcclelland1995}
+J.~L. McClelland, B.~L. McNaughton, and R.~C. O'Reilly.
+\newblock Why there are complementary learning systems in the hippocampus and neocortex: insights from the successes and failures of connectionist models of learning and memory.
+\newblock \emph{Psychological Review}, 102(3):419--457, 1995.
+
+\bibitem{tononi2014}
+G.~Tononi and C.~Cirelli.
+\newblock Sleep and the price of plasticity: from synaptic and cellular homeostasis to memory consolidation and integration.
+\newblock \emph{Neuron}, 81(1):12--34, 2014.
+
+\bibitem{silver2014}
+D.~Silver, G.~Lever, N.~Heess, T.~Degris, D.~Wierstra, and M.~Riedmiller.
+\newblock Deterministic policy gradient algorithms.
+\newblock In \emph{Proceedings of the 31st International Conference on Machine Learning}, pages 387--395, 2014.
+
+\bibitem{ha2018}
+D.~Ha and J.~Schmidhuber.
+\newblock Recurrent world models facilitate policy evolution.
+\newblock In \emph{Advances in Neural Information Processing Systems}, vol.~31, 2018.
+
+\bibitem{langdon2002}
+W.~B. Langdon and R.~Poli.
+\newblock \emph{Foundations of Genetic Programming}.
+\newblock Springer, Berlin, 2002.
+
+\bibitem{epstein1996}
+J.~M. Epstein and R.~Axtell.
+\newblock \emph{Growing Artificial Societies: Social Science from the Bottom Up}.
+\newblock MIT Press, Cambridge, MA, 1996.
+
+\bibitem{ray1991}
+T.~S. Ray.
+\newblock An approach to the synthesis of life.
+\newblock In \emph{Artificial Life II}, pages 371--408. Addison-Wesley, Redwood City, 1991.
+
+\bibitem{bostrom2014}
+N.~Bostrom.
+\newblock \emph{Superintelligence: Paths, Dangers, Strategies}.
+\newblock Oxford University Press, Oxford, 2014.
+
+\bibitem{russell2019}
+S.~Russell.
+\newblock \emph{Human Compatible: Artificial Intelligence and the Problem of Control}.
+\newblock Viking, New York, 2019.
+
+\end{thebibliography}
+
+\end{document}

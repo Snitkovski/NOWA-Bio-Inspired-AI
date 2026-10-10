@@ -1,0 +1,1425 @@
+[
+  {
+    "quarter_index": 1,
+    "fitness": {
+      "cost_efficiency": 0.9725888888888888,
+      "stockout_avoidance": 0.9745593801468955,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9726,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "stockout_avoidance": {
+        "value": 0.9746,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": false
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": false
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": true
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": false
+      },
+      "stage": "1b",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": {
+      "cost_efficiency": true,
+      "stockout_avoidance": true,
+      "budget_discipline": true,
+      "reaction_to_risk_events": true
+    },
+    "world_summary": {
+      "day": 90,
+      "budget": 36894.86,
+      "spent_ratio": 0.6311,
+      "bankrupt": false,
+      "total_stockout_units": 14.2,
+      "total_holding_cost": 445.35,
+      "n_orders_placed": 9,
+      "n_orders_delivered": 9,
+      "n_suppliers_defaulted": 0,
+      "action_counts": {
+        "place_order_cheap_supplier": 35,
+        "wait_and_monitor": 13,
+        "diversify_supplier": 12,
+        "place_order_reliable_supplier": 13,
+        "urgent_reorder": 17
+      },
+      "supplier_order_counts": {
+        "supplier_002": 3,
+        "supplier_001": 6
+      },
+      "strategy_counts": {
+        "place_order_cheap_supplier": 4,
+        "diversify_supplier": 1,
+        "place_order_reliable_supplier": 2,
+        "urgent_reorder": 2
+      },
+      "curriculum_quarter": 1,
+      "cycle": 1,
+      "entities": {
+        "seed": 42,
+        "day": 90,
+        "budget": 36894.856629028065,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "Банка 1 литр",
+            "base_demand_per_day": 10.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 197.47778057316077,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 151.2003244948912
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "base_demand_per_day": 6.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 58.64398456153492,
+            "reorder_point": 18.0,
+            "cumulative_stockout_units": 14.19586587803235,
+            "cumulative_holding_cost": 85.40461798562802
+          },
+          {
+            "product_id": "Пакет",
+            "base_demand_per_day": 15.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 64.82341243412054,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 208.74842849127373
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 5,
+            "reputation": 0.6800000000000002,
+            "total_orders": 6,
+            "successful_orders": 6,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 3,
+            "reputation": 0.5900000000000001,
+            "total_orders": 3,
+            "successful_orders": 3,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 1,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          }
+        ],
+        "offers": [
+          {
+            "product_id": "Банка 1 литр",
+            "supplier_id": "supplier_001",
+            "unit_price": 30.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "supplier_id": "supplier_001",
+            "unit_price": 50.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_002",
+            "unit_price": 5.0,
+            "lead_time_days": 3,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_003",
+            "unit_price": 7.0,
+            "lead_time_days": 1,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          }
+        ]
+      }
+    },
+    "processing_time_s": 0.1538842999980261
+  },
+  {
+    "quarter_index": 2,
+    "fitness": {
+      "cost_efficiency": 0.69761,
+      "stockout_avoidance": 1.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.41666666666666663,
+      "decision_consistency": 0.9166666666666666,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6976,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "stockout_avoidance": {
+        "value": 1.0,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": false
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": false
+      },
+      "supplier_diversification": {
+        "value": 0.4167,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": true
+      },
+      "decision_consistency": {
+        "value": 0.9167,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": false
+      },
+      "stage": "1b",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": {
+      "cost_efficiency": true,
+      "stockout_avoidance": true,
+      "budget_discipline": true,
+      "reaction_to_risk_events": true
+    },
+    "world_summary": {
+      "day": 90,
+      "budget": 32755.65,
+      "spent_ratio": 0.6724,
+      "bankrupt": false,
+      "total_stockout_units": 0.0,
+      "total_holding_cost": 477.93,
+      "n_orders_placed": 10,
+      "n_orders_delivered": 10,
+      "n_suppliers_defaulted": 0,
+      "action_counts": {
+        "wait_and_monitor": 7,
+        "diversify_supplier": 15,
+        "place_order_cheap_supplier": 17,
+        "place_order_reliable_supplier": 32,
+        "urgent_reorder": 19
+      },
+      "supplier_order_counts": {
+        "supplier_003": 3,
+        "supplier_001": 6,
+        "supplier_002": 1
+      },
+      "strategy_counts": {
+        "place_order_reliable_supplier": 6,
+        "diversify_supplier": 1,
+        "place_order_cheap_supplier": 2,
+        "urgent_reorder": 1
+      },
+      "curriculum_quarter": 1,
+      "cycle": 2,
+      "entities": {
+        "seed": 43,
+        "day": 90,
+        "budget": 32755.64735829805,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "Банка 1 литр",
+            "base_demand_per_day": 10.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 119.80167234027755,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 147.98594673824303
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "base_demand_per_day": 6.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 37.66226279362884,
+            "reorder_point": 18.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 88.08497116420148
+          },
+          {
+            "product_id": "Пакет",
+            "base_demand_per_day": 15.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 457.5455946383363,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 241.86172379959163
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 5,
+            "reputation": 0.8600000000000003,
+            "total_orders": 12,
+            "successful_orders": 12,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 3,
+            "reputation": 0.6200000000000001,
+            "total_orders": 4,
+            "successful_orders": 4,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 1,
+            "reputation": 0.5900000000000001,
+            "total_orders": 3,
+            "successful_orders": 3,
+            "is_defaulted": false
+          }
+        ],
+        "offers": [
+          {
+            "product_id": "Банка 1 литр",
+            "supplier_id": "supplier_001",
+            "unit_price": 30.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "supplier_id": "supplier_001",
+            "unit_price": 50.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_002",
+            "unit_price": 5.0,
+            "lead_time_days": 3,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_003",
+            "unit_price": 7.0,
+            "lead_time_days": 1,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          }
+        ]
+      }
+    },
+    "processing_time_s": 0.44487149999986286
+  },
+  {
+    "quarter_index": 3,
+    "fitness": {
+      "cost_efficiency": 0.8908454545454544,
+      "stockout_avoidance": 0.9769537112139611,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 1.0,
+      "decision_consistency": 0.9166666666666666,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8908,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "stockout_avoidance": {
+        "value": 0.977,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": false
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": false
+      },
+      "supplier_diversification": {
+        "value": 1.0,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": true
+      },
+      "decision_consistency": {
+        "value": 0.9167,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": false
+      },
+      "stage": "1b",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": {
+      "cost_efficiency": true,
+      "stockout_avoidance": true,
+      "budget_discipline": true,
+      "reaction_to_risk_events": true
+    },
+    "world_summary": {
+      "day": 90,
+      "budget": 25248.6,
+      "spent_ratio": 0.7475,
+      "bankrupt": false,
+      "total_stockout_units": 12.86,
+      "total_holding_cost": 443.02,
+      "n_orders_placed": 11,
+      "n_orders_delivered": 10,
+      "n_suppliers_defaulted": 1,
+      "action_counts": {
+        "place_order_cheap_supplier": 28,
+        "wait_and_monitor": 6,
+        "place_order_reliable_supplier": 30,
+        "urgent_reorder": 17,
+        "diversify_supplier": 9
+      },
+      "supplier_order_counts": {
+        "supplier_003": 1,
+        "supplier_001": 7,
+        "supplier_002": 3
+      },
+      "strategy_counts": {
+        "place_order_reliable_supplier": 3,
+        "place_order_cheap_supplier": 5,
+        "diversify_supplier": 1,
+        "urgent_reorder": 2
+      },
+      "curriculum_quarter": 1,
+      "cycle": 3,
+      "entities": {
+        "seed": 44,
+        "day": 90,
+        "budget": 25248.599952381013,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "Банка 1 литр",
+            "base_demand_per_day": 10.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 122.89627239355018,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 144.65813904044487
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "base_demand_per_day": 6.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 13.767232795515833,
+            "reorder_point": 18.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 80.67471791010298
+          },
+          {
+            "product_id": "Пакет",
+            "base_demand_per_day": 15.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 463.1549047169208,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 12.859829142609671,
+            "cumulative_holding_cost": 217.6871906684679
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 5,
+            "reputation": 0.9300000000000005,
+            "total_orders": 18,
+            "successful_orders": 17,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 3,
+            "reputation": 0.7100000000000002,
+            "total_orders": 7,
+            "successful_orders": 7,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 1,
+            "reputation": 0.5100000000000001,
+            "total_orders": 4,
+            "successful_orders": 3,
+            "is_defaulted": true
+          }
+        ],
+        "offers": [
+          {
+            "product_id": "Банка 1 литр",
+            "supplier_id": "supplier_001",
+            "unit_price": 30.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "supplier_id": "supplier_001",
+            "unit_price": 50.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_002",
+            "unit_price": 5.0,
+            "lead_time_days": 3,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_003",
+            "unit_price": 7.0,
+            "lead_time_days": 1,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          }
+        ]
+      }
+    },
+    "processing_time_s": 0.9070943999977317
+  },
+  {
+    "quarter_index": 4,
+    "fitness": {
+      "cost_efficiency": 0.5744999999999999,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.41666666666666663,
+      "decision_consistency": 0.75,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.5745,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": false
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": false
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": false
+      },
+      "supplier_diversification": {
+        "value": 0.4167,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": true
+      },
+      "decision_consistency": {
+        "value": 0.75,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": false
+      },
+      "stage": "1b",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": {
+      "cost_efficiency": true,
+      "stockout_avoidance": false,
+      "budget_discipline": true,
+      "reaction_to_risk_events": true
+    },
+    "world_summary": {
+      "day": 90,
+      "budget": 70374.08,
+      "spent_ratio": 0.2963,
+      "bankrupt": false,
+      "total_stockout_units": 826.89,
+      "total_holding_cost": 301.95,
+      "n_orders_placed": 6,
+      "n_orders_delivered": 6,
+      "n_suppliers_defaulted": 1,
+      "action_counts": {
+        "place_order_reliable_supplier": 23,
+        "urgent_reorder": 22,
+        "place_order_cheap_supplier": 36,
+        "diversify_supplier": 6,
+        "wait_and_monitor": 3
+      },
+      "supplier_order_counts": {
+        "supplier_002": 1,
+        "supplier_001": 2,
+        "supplier_003": 3
+      },
+      "strategy_counts": {
+        "place_order_cheap_supplier": 2,
+        "place_order_reliable_supplier": 2,
+        "urgent_reorder": 2
+      },
+      "curriculum_quarter": 1,
+      "cycle": 4,
+      "entities": {
+        "seed": 45,
+        "day": 90,
+        "budget": 70374.07693852171,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "Банка 1 литр",
+            "base_demand_per_day": 10.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 0.0,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 475.21776142588095,
+            "cumulative_holding_cost": 64.90896096577814
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "base_demand_per_day": 6.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 0.0,
+            "reorder_point": 18.0,
+            "cumulative_stockout_units": 327.4475329635764,
+            "cumulative_holding_cost": 32.60966958726584
+          },
+          {
+            "product_id": "Пакет",
+            "base_demand_per_day": 15.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 450.0,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 24.223346658986816,
+            "cumulative_holding_cost": 204.4344309253026
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 5,
+            "reputation": 0.9900000000000005,
+            "total_orders": 20,
+            "successful_orders": 19,
+            "is_defaulted": true
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 3,
+            "reputation": 0.7400000000000002,
+            "total_orders": 8,
+            "successful_orders": 8,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 1,
+            "reputation": 0.6000000000000002,
+            "total_orders": 7,
+            "successful_orders": 6,
+            "is_defaulted": false
+          }
+        ],
+        "offers": [
+          {
+            "product_id": "Банка 1 литр",
+            "supplier_id": "supplier_001",
+            "unit_price": 30.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "supplier_id": "supplier_001",
+            "unit_price": 50.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_002",
+            "unit_price": 5.0,
+            "lead_time_days": 3,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_003",
+            "unit_price": 7.0,
+            "lead_time_days": 1,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          }
+        ]
+      }
+    },
+    "processing_time_s": 1.5464800000008836
+  },
+  {
+    "quarter_index": 5,
+    "fitness": {
+      "cost_efficiency": 0.8090409090909091,
+      "stockout_avoidance": 0.9953403444675488,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.5666666666666667,
+      "decision_consistency": 0.8333333333333334,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.809,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "stockout_avoidance": {
+        "value": 0.9953,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": false
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": false
+      },
+      "supplier_diversification": {
+        "value": 0.5667,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": true
+      },
+      "decision_consistency": {
+        "value": 0.8333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": false
+      },
+      "stage": "1b",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": {
+      "cost_efficiency": true,
+      "stockout_avoidance": true,
+      "budget_discipline": true,
+      "reaction_to_risk_events": true
+    },
+    "world_summary": {
+      "day": 90,
+      "budget": 27332.36,
+      "spent_ratio": 0.7267,
+      "bankrupt": false,
+      "total_stockout_units": 2.6,
+      "total_holding_cost": 471.73,
+      "n_orders_placed": 11,
+      "n_orders_delivered": 11,
+      "n_suppliers_defaulted": 0,
+      "action_counts": {
+        "place_order_cheap_supplier": 33,
+        "diversify_supplier": 8,
+        "place_order_reliable_supplier": 35,
+        "urgent_reorder": 12,
+        "wait_and_monitor": 2
+      },
+      "supplier_order_counts": {
+        "supplier_003": 2,
+        "supplier_001": 7,
+        "supplier_002": 2
+      },
+      "strategy_counts": {
+        "place_order_reliable_supplier": 3,
+        "place_order_cheap_supplier": 6,
+        "urgent_reorder": 1,
+        "diversify_supplier": 1
+      },
+      "curriculum_quarter": 1,
+      "cycle": 5,
+      "entities": {
+        "seed": 46,
+        "day": 90,
+        "budget": 27332.357661287308,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "Банка 1 литр",
+            "base_demand_per_day": 10.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 152.21200588956276,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 150.68171512049193
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "base_demand_per_day": 6.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 180.77390801430838,
+            "reorder_point": 18.0,
+            "cumulative_stockout_units": 2.6000877871077606,
+            "cumulative_holding_cost": 83.47140655921078
+          },
+          {
+            "product_id": "Пакет",
+            "base_demand_per_day": 15.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 403.1611629978266,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 237.57921703296057
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 5,
+            "reputation": 1.0,
+            "total_orders": 27,
+            "successful_orders": 26,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 3,
+            "reputation": 0.8000000000000003,
+            "total_orders": 10,
+            "successful_orders": 10,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 1,
+            "reputation": 0.6600000000000003,
+            "total_orders": 9,
+            "successful_orders": 8,
+            "is_defaulted": false
+          }
+        ],
+        "offers": [
+          {
+            "product_id": "Банка 1 литр",
+            "supplier_id": "supplier_001",
+            "unit_price": 30.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "supplier_id": "supplier_001",
+            "unit_price": 50.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_002",
+            "unit_price": 5.0,
+            "lead_time_days": 3,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_003",
+            "unit_price": 7.0,
+            "lead_time_days": 1,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          }
+        ]
+      }
+    },
+    "processing_time_s": 2.2750793999985035
+  },
+  {
+    "quarter_index": 6,
+    "fitness": {
+      "cost_efficiency": 0.8579727272727272,
+      "stockout_avoidance": 0.991731336260992,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.5666666666666667,
+      "decision_consistency": 0.8333333333333334,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.858,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "stockout_avoidance": {
+        "value": 0.9917,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": false
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": false
+      },
+      "supplier_diversification": {
+        "value": 0.5667,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": true
+      },
+      "decision_consistency": {
+        "value": 0.8333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": false
+      },
+      "stage": "1b",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": {
+      "cost_efficiency": true,
+      "stockout_avoidance": true,
+      "budget_discipline": true,
+      "reaction_to_risk_events": true
+    },
+    "world_summary": {
+      "day": 90,
+      "budget": 25945.9,
+      "spent_ratio": 0.7405,
+      "bankrupt": false,
+      "total_stockout_units": 4.61,
+      "total_holding_cost": 456.84,
+      "n_orders_placed": 11,
+      "n_orders_delivered": 10,
+      "n_suppliers_defaulted": 0,
+      "action_counts": {
+        "place_order_cheap_supplier": 47,
+        "place_order_reliable_supplier": 22,
+        "urgent_reorder": 8,
+        "wait_and_monitor": 5,
+        "diversify_supplier": 8
+      },
+      "supplier_order_counts": {
+        "supplier_002": 2,
+        "supplier_001": 7,
+        "supplier_003": 2
+      },
+      "strategy_counts": {
+        "place_order_cheap_supplier": 7,
+        "place_order_reliable_supplier": 3,
+        "diversify_supplier": 1
+      },
+      "curriculum_quarter": 1,
+      "cycle": 6,
+      "entities": {
+        "seed": 47,
+        "day": 90,
+        "budget": 25945.901720524587,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "Банка 1 литр",
+            "base_demand_per_day": 10.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 114.80538024518482,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 149.04199634784845
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "base_demand_per_day": 6.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 16.68490935119023,
+            "reorder_point": 18.0,
+            "cumulative_stockout_units": 4.613914366366507,
+            "cumulative_holding_cost": 81.81615140972384
+          },
+          {
+            "product_id": "Пакет",
+            "base_demand_per_day": 15.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 466.5353079267314,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 225.98013171783347
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 5,
+            "reputation": 1.0,
+            "total_orders": 33,
+            "successful_orders": 32,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 3,
+            "reputation": 0.7500000000000003,
+            "total_orders": 12,
+            "successful_orders": 11,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 1,
+            "reputation": 0.7200000000000003,
+            "total_orders": 11,
+            "successful_orders": 10,
+            "is_defaulted": false
+          }
+        ],
+        "offers": [
+          {
+            "product_id": "Банка 1 литр",
+            "supplier_id": "supplier_001",
+            "unit_price": 30.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "supplier_id": "supplier_001",
+            "unit_price": 50.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_002",
+            "unit_price": 5.0,
+            "lead_time_days": 3,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_003",
+            "unit_price": 7.0,
+            "lead_time_days": 1,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          }
+        ]
+      }
+    },
+    "processing_time_s": 2.7839966000028653
+  },
+  {
+    "quarter_index": 7,
+    "fitness": {
+      "cost_efficiency": 0.9860599999999999,
+      "stockout_avoidance": 0.9977559189268094,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 1.0,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9861,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "stockout_avoidance": {
+        "value": 0.9978,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": false
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": false
+      },
+      "supplier_diversification": {
+        "value": 1.0,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": true
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": false
+      },
+      "stage": "1b",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": {
+      "cost_efficiency": true,
+      "stockout_avoidance": true,
+      "budget_discipline": true,
+      "reaction_to_risk_events": true
+    },
+    "world_summary": {
+      "day": 90,
+      "budget": 29979.4,
+      "spent_ratio": 0.7002,
+      "bankrupt": false,
+      "total_stockout_units": 1.25,
+      "total_holding_cost": 449.82,
+      "n_orders_placed": 10,
+      "n_orders_delivered": 10,
+      "n_suppliers_defaulted": 1,
+      "action_counts": {
+        "place_order_cheap_supplier": 52,
+        "diversify_supplier": 10,
+        "place_order_reliable_supplier": 17,
+        "urgent_reorder": 6,
+        "wait_and_monitor": 5
+      },
+      "supplier_order_counts": {
+        "supplier_002": 3,
+        "supplier_001": 7
+      },
+      "strategy_counts": {
+        "place_order_cheap_supplier": 5,
+        "place_order_reliable_supplier": 4,
+        "diversify_supplier": 1
+      },
+      "curriculum_quarter": 1,
+      "cycle": 7,
+      "entities": {
+        "seed": 48,
+        "day": 90,
+        "budget": 29979.39530293722,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "Банка 1 литр",
+            "base_demand_per_day": 10.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 138.6926864643724,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 146.72598594568532
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "base_demand_per_day": 6.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 181.3505606823883,
+            "reorder_point": 18.0,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 85.69299767617224
+          },
+          {
+            "product_id": "Пакет",
+            "base_demand_per_day": 15.0,
+            "demand_volatility": 0.15,
+            "holding_cost_per_unit": 1.0,
+            "stockout_penalty_per_unit": 10.0,
+            "current_stock": 97.307671547974,
+            "reorder_point": 50.0,
+            "cumulative_stockout_units": 1.252197238840342,
+            "cumulative_holding_cost": 217.40571344094815
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 5,
+            "reputation": 0.9500000000000001,
+            "total_orders": 40,
+            "successful_orders": 38,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 3,
+            "reputation": 0.8400000000000004,
+            "total_orders": 15,
+            "successful_orders": 14,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9,
+            "base_price_multiplier": 1.0,
+            "price_volatility": 0.05,
+            "lead_time_days": 1,
+            "reputation": 0.7200000000000003,
+            "total_orders": 11,
+            "successful_orders": 10,
+            "is_defaulted": true
+          }
+        ],
+        "offers": [
+          {
+            "product_id": "Банка 1 литр",
+            "supplier_id": "supplier_001",
+            "unit_price": 30.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Банка 3 литра",
+            "supplier_id": "supplier_001",
+            "unit_price": 50.0,
+            "lead_time_days": 5,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_002",
+            "unit_price": 5.0,
+            "lead_time_days": 3,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          },
+          {
+            "product_id": "Пакет",
+            "supplier_id": "supplier_003",
+            "unit_price": 7.0,
+            "lead_time_days": 1,
+            "reliability": 0.9,
+            "price_volatility": 0.05
+          }
+        ]
+      }
+    },
+    "processing_time_s": 2.8472743000020273
+  }
+]

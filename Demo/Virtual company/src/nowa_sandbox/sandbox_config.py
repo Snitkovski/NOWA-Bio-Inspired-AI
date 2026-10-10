@@ -1,0 +1,214 @@
+"""YAML configuration loading for the procurement sandbox.
+
+Keeps world physics, training schedule and graduation thresholds in one file
+so calibration sweeps (spec section 19) do not require code edits.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, Mapping, Optional
+
+from ._common import clamp, safe_float, safe_int
+from .procurement_fitness import GRADUATION_THRESHOLDS, STAGE_CRITERIA
+from .procurement_world import ProcurementWorldConfig
+
+
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[2] / "configs" / "default_world.yaml"
+
+
+def _valid_stage(value: Any) -> str:
+    """Fall back to Stage 1a rather than failing on a typo in YAML."""
+    stage = str(value).strip()
+    return stage if stage in STAGE_CRITERIA else "1a"
+
+
+@dataclass
+class TrainingConfig:
+    n_quarters: int = 30
+    sleep_every_n_days: int = 7
+    stop_on_graduation: bool = True
+    seed: int = 42
+    seed_intuition: bool = True
+    stage: str = "1a"
+    """Curriculum stage (v1.1 section 26): "1a" rotating suppliers, "1b" persistent."""
+
+
+@dataclass
+class OutputConfig:
+    results_dir: str = "results/"
+    save_per_quarter_snapshots: bool = True
+
+
+@dataclass
+class SandboxConfig:
+    world: ProcurementWorldConfig = field(default_factory=ProcurementWorldConfig)
+    training: TrainingConfig = field(default_factory=TrainingConfig)
+    graduation_thresholds: Dict[str, float] = field(
+        default_factory=lambda: dict(GRADUATION_THRESHOLDS)
+    )
+    output: OutputConfig = field(default_factory=OutputConfig)
+
+    @classmethod
+    def from_mapping(cls, data: Optional[Mapping[str, Any]]) -> "SandboxConfig":
+        data = dict(data or {})
+        config = cls()
+
+        world = dict(data.get("world") or {})
+        defaults = ProcurementWorldConfig()
+        config.world = ProcurementWorldConfig(
+            initial_budget=safe_float(
+                world.get("initial_budget", defaults.initial_budget),
+                defaults.initial_budget,
+            ),
+            n_products=safe_int(world.get("n_products", defaults.n_products), defaults.n_products, minimum=0),
+            n_suppliers=safe_int(world.get("n_suppliers", defaults.n_suppliers), defaults.n_suppliers, minimum=0),
+            days_per_quarter=safe_int(
+                world.get("days_per_quarter", defaults.days_per_quarter),
+                defaults.days_per_quarter,
+                minimum=0,
+            ),
+            demand_shock_probability=safe_float(
+                world.get("demand_shock_probability", defaults.demand_shock_probability),
+                defaults.demand_shock_probability,
+            ),
+            supplier_default_probability=safe_float(
+                world.get("supplier_default_probability", defaults.supplier_default_probability),
+                defaults.supplier_default_probability,
+            ),
+            late_delivery_probability_base=safe_float(
+                world.get("late_delivery_probability_base", defaults.late_delivery_probability_base),
+                defaults.late_delivery_probability_base,
+            ),
+            seed=None if world.get("seed") is None else safe_int(world.get("seed"), 0),
+            max_lead_time_days=safe_int(
+                world.get("max_lead_time_days", defaults.max_lead_time_days),
+                defaults.max_lead_time_days,
+                minimum=3,
+            ),
+            max_demand_per_day=safe_float(
+                world.get("max_demand_per_day", defaults.max_demand_per_day),
+                defaults.max_demand_per_day,
+            ),
+            min_reorder_days=safe_float(
+                world.get("min_reorder_days", defaults.min_reorder_days),
+                defaults.min_reorder_days,
+            ),
+            max_reorder_days=safe_float(
+                world.get("max_reorder_days", defaults.max_reorder_days),
+                defaults.max_reorder_days,
+            ),
+            min_initial_stock_days=safe_float(
+                world.get("min_initial_stock_days", defaults.min_initial_stock_days),
+                defaults.min_initial_stock_days,
+            ),
+            max_initial_stock_days=safe_float(
+                world.get("max_initial_stock_days", defaults.max_initial_stock_days),
+                defaults.max_initial_stock_days,
+            ),
+            max_demand_volatility=safe_float(
+                world.get("max_demand_volatility", defaults.max_demand_volatility),
+                defaults.max_demand_volatility,
+            ),
+            min_supplier_reliability=safe_float(
+                world.get("min_supplier_reliability", defaults.min_supplier_reliability),
+                defaults.min_supplier_reliability,
+            ),
+            max_price_volatility=safe_float(
+                world.get("max_price_volatility", defaults.max_price_volatility),
+                defaults.max_price_volatility,
+            ),
+        )
+
+        training = dict(data.get("training") or {})
+        config.training = TrainingConfig(
+            n_quarters=safe_int(training.get("n_quarters", 30), 30, minimum=0),
+            sleep_every_n_days=safe_int(training.get("sleep_every_n_days", 7), 7, minimum=1),
+            stop_on_graduation=bool(training.get("stop_on_graduation", True)),
+            seed=safe_int(training.get("seed", 42), 42),
+            seed_intuition=bool(training.get("seed_intuition", True)),
+            stage=_valid_stage(training.get("stage", "1a")),
+        )
+
+        thresholds = dict(GRADUATION_THRESHOLDS)
+        for criterion, value in dict(data.get("graduation_thresholds") or {}).items():
+            if criterion in thresholds:
+                thresholds[criterion] = clamp(
+                    safe_float(value, thresholds[criterion]), 0.0, 1.0
+                )
+        config.graduation_thresholds = thresholds
+
+        output = dict(data.get("output") or {})
+        config.output = OutputConfig(
+            results_dir=str(output.get("results_dir", "results/")),
+            save_per_quarter_snapshots=bool(output.get("save_per_quarter_snapshots", True)),
+        )
+        return config
+
+    @classmethod
+    def from_yaml(cls, path: Any) -> "SandboxConfig":
+        try:
+            import yaml
+        except ImportError as exc:  # pragma: no cover - depends on environment
+            raise RuntimeError(
+                "pyyaml is required to load sandbox YAML configs; "
+                "install it via requirements.txt"
+            ) from exc
+
+        text = Path(path).read_text(encoding="utf-8")
+        data = yaml.safe_load(text) or {}
+        if not isinstance(data, Mapping):
+            raise ValueError(f"config at {path} must be a YAML mapping")
+        return cls.from_mapping(data)
+
+    @classmethod
+    def load(cls, path: Optional[Any] = None) -> "SandboxConfig":
+        """Load from ``path``, or return defaults when no config is supplied."""
+        if path is None:
+            return cls()
+        return cls.from_yaml(path)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "world": {
+                "initial_budget": self.world.initial_budget,
+                "n_products": self.world.n_products,
+                "n_suppliers": self.world.n_suppliers,
+                "days_per_quarter": self.world.days_per_quarter,
+                "demand_shock_probability": self.world.demand_shock_probability,
+                "supplier_default_probability": self.world.supplier_default_probability,
+                "late_delivery_probability_base": self.world.late_delivery_probability_base,
+                "seed": self.world.seed,
+                "max_lead_time_days": self.world.max_lead_time_days,
+                "max_demand_per_day": self.world.max_demand_per_day,
+                "min_reorder_days": self.world.min_reorder_days,
+                "max_reorder_days": self.world.max_reorder_days,
+                "min_initial_stock_days": self.world.min_initial_stock_days,
+                "max_initial_stock_days": self.world.max_initial_stock_days,
+                "max_demand_volatility": self.world.max_demand_volatility,
+                "min_supplier_reliability": self.world.min_supplier_reliability,
+                "max_price_volatility": self.world.max_price_volatility,
+            },
+            "training": {
+                "n_quarters": self.training.n_quarters,
+                "sleep_every_n_days": self.training.sleep_every_n_days,
+                "stop_on_graduation": self.training.stop_on_graduation,
+                "seed": self.training.seed,
+                "seed_intuition": self.training.seed_intuition,
+                "stage": self.training.stage,
+            },
+            "graduation_thresholds": dict(self.graduation_thresholds),
+            "output": {
+                "results_dir": self.output.results_dir,
+                "save_per_quarter_snapshots": self.output.save_per_quarter_snapshots,
+            },
+        }
+
+
+__all__ = [
+    "SandboxConfig",
+    "TrainingConfig",
+    "OutputConfig",
+    "DEFAULT_CONFIG_PATH",
+]

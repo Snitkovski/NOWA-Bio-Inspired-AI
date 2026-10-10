@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "quarters": {
+    "1": {
+      "budget": 100000.0,
+      "products": [
+        {
+          "product_id": "Банка 1 литр",
+          "base_demand_per_day": 10.0,
+          "demand_volatility": 0.15,
+          "holding_cost_per_unit": 1.0,
+          "stockout_penalty_per_unit": 10.0,
+          "current_stock": 200.0,
+          "reorder_point": 50.0
+        },
+        {
+          "product_id": "Банка 3 литра",
+          "base_demand_per_day": 6.0,
+          "demand_volatility": 0.15,
+          "holding_cost_per_unit": 1.0,
+          "stockout_penalty_per_unit": 10.0,
+          "current_stock": 60.0,
+          "reorder_point": 18.0
+        },
+        {
+          "product_id": "Пакет",
+          "base_demand_per_day": 15.0,
+          "demand_volatility": 0.15,
+          "holding_cost_per_unit": 1.0,
+          "stockout_penalty_per_unit": 10.0,
+          "current_stock": 100.0,
+          "reorder_point": 50.0
+        }
+      ],
+      "suppliers": [
+        {
+          "supplier_id": "supplier_001",
+          "reputation": 0.5,
+          "is_defaulted": false
+        },
+        {
+          "supplier_id": "supplier_002",
+          "reputation": 0.5,
+          "is_defaulted": false
+        },
+        {
+          "supplier_id": "supplier_003",
+          "reputation": 0.5,
+          "is_defaulted": false
+        }
+      ],
+      "offers": [
+        {
+          "product_id": "Банка 1 литр",
+          "supplier_id": "supplier_001",
+          "unit_price": 30.0,
+          "lead_time_days": 5,
+          "reliability": 0.9,
+          "price_volatility": 0.05
+        },
+        {
+          "product_id": "Банка 3 литра",
+          "supplier_id": "supplier_001",
+          "unit_price": 50.0,
+          "lead_time_days": 5,
+          "reliability": 0.9,
+          "price_volatility": 0.05
+        },
+        {
+          "product_id": "Пакет",
+          "supplier_id": "supplier_002",
+          "unit_price": 5.0,
+          "lead_time_days": 3,
+          "reliability": 0.9,
+          "price_volatility": 0.05
+        },
+        {
+          "product_id": "Пакет",
+          "supplier_id": "supplier_003",
+          "unit_price": 7.0,
+          "lead_time_days": 1,
+          "reliability": 0.9,
+          "price_volatility": 0.05
+        }
+      ]
+    }
+  }
+}

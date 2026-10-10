@@ -1,0 +1,128 @@
+{
+  "alarm_call": {
+    "file": "alarm_call.wav",
+    "duration_s": 0.6,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "bark": {
+    "file": "bark.wav",
+    "duration_s": 0.35,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "chewing": {
+    "file": "chewing.wav",
+    "duration_s": 1.08,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "chewing_soft": {
+    "file": "chewing_soft.wav",
+    "duration_s": 1.11,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "chirp": {
+    "file": "chirp.wav",
+    "duration_s": 0.18,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "drinking": {
+    "file": "drinking.wav",
+    "duration_s": 0.9,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "fur_rustle": {
+    "file": "fur_rustle.wav",
+    "duration_s": 0.55,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "gnaw_metal": {
+    "file": "gnaw_metal.wav",
+    "duration_s": 0.95,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "gnaw_wood": {
+    "file": "gnaw_wood.wav",
+    "duration_s": 0.9,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "gnawing": {
+    "file": "gnawing.wav",
+    "duration_s": 0.85,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "jump_land": {
+    "file": "jump_land.wav",
+    "duration_s": 0.18,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "rustling": {
+    "file": "rustling.wav",
+    "duration_s": 1.0,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "scratch_bars": {
+    "file": "scratch_bars.wav",
+    "duration_s": 0.6,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "squeak_soft": {
+    "file": "squeak_soft.wav",
+    "duration_s": 0.25,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "steps_fast": {
+    "file": "steps_fast.wav",
+    "duration_s": 0.72,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "steps_soft": {
+    "file": "steps_soft.wav",
+    "duration_s": 0.68,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "teeth_click": {
+    "file": "teeth_click.wav",
+    "duration_s": 0.282,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "thump_loud": {
+    "file": "thump_loud.wav",
+    "duration_s": 0.4,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "thump_soft": {
+    "file": "thump_soft.wav",
+    "duration_s": 0.22,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "toy_rattle": {
+    "file": "toy_rattle.wav",
+    "duration_s": 0.62,
+    "sample_rate": 44100,
+    "channels": 1
+  },
+  "wheel_spin": {
+    "file": "wheel_spin.wav",
+    "duration_s": 1.2,
+    "sample_rate": 44100,
+    "channels": 1
+  }
+}

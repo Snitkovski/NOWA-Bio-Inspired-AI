@@ -1,0 +1,2557 @@
+[
+  {
+    "quarter_index": 1,
+    "fitness": {
+      "cost_efficiency": 0.32912441094355027,
+      "stockout_avoidance": 0.8530078073278444,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.5714285714285714,
+      "decision_consistency": 0.719047619047619,
+      "reaction_to_risk_events": 0.975609756097561
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.3291,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.853,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.5714,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.719,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9756,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 78563.03,
+      "spent_ratio": 0.2144,
+      "bankrupt": false,
+      "total_stockout_units": 560.46,
+      "total_holding_cost": 2340.5,
+      "n_orders_placed": 70,
+      "n_orders_delivered": 68,
+      "n_suppliers_defaulted": 1,
+      "action_counts": {
+        "diversify_supplier": 20,
+        "place_order_cheap_supplier": 4,
+        "wait_and_monitor": 6,
+        "urgent_reorder": 58,
+        "place_order_reliable_supplier": 2
+      },
+      "supplier_order_counts": {
+        "supplier_004": 5,
+        "supplier_001": 50,
+        "supplier_000": 4,
+        "supplier_002": 6,
+        "supplier_003": 5
+      },
+      "strategy_counts": {
+        "place_order_cheap_supplier": 2,
+        "urgent_reorder": 50,
+        "diversify_supplier": 16,
+        "place_order_reliable_supplier": 2
+      },
+      "entities": {
+        "seed": 42,
+        "day": 90,
+        "budget": 78563.02637415162,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "product_000",
+            "base_demand_per_day": 20.985669961447094,
+            "demand_volatility": 0.10500215104453339,
+            "holding_cost_per_unit": 0.9125439775536789,
+            "stockout_penalty_per_unit": 8.34816107223234,
+            "current_stock": 240.83245302173813,
+            "reorder_point": 260.50762657923076,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 241.44903704148865
+          },
+          {
+            "product_id": "product_001",
+            "base_demand_per_day": 27.304489192621133,
+            "demand_volatility": 0.11738776652588323,
+            "holding_cost_per_unit": 1.1328827295279056,
+            "stockout_penalty_per_unit": 5.446958291571055,
+            "current_stock": 244.1868240089839,
+            "reorder_point": 301.5191683679655,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 321.1716600087569
+          },
+          {
+            "product_id": "product_002",
+            "base_demand_per_day": 5.663399242096591,
+            "demand_volatility": 0.1397675301373297,
+            "holding_cost_per_unit": 1.474826656669285,
+            "stockout_penalty_per_unit": 13.17412220904825,
+            "current_stock": 108.34528718419791,
+            "reorder_point": 66.34176931432694,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 91.67084043462022
+          },
+          {
+            "product_id": "product_003",
+            "base_demand_per_day": 25.235761416945667,
+            "demand_volatility": 0.1012997519356122,
+            "holding_cost_per_unit": 1.7087288777492118,
+            "stockout_penalty_per_unit": 15.472090924823403,
+            "current_stock": 144.45485385465406,
+            "reorder_point": 208.03947841842898,
+            "cumulative_stockout_units": 238.07395993555136,
+            "cumulative_holding_cost": 273.7193477671268
+          },
+          {
+            "product_id": "product_004",
+            "base_demand_per_day": 28.93032680516953,
+            "demand_volatility": 0.16731890902252536,
+            "holding_cost_per_unit": 0.6391187650702219,
+            "stockout_penalty_per_unit": 6.45074565250196,
+            "current_stock": 320.8585930485329,
+            "reorder_point": 342.2402187420442,
+            "cumulative_stockout_units": 49.3736521837872,
+            "cumulative_holding_cost": 220.74466037986758
+          },
+          {
+            "product_id": "product_005",
+            "base_demand_per_day": 25.178206831859505,
+            "demand_volatility": 0.24594635733876358,
+            "holding_cost_per_unit": 1.3043421371820512,
+            "stockout_penalty_per_unit": 19.59673645969056,
+            "current_stock": 399.69338923792395,
+            "reorder_point": 287.4425933733173,
+            "cumulative_stockout_units": 19.49035687269901,
+            "cumulative_holding_cost": 338.98062018361173
+          },
+          {
+            "product_id": "product_006",
+            "base_demand_per_day": 25.735116606324873,
+            "demand_volatility": 0.2237039504728492,
+            "holding_cost_per_unit": 1.7925603504661658,
+            "stockout_penalty_per_unit": 13.66028217885143,
+            "current_stock": 222.36221741851662,
+            "reorder_point": 189.58018309860557,
+            "cumulative_stockout_units": 136.11101920574075,
+            "cumulative_holding_cost": 321.10131108833315
+          },
+          {
+            "product_id": "product_007",
+            "base_demand_per_day": 10.69745689128867,
+            "demand_volatility": 0.15787759272042143,
+            "holding_cost_per_unit": 0.6196879653854412,
+            "stockout_penalty_per_unit": 8.491863295415452,
+            "current_stock": 100.2240359319122,
+            "reorder_point": 98.67108332851187,
+            "cumulative_stockout_units": 98.59973886213028,
+            "cumulative_holding_cost": 57.84973332347198
+          },
+          {
+            "product_id": "product_008",
+            "base_demand_per_day": 20.892111106610002,
+            "demand_volatility": 0.17296643579401685,
+            "holding_cost_per_unit": 1.055271450675324,
+            "stockout_penalty_per_unit": 8.142605461572316,
+            "current_stock": 483.50891801417305,
+            "reorder_point": 302.79431146631333,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 324.3644209022967
+          },
+          {
+            "product_id": "product_009",
+            "base_demand_per_day": 21.20088463116484,
+            "demand_volatility": 0.22182620113339763,
+            "holding_cost_per_unit": 0.7567079722971455,
+            "stockout_penalty_per_unit": 15.936901969255238,
+            "current_stock": 166.22121960351404,
+            "reorder_point": 212.76452076512655,
+            "cumulative_stockout_units": 18.80628141768984,
+            "cumulative_holding_cost": 149.45199471892732
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_000",
+            "reliability": 0.9880094366209531,
+            "base_price_multiplier": 1.0419999279562278,
+            "price_volatility": 0.0645559795019717,
+            "lead_time_days": 8,
+            "reputation": 0.56,
+            "total_orders": 2,
+            "successful_orders": 2,
+            "is_defaulted": true
+          },
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.9601418648360638,
+            "base_price_multiplier": 1.0827999734638734,
+            "price_volatility": 0.038323845757128355,
+            "lead_time_days": 3,
+            "reputation": 1.0,
+            "total_orders": 48,
+            "successful_orders": 48,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9529587021465307,
+            "base_price_multiplier": 0.9703494361066987,
+            "price_volatility": 0.02529508841692378,
+            "lead_time_days": 8,
+            "reputation": 0.6800000000000002,
+            "total_orders": 6,
+            "successful_orders": 6,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.8403990433702867,
+            "base_price_multiplier": 0.9997693778476832,
+            "price_volatility": 0.0907746523109362,
+            "lead_time_days": 10,
+            "reputation": 0.6500000000000001,
+            "total_orders": 5,
+            "successful_orders": 5,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_004",
+            "reliability": 0.8271456021839919,
+            "base_price_multiplier": 0.8918890958576519,
+            "price_volatility": 0.07959911856732853,
+            "lead_time_days": 7,
+            "reputation": 0.6500000000000001,
+            "total_orders": 5,
+            "successful_orders": 5,
+            "is_defaulted": false
+          }
+        ],
+        "offers": []
+      }
+    },
+    "processing_time_s": 3.5232239999995727
+  },
+  {
+    "quarter_index": 2,
+    "fitness": {
+      "cost_efficiency": 0.9586569855133977,
+      "stockout_avoidance": 1.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9587,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 1.0,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 79587.8,
+      "spent_ratio": 0.2041,
+      "bankrupt": false,
+      "total_stockout_units": 0.0,
+      "total_holding_cost": 3374.1,
+      "n_orders_placed": 66,
+      "n_orders_delivered": 63,
+      "n_suppliers_defaulted": 0,
+      "action_counts": {
+        "wait_and_monitor": 1,
+        "urgent_reorder": 89
+      },
+      "supplier_order_counts": {
+        "supplier_000": 66
+      },
+      "strategy_counts": {
+        "urgent_reorder": 66
+      },
+      "entities": {
+        "seed": 43,
+        "day": 90,
+        "budget": 79587.80243508982,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "product_000",
+            "base_demand_per_day": 5.963795983434501,
+            "demand_volatility": 0.23924486452741056,
+            "holding_cost_per_unit": 0.7158998320930415,
+            "stockout_penalty_per_unit": 11.937983822436314,
+            "current_stock": 115.36570524799652,
+            "reorder_point": 79.5785687556985,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 60.66361258248613
+          },
+          {
+            "product_id": "product_001",
+            "base_demand_per_day": 16.32973071165531,
+            "demand_volatility": 0.19965444595961024,
+            "holding_cost_per_unit": 0.5287356620365217,
+            "stockout_penalty_per_unit": 11.485832584271602,
+            "current_stock": 292.0203250984599,
+            "reorder_point": 225.64926593047835,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 129.6058706712246
+          },
+          {
+            "product_id": "product_002",
+            "base_demand_per_day": 18.67459760727514,
+            "demand_volatility": 0.2510633676509932,
+            "holding_cost_per_unit": 1.1511022082783513,
+            "stockout_penalty_per_unit": 7.642821564270344,
+            "current_stock": 353.265459605438,
+            "reorder_point": 253.26040891454673,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 316.03331675944435
+          },
+          {
+            "product_id": "product_003",
+            "base_demand_per_day": 14.396457141911222,
+            "demand_volatility": 0.11914862269254863,
+            "holding_cost_per_unit": 1.2686455194038375,
+            "stockout_penalty_per_unit": 12.439658581693202,
+            "current_stock": 208.35865530614697,
+            "reorder_point": 169.5576622125657,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 223.84465487293835
+          },
+          {
+            "product_id": "product_004",
+            "base_demand_per_day": 17.666900320339202,
+            "demand_volatility": 0.21503178504383513,
+            "holding_cost_per_unit": 1.0653877786941635,
+            "stockout_penalty_per_unit": 5.733796124823525,
+            "current_stock": 246.22723262102568,
+            "reorder_point": 256.7924403167092,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 296.440277593172
+          },
+          {
+            "product_id": "product_005",
+            "base_demand_per_day": 25.9774550359186,
+            "demand_volatility": 0.15923195671331788,
+            "holding_cost_per_unit": 1.8331284121838762,
+            "stockout_penalty_per_unit": 12.833790923303594,
+            "current_stock": 262.9388644164688,
+            "reorder_point": 359.67095850260034,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 694.4383049905664
+          },
+          {
+            "product_id": "product_006",
+            "base_demand_per_day": 19.609426568073687,
+            "demand_volatility": 0.28655745185874615,
+            "holding_cost_per_unit": 1.5188775181141412,
+            "stockout_penalty_per_unit": 6.4114806255096894,
+            "current_stock": 225.68165073498108,
+            "reorder_point": 260.709072343865,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 417.2028425711532
+          },
+          {
+            "product_id": "product_007",
+            "base_demand_per_day": 27.47283118281436,
+            "demand_volatility": 0.166254997745428,
+            "holding_cost_per_unit": 1.2933371290278828,
+            "stockout_penalty_per_unit": 15.517327163978209,
+            "current_stock": 657.4045896617965,
+            "reorder_point": 378.7645634946893,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 514.6319858830414
+          },
+          {
+            "product_id": "product_008",
+            "base_demand_per_day": 24.521631918762264,
+            "demand_volatility": 0.11001944970546128,
+            "holding_cost_per_unit": 1.3871125050052298,
+            "stockout_penalty_per_unit": 10.520781844290529,
+            "current_stock": 192.26778561426073,
+            "reorder_point": 290.234183327086,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 412.4857356946711
+          },
+          {
+            "product_id": "product_009",
+            "base_demand_per_day": 29.229361115647027,
+            "demand_volatility": 0.21039396474161176,
+            "holding_cost_per_unit": 0.6699528019540695,
+            "stockout_penalty_per_unit": 12.423921700496205,
+            "current_stock": 508.59171627683986,
+            "reorder_point": 427.9713570503251,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 308.750963291517
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_000",
+            "reliability": 0.9358838414584008,
+            "base_price_multiplier": 0.8624029043459807,
+            "price_volatility": 0.09732439542706268,
+            "lead_time_days": 4,
+            "reputation": 1.0,
+            "total_orders": 63,
+            "successful_orders": 60,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.8680430171203597,
+            "base_price_multiplier": 1.0434895003279174,
+            "price_volatility": 0.08988108257341598,
+            "lead_time_days": 5,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9090772052363987,
+            "base_price_multiplier": 0.9422569329491424,
+            "price_volatility": 0.07520544441651629,
+            "lead_time_days": 9,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.8841845639166002,
+            "base_price_multiplier": 0.8613922047910855,
+            "price_volatility": 0.020201557341668633,
+            "lead_time_days": 4,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_004",
+            "reliability": 0.8239464764265138,
+            "base_price_multiplier": 0.8551155872401213,
+            "price_volatility": 0.08183202439774158,
+            "lead_time_days": 8,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          }
+        ],
+        "offers": []
+      }
+    },
+    "processing_time_s": 5.126254899999367
+  },
+  {
+    "quarter_index": 3,
+    "fitness": {
+      "cost_efficiency": 0.8876592901493868,
+      "stockout_avoidance": 1.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8877,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 1.0,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 85348.76,
+      "spent_ratio": 0.1465,
+      "bankrupt": false,
+      "total_stockout_units": 0.0,
+      "total_holding_cost": 1978.59,
+      "n_orders_placed": 75,
+      "n_orders_delivered": 74,
+      "n_suppliers_defaulted": 1,
+      "action_counts": {
+        "urgent_reorder": 90
+      },
+      "supplier_order_counts": {
+        "supplier_001": 75
+      },
+      "strategy_counts": {
+        "urgent_reorder": 75
+      },
+      "entities": {
+        "seed": 44,
+        "day": 90,
+        "budget": 85348.76033992857,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "product_000",
+            "base_demand_per_day": 15.213396981362344,
+            "demand_volatility": 0.20839440182091923,
+            "holding_cost_per_unit": 1.7930549247189098,
+            "stockout_penalty_per_unit": 7.649984662931658,
+            "current_stock": 88.01273291432919,
+            "reorder_point": 110.03512338981653,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 197.02099448578102
+          },
+          {
+            "product_id": "product_001",
+            "base_demand_per_day": 7.916263336071595,
+            "demand_volatility": 0.10176112517741338,
+            "holding_cost_per_unit": 0.7350355026250457,
+            "stockout_penalty_per_unit": 12.705698127540135,
+            "current_stock": 152.95544538163253,
+            "reorder_point": 99.33392219857413,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 78.60006987745199
+          },
+          {
+            "product_id": "product_002",
+            "base_demand_per_day": 14.460664278082023,
+            "demand_volatility": 0.18100954706385122,
+            "holding_cost_per_unit": 1.536964442618569,
+            "stockout_penalty_per_unit": 9.891798089252898,
+            "current_stock": 267.1433918264132,
+            "reorder_point": 198.57649070241192,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 341.79040316951784
+          },
+          {
+            "product_id": "product_003",
+            "base_demand_per_day": 20.43049889785208,
+            "demand_volatility": 0.12240196542592952,
+            "holding_cost_per_unit": 0.605100031069876,
+            "stockout_penalty_per_unit": 6.419413194433026,
+            "current_stock": 212.2294881036055,
+            "reorder_point": 160.6191666858933,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 108.9789962294939
+          },
+          {
+            "product_id": "product_004",
+            "base_demand_per_day": 20.632924218071025,
+            "demand_volatility": 0.2939134959723161,
+            "holding_cost_per_unit": 0.5525049941005303,
+            "stockout_penalty_per_unit": 10.78818270144756,
+            "current_stock": 359.9661838554877,
+            "reorder_point": 295.77535553466157,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 188.92659478493803
+          },
+          {
+            "product_id": "product_005",
+            "base_demand_per_day": 9.71482912638087,
+            "demand_volatility": 0.15166937373148834,
+            "holding_cost_per_unit": 0.8719469619157973,
+            "stockout_penalty_per_unit": 5.738071059075535,
+            "current_stock": 152.42081681064923,
+            "reorder_point": 131.47703429921378,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 128.25728075274438
+          },
+          {
+            "product_id": "product_006",
+            "base_demand_per_day": 15.909126272399305,
+            "demand_volatility": 0.10756670495659831,
+            "holding_cost_per_unit": 1.570369970366923,
+            "stockout_penalty_per_unit": 16.055690256259105,
+            "current_stock": 146.91267714863153,
+            "reorder_point": 153.19252004750672,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 260.51661528154403
+          },
+          {
+            "product_id": "product_007",
+            "base_demand_per_day": 25.762042230158702,
+            "demand_volatility": 0.22611164071206694,
+            "holding_cost_per_unit": 1.3849604182164632,
+            "stockout_penalty_per_unit": 13.107940794965646,
+            "current_stock": 420.3023581466868,
+            "reorder_point": 274.22611964235233,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 416.8395504005747
+          },
+          {
+            "product_id": "product_008",
+            "base_demand_per_day": 24.85149173748174,
+            "demand_volatility": 0.23675106614086044,
+            "holding_cost_per_unit": 1.0188610473601403,
+            "stockout_penalty_per_unit": 17.294209335745922,
+            "current_stock": 158.9984961275685,
+            "reorder_point": 182.63325267446027,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 201.20926312652833
+          },
+          {
+            "product_id": "product_009",
+            "base_demand_per_day": 8.931731359900889,
+            "demand_volatility": 0.14462930095665485,
+            "holding_cost_per_unit": 0.5218826522682394,
+            "stockout_penalty_per_unit": 16.301828504036692,
+            "current_stock": 179.42536868142184,
+            "reorder_point": 101.33597186317448,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 56.44989196266275
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_000",
+            "reliability": 0.9889864413398177,
+            "base_price_multiplier": 0.9570033883232139,
+            "price_volatility": 0.035923756006080595,
+            "lead_time_days": 4,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.8685791883217155,
+            "base_price_multiplier": 0.8837022129551839,
+            "price_volatility": 0.037903603676990874,
+            "lead_time_days": 3,
+            "reputation": 1.0,
+            "total_orders": 74,
+            "successful_orders": 69,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9897945191138573,
+            "base_price_multiplier": 1.0782142051636763,
+            "price_volatility": 0.0740693668264674,
+            "lead_time_days": 10,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": true
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.8232730188005393,
+            "base_price_multiplier": 0.9038320644181462,
+            "price_volatility": 0.07139588280627548,
+            "lead_time_days": 3,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_004",
+            "reliability": 0.9177310446157431,
+            "base_price_multiplier": 0.9381095646047178,
+            "price_volatility": 0.07162528280202163,
+            "lead_time_days": 7,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          }
+        ],
+        "offers": []
+      }
+    },
+    "processing_time_s": 4.956288599999425
+  },
+  {
+    "quarter_index": 4,
+    "fitness": {
+      "cost_efficiency": 0.43685457965742946,
+      "stockout_avoidance": 0.9077563104337366,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.525,
+      "decision_consistency": 0.5728174603174603,
+      "reaction_to_risk_events": 0.9629629629629629
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.4369,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9078,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.525,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.5728,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.963,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 84244.96,
+      "spent_ratio": 0.1576,
+      "bankrupt": false,
+      "total_stockout_units": 265.09,
+      "total_holding_cost": 1520.79,
+      "n_orders_placed": 72,
+      "n_orders_delivered": 68,
+      "n_suppliers_defaulted": 2,
+      "action_counts": {
+        "urgent_reorder": 90
+      },
+      "supplier_order_counts": {
+        "supplier_003": 41,
+        "supplier_002": 31
+      },
+      "strategy_counts": {
+        "urgent_reorder": 72
+      },
+      "entities": {
+        "seed": 45,
+        "day": 90,
+        "budget": 84244.95838964698,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "product_000",
+            "base_demand_per_day": 11.796885359602271,
+            "demand_volatility": 0.19760564157018157,
+            "holding_cost_per_unit": 0.6228190135567498,
+            "stockout_penalty_per_unit": 10.081002304881046,
+            "current_stock": 37.78809922718942,
+            "reorder_point": 83.61975557504044,
+            "cumulative_stockout_units": 160.479255445374,
+            "cumulative_holding_cost": 33.46169522625083
+          },
+          {
+            "product_id": "product_001",
+            "base_demand_per_day": 12.096257397469216,
+            "demand_volatility": 0.12354127311160562,
+            "holding_cost_per_unit": 0.9665573372180011,
+            "stockout_penalty_per_unit": 16.152061892595597,
+            "current_stock": 175.08400869045386,
+            "reorder_point": 145.14904617428948,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 113.0541885980051
+          },
+          {
+            "product_id": "product_002",
+            "base_demand_per_day": 8.375279022676008,
+            "demand_volatility": 0.25901424869311657,
+            "holding_cost_per_unit": 1.6054514365731531,
+            "stockout_penalty_per_unit": 8.165154493516168,
+            "current_stock": 104.17449844888651,
+            "reorder_point": 106.68776968582107,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 152.53896767936922
+          },
+          {
+            "product_id": "product_003",
+            "base_demand_per_day": 6.873783136330112,
+            "demand_volatility": 0.1816262768846832,
+            "holding_cost_per_unit": 1.5506766370370266,
+            "stockout_penalty_per_unit": 18.844373714048558,
+            "current_stock": 0.0,
+            "reorder_point": 61.9664945702067,
+            "cumulative_stockout_units": 44.535555509072765,
+            "cumulative_holding_cost": 66.97115659870018
+          },
+          {
+            "product_id": "product_004",
+            "base_demand_per_day": 24.377324865235536,
+            "demand_volatility": 0.29253446060421723,
+            "holding_cost_per_unit": 0.6406319112859227,
+            "stockout_penalty_per_unit": 6.347424129534496,
+            "current_stock": 281.96745773174547,
+            "reorder_point": 232.46008632177762,
+            "cumulative_stockout_units": 32.501078127507085,
+            "cumulative_holding_cost": 112.34517465066833
+          },
+          {
+            "product_id": "product_005",
+            "base_demand_per_day": 14.669411871430059,
+            "demand_volatility": 0.27526641478365,
+            "holding_cost_per_unit": 1.6186992734369747,
+            "stockout_penalty_per_unit": 14.9107397947689,
+            "current_stock": 180.72839630211197,
+            "reorder_point": 188.595102668385,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 288.3341040157326
+          },
+          {
+            "product_id": "product_006",
+            "base_demand_per_day": 25.25622217025558,
+            "demand_volatility": 0.22865014114123958,
+            "holding_cost_per_unit": 1.3897374309216362,
+            "stockout_penalty_per_unit": 5.897975805328813,
+            "current_stock": 548.307368873586,
+            "reorder_point": 361.0153431522938,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 482.8192156992544
+          },
+          {
+            "product_id": "product_007",
+            "base_demand_per_day": 13.783587842426071,
+            "demand_volatility": 0.22526927856893067,
+            "holding_cost_per_unit": 0.5253485655375317,
+            "stockout_penalty_per_unit": 12.499530245907392,
+            "current_stock": 65.76763013306638,
+            "reorder_point": 128.88032849541065,
+            "cumulative_stockout_units": 26.811448932547286,
+            "cumulative_holding_cost": 50.94713471844378
+          },
+          {
+            "product_id": "product_008",
+            "base_demand_per_day": 15.362425331987582,
+            "demand_volatility": 0.26708846893910654,
+            "holding_cost_per_unit": 0.7151500722507949,
+            "stockout_penalty_per_unit": 11.831995012727662,
+            "current_stock": 20.2103167351611,
+            "reorder_point": 154.78170020673153,
+            "cumulative_stockout_units": 0.7604530253371387,
+            "cumulative_holding_cost": 82.18503617499341
+          },
+          {
+            "product_id": "product_009",
+            "base_demand_per_day": 27.063099316351074,
+            "demand_volatility": 0.22249030605367787,
+            "holding_cost_per_unit": 0.5435035373000754,
+            "stockout_penalty_per_unit": 17.879711375751132,
+            "current_stock": 324.8141569589148,
+            "reorder_point": 302.1432683645356,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 138.13493699164098
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_000",
+            "reliability": 0.854808068874974,
+            "base_price_multiplier": 0.940253609049654,
+            "price_volatility": 0.034629578596376186,
+            "lead_time_days": 7,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": true
+          },
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.8094547358619864,
+            "base_price_multiplier": 1.1334440645590365,
+            "price_volatility": 0.02821958899673741,
+            "lead_time_days": 8,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9176646080828295,
+            "base_price_multiplier": 0.986477943746283,
+            "price_volatility": 0.03603890617451222,
+            "lead_time_days": 7,
+            "reputation": 1.0,
+            "total_orders": 27,
+            "successful_orders": 27,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9846026887449706,
+            "base_price_multiplier": 1.0434908493479207,
+            "price_volatility": 0.061488625379385986,
+            "lead_time_days": 6,
+            "reputation": 1.0,
+            "total_orders": 37,
+            "successful_orders": 37,
+            "is_defaulted": true
+          },
+          {
+            "supplier_id": "supplier_004",
+            "reliability": 0.8938197193686251,
+            "base_price_multiplier": 0.894604404998207,
+            "price_volatility": 0.021816091297630243,
+            "lead_time_days": 7,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          }
+        ],
+        "offers": []
+      }
+    },
+    "processing_time_s": 7.186059699999532
+  },
+  {
+    "quarter_index": 5,
+    "fitness": {
+      "cost_efficiency": 0.87378751694445,
+      "stockout_avoidance": 0.9124466879359668,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.5099099099099098,
+      "decision_consistency": 0.588452380952381,
+      "reaction_to_risk_events": 0.9811320754716981
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8738,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9124,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.5099,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.5885,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9811,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 82833.3,
+      "spent_ratio": 0.1717,
+      "bankrupt": false,
+      "total_stockout_units": 288.75,
+      "total_holding_cost": 2399.36,
+      "n_orders_placed": 74,
+      "n_orders_delivered": 70,
+      "n_suppliers_defaulted": 1,
+      "action_counts": {
+        "urgent_reorder": 90
+      },
+      "supplier_order_counts": {
+        "supplier_000": 30,
+        "supplier_002": 44
+      },
+      "strategy_counts": {
+        "urgent_reorder": 74
+      },
+      "entities": {
+        "seed": 46,
+        "day": 90,
+        "budget": 82833.29817955266,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "product_000",
+            "base_demand_per_day": 27.2067019113122,
+            "demand_volatility": 0.1799988791942026,
+            "holding_cost_per_unit": 1.3829302741613483,
+            "stockout_penalty_per_unit": 17.896800103141423,
+            "current_stock": 104.25783461944997,
+            "reorder_point": 302.69464471470087,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 386.8021515783767
+          },
+          {
+            "product_id": "product_001",
+            "base_demand_per_day": 19.59326213934015,
+            "demand_volatility": 0.28943990439534584,
+            "holding_cost_per_unit": 0.5482720847844016,
+            "stockout_penalty_per_unit": 6.034155053998109,
+            "current_stock": 323.9026714292397,
+            "reorder_point": 266.48278856622306,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 151.71931753087117
+          },
+          {
+            "product_id": "product_002",
+            "base_demand_per_day": 26.078739693550197,
+            "demand_volatility": 0.1270782359669596,
+            "holding_cost_per_unit": 1.8793100300653487,
+            "stockout_penalty_per_unit": 12.916540167814672,
+            "current_stock": 397.31045359629167,
+            "reorder_point": 377.5198678707191,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 765.6146098347003
+          },
+          {
+            "product_id": "product_003",
+            "base_demand_per_day": 7.323036156216121,
+            "demand_volatility": 0.294872778214843,
+            "holding_cost_per_unit": 1.2181165742916444,
+            "stockout_penalty_per_unit": 7.34166709378996,
+            "current_stock": 62.84784016464546,
+            "reorder_point": 55.61522215624378,
+            "cumulative_stockout_units": 64.19695211551196,
+            "cumulative_holding_cost": 54.56990700722403
+          },
+          {
+            "product_id": "product_004",
+            "base_demand_per_day": 23.721863012101885,
+            "demand_volatility": 0.20888450983067108,
+            "holding_cost_per_unit": 0.664072775460747,
+            "stockout_penalty_per_unit": 8.395383954416342,
+            "current_stock": 224.03716951945,
+            "reorder_point": 313.7919420870366,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 217.44979907483696
+          },
+          {
+            "product_id": "product_005",
+            "base_demand_per_day": 11.876741937048456,
+            "demand_volatility": 0.12133376388958206,
+            "holding_cost_per_unit": 1.032107653580555,
+            "stockout_penalty_per_unit": 6.035472557969737,
+            "current_stock": 238.35403883769857,
+            "reorder_point": 165.97451716037358,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 172.47496917799577
+          },
+          {
+            "product_id": "product_006",
+            "base_demand_per_day": 9.59361456033982,
+            "demand_volatility": 0.16034679167960939,
+            "holding_cost_per_unit": 1.6597851191781823,
+            "stockout_penalty_per_unit": 8.05477542754845,
+            "current_stock": 43.671697737822086,
+            "reorder_point": 86.20121674934863,
+            "cumulative_stockout_units": 2.404414209200324,
+            "cumulative_holding_cost": 124.63405757750905
+          },
+          {
+            "product_id": "product_007",
+            "base_demand_per_day": 20.25703924086824,
+            "demand_volatility": 0.24234629974541663,
+            "holding_cost_per_unit": 1.5150998754145735,
+            "stockout_penalty_per_unit": 5.968839908714117,
+            "current_stock": 115.12362346453553,
+            "reorder_point": 160.56366134866292,
+            "cumulative_stockout_units": 35.23564668592513,
+            "cumulative_holding_cost": 211.9798580168114
+          },
+          {
+            "product_id": "product_008",
+            "base_demand_per_day": 19.002531055915213,
+            "demand_volatility": 0.17317022462159842,
+            "holding_cost_per_unit": 1.6268357112488738,
+            "stockout_penalty_per_unit": 13.529088121375501,
+            "current_stock": 210.86962642656619,
+            "reorder_point": 159.09859018897578,
+            "cumulative_stockout_units": 29.53685667130397,
+            "cumulative_holding_cost": 244.9273304988541
+          },
+          {
+            "product_id": "product_009",
+            "base_demand_per_day": 18.565228728479752,
+            "demand_volatility": 0.11316358803853876,
+            "holding_cost_per_unit": 0.6510310293149772,
+            "stockout_penalty_per_unit": 17.87387184841984,
+            "current_stock": 101.87924080277809,
+            "reorder_point": 130.10648727396475,
+            "cumulative_stockout_units": 157.37149471672654,
+            "cumulative_holding_cost": 69.1898201502559
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_000",
+            "reliability": 0.9360146586492987,
+            "base_price_multiplier": 0.905648722202859,
+            "price_volatility": 0.044067422988513294,
+            "lead_time_days": 3,
+            "reputation": 1.0,
+            "total_orders": 28,
+            "successful_orders": 27,
+            "is_defaulted": true
+          },
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.8982365843906361,
+            "base_price_multiplier": 1.0686234370657113,
+            "price_volatility": 0.035806825622854276,
+            "lead_time_days": 6,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.8694610280416618,
+            "base_price_multiplier": 0.8757376240397146,
+            "price_volatility": 0.05135740842860216,
+            "lead_time_days": 5,
+            "reputation": 1.0,
+            "total_orders": 40,
+            "successful_orders": 35,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.8257945628051527,
+            "base_price_multiplier": 0.9643219229776627,
+            "price_volatility": 0.08244523456814404,
+            "lead_time_days": 7,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_004",
+            "reliability": 0.9382924942353429,
+            "base_price_multiplier": 0.9912946992605196,
+            "price_volatility": 0.07639598070909227,
+            "lead_time_days": 5,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          }
+        ],
+        "offers": []
+      }
+    },
+    "processing_time_s": 7.7990890000000945
+  },
+  {
+    "quarter_index": 6,
+    "fitness": {
+      "cost_efficiency": 0.5643870803298158,
+      "stockout_avoidance": 0.9996671736822969,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.9736842105263158
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.5644,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9997,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9737,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 83228.77,
+      "spent_ratio": 0.1677,
+      "bankrupt": false,
+      "total_stockout_units": 0.94,
+      "total_holding_cost": 3061.14,
+      "n_orders_placed": 70,
+      "n_orders_delivered": 68,
+      "n_suppliers_defaulted": 1,
+      "action_counts": {
+        "urgent_reorder": 90
+      },
+      "supplier_order_counts": {
+        "supplier_003": 70
+      },
+      "strategy_counts": {
+        "urgent_reorder": 70
+      },
+      "entities": {
+        "seed": 47,
+        "day": 90,
+        "budget": 83228.76710049366,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "product_000",
+            "base_demand_per_day": 13.796156395697066,
+            "demand_volatility": 0.18603724919801962,
+            "holding_cost_per_unit": 1.1805062953843612,
+            "stockout_penalty_per_unit": 10.152046113173798,
+            "current_stock": 193.0791143740166,
+            "reorder_point": 139.88368877435897,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 168.68652624100775
+          },
+          {
+            "product_id": "product_001",
+            "base_demand_per_day": 6.022718063571065,
+            "demand_volatility": 0.18370652147922933,
+            "holding_cost_per_unit": 0.5354897933904044,
+            "stockout_penalty_per_unit": 6.536837704549711,
+            "current_stock": 141.89480587278865,
+            "reorder_point": 88.68202252770601,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 51.72507996795107
+          },
+          {
+            "product_id": "product_002",
+            "base_demand_per_day": 17.038819440427712,
+            "demand_volatility": 0.2093375548856493,
+            "holding_cost_per_unit": 1.8761056678262862,
+            "stockout_penalty_per_unit": 18.48107535193609,
+            "current_stock": 135.73773779916746,
+            "reorder_point": 150.62956391366947,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 306.6317297295172
+          },
+          {
+            "product_id": "product_003",
+            "base_demand_per_day": 18.08173993862285,
+            "demand_volatility": 0.17181642270419148,
+            "holding_cost_per_unit": 1.9366454211106392,
+            "stockout_penalty_per_unit": 5.498961682723347,
+            "current_stock": 235.98647083756887,
+            "reorder_point": 226.03641032431727,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 487.28307699324336
+          },
+          {
+            "product_id": "product_004",
+            "base_demand_per_day": 20.024390135316878,
+            "demand_volatility": 0.2115580880270944,
+            "holding_cost_per_unit": 1.6428474768547339,
+            "stockout_penalty_per_unit": 8.579287877895972,
+            "current_stock": 428.4546348695197,
+            "reorder_point": 286.7418724960045,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 521.85910754059
+          },
+          {
+            "product_id": "product_005",
+            "base_demand_per_day": 5.881973118614327,
+            "demand_volatility": 0.1667856128483222,
+            "holding_cost_per_unit": 1.0442579453254348,
+            "stockout_penalty_per_unit": 10.753680375401574,
+            "current_stock": 43.97369176003375,
+            "reorder_point": 53.071138723192945,
+            "cumulative_stockout_units": 0.9392529029659311,
+            "cumulative_holding_cost": 52.93347240951073
+          },
+          {
+            "product_id": "product_006",
+            "base_demand_per_day": 21.220211958874977,
+            "demand_volatility": 0.2762223381205764,
+            "holding_cost_per_unit": 1.8905208412469356,
+            "stockout_penalty_per_unit": 17.68438383953932,
+            "current_stock": 221.22269492275458,
+            "reorder_point": 274.8745694789296,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 578.689129255239
+          },
+          {
+            "product_id": "product_007",
+            "base_demand_per_day": 24.326867240790325,
+            "demand_volatility": 0.22093103431619554,
+            "holding_cost_per_unit": 1.5122819081584113,
+            "stockout_penalty_per_unit": 9.294774742329462,
+            "current_stock": 277.5516188870137,
+            "reorder_point": 216.79772444781963,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 356.84485400994265
+          },
+          {
+            "product_id": "product_008",
+            "base_demand_per_day": 18.881650925056633,
+            "demand_volatility": 0.15231793725035078,
+            "holding_cost_per_unit": 1.2990265849834348,
+            "stockout_penalty_per_unit": 5.6016470287679905,
+            "current_stock": 440.7986452690942,
+            "reorder_point": 249.94235356513514,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 358.50507909462317
+          },
+          {
+            "product_id": "product_009",
+            "base_demand_per_day": 11.506093953667698,
+            "demand_volatility": 0.24604221063762763,
+            "holding_cost_per_unit": 1.699421959604364,
+            "stockout_penalty_per_unit": 14.09517263404306,
+            "current_stock": 113.49906243824513,
+            "reorder_point": 99.60469148867946,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 177.98484426498183
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_000",
+            "reliability": 0.8922257707871225,
+            "base_price_multiplier": 1.1387030667145253,
+            "price_volatility": 0.09882931645260001,
+            "lead_time_days": 5,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.8843384088045816,
+            "base_price_multiplier": 1.14433825724638,
+            "price_volatility": 0.06375941015908533,
+            "lead_time_days": 4,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.8141749042309261,
+            "base_price_multiplier": 1.0033704544886715,
+            "price_volatility": 0.06980109545401605,
+            "lead_time_days": 10,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": true
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9486438249227064,
+            "base_price_multiplier": 0.9806838759010552,
+            "price_volatility": 0.09347839400719324,
+            "lead_time_days": 3,
+            "reputation": 1.0,
+            "total_orders": 68,
+            "successful_orders": 66,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_004",
+            "reliability": 0.9154802024390739,
+            "base_price_multiplier": 1.1197580098605715,
+            "price_volatility": 0.06869074971495058,
+            "lead_time_days": 10,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          }
+        ],
+        "offers": []
+      }
+    },
+    "processing_time_s": 6.7348541000001205
+  },
+  {
+    "quarter_index": 7,
+    "fitness": {
+      "cost_efficiency": 0.07199789158079284,
+      "stockout_avoidance": 0.9939698758218225,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.072,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.994,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 82351.71,
+      "spent_ratio": 0.1765,
+      "bankrupt": false,
+      "total_stockout_units": 16.65,
+      "total_holding_cost": 2077.92,
+      "n_orders_placed": 75,
+      "n_orders_delivered": 72,
+      "n_suppliers_defaulted": 1,
+      "action_counts": {
+        "urgent_reorder": 90
+      },
+      "supplier_order_counts": {
+        "supplier_001": 75
+      },
+      "strategy_counts": {
+        "urgent_reorder": 75
+      },
+      "entities": {
+        "seed": 48,
+        "day": 90,
+        "budget": 82351.70511282944,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "product_000",
+            "base_demand_per_day": 18.70394571040824,
+            "demand_volatility": 0.12637829267517514,
+            "holding_cost_per_unit": 1.5673202634020367,
+            "stockout_penalty_per_unit": 9.533750838767235,
+            "current_stock": 136.76500606411236,
+            "reorder_point": 159.76436801006034,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 229.00286979859897
+          },
+          {
+            "product_id": "product_001",
+            "base_demand_per_day": 24.049625179890096,
+            "demand_volatility": 0.13312830948031218,
+            "holding_cost_per_unit": 1.9491307192311815,
+            "stockout_penalty_per_unit": 18.10412589356655,
+            "current_stock": 295.5954489404045,
+            "reorder_point": 293.2739150104032,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 551.9381822020364
+          },
+          {
+            "product_id": "product_002",
+            "base_demand_per_day": 10.451233640734614,
+            "demand_volatility": 0.20232008033478807,
+            "holding_cost_per_unit": 1.7754654047107565,
+            "stockout_penalty_per_unit": 7.323733732676692,
+            "current_stock": 23.250994793111527,
+            "reorder_point": 79.28877940374511,
+            "cumulative_stockout_units": 7.416415495510533,
+            "cumulative_holding_cost": 107.90695099041501
+          },
+          {
+            "product_id": "product_003",
+            "base_demand_per_day": 6.5876287841169265,
+            "demand_volatility": 0.19977722864190367,
+            "holding_cost_per_unit": 0.7445521274655894,
+            "stockout_penalty_per_unit": 6.932570381827653,
+            "current_stock": 91.86295455435302,
+            "reorder_point": 61.489061669507635,
+            "cumulative_stockout_units": 4.6919139374495,
+            "cumulative_holding_cost": 41.75136280584315
+          },
+          {
+            "product_id": "product_004",
+            "base_demand_per_day": 13.477191012110104,
+            "demand_volatility": 0.16755023612803882,
+            "holding_cost_per_unit": 1.7624333751043102,
+            "stockout_penalty_per_unit": 9.078726984375795,
+            "current_stock": 161.53016807721343,
+            "reorder_point": 195.23360773905227,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 353.6799955904312
+          },
+          {
+            "product_id": "product_005",
+            "base_demand_per_day": 19.27849752805065,
+            "demand_volatility": 0.1565821761359828,
+            "holding_cost_per_unit": 0.7072762104018028,
+            "stockout_penalty_per_unit": 14.791877355891765,
+            "current_stock": 259.93784957933235,
+            "reorder_point": 196.9107260872414,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 123.77361369514023
+          },
+          {
+            "product_id": "product_006",
+            "base_demand_per_day": 25.379522600614894,
+            "demand_volatility": 0.2565039867283159,
+            "holding_cost_per_unit": 0.9158816713088009,
+            "stockout_penalty_per_unit": 10.495223562889729,
+            "current_stock": 165.52698152909534,
+            "reorder_point": 236.81669009793623,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 191.18710475931252
+          },
+          {
+            "product_id": "product_007",
+            "base_demand_per_day": 17.42380322829635,
+            "demand_volatility": 0.12328887101808679,
+            "holding_cost_per_unit": 0.6726516733961705,
+            "stockout_penalty_per_unit": 7.2035703792242325,
+            "current_stock": 176.94712083654883,
+            "reorder_point": 196.53723128273188,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 120.17809172092274
+          },
+          {
+            "product_id": "product_008",
+            "base_demand_per_day": 12.981733564668684,
+            "demand_volatility": 0.18607707934243595,
+            "holding_cost_per_unit": 1.6607067735150904,
+            "stockout_penalty_per_unit": 16.72372777396623,
+            "current_stock": 242.58764876157338,
+            "reorder_point": 182.93172019284694,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 302.2681567427758
+          },
+          {
+            "product_id": "product_009",
+            "base_demand_per_day": 5.018842108518314,
+            "demand_volatility": 0.21645406918823157,
+            "holding_cost_per_unit": 1.5255188417330903,
+            "stockout_penalty_per_unit": 11.082056180002636,
+            "current_stock": 57.56372048450639,
+            "reorder_point": 45.5209571657214,
+            "cumulative_stockout_units": 4.5368419557991295,
+            "cumulative_holding_cost": 56.23855886525993
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_000",
+            "reliability": 0.945572905466431,
+            "base_price_multiplier": 0.9078307117522227,
+            "price_volatility": 0.06514147038805676,
+            "lead_time_days": 6,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.9574772571048291,
+            "base_price_multiplier": 1.128400632525762,
+            "price_volatility": 0.03316246820875295,
+            "lead_time_days": 5,
+            "reputation": 1.0,
+            "total_orders": 72,
+            "successful_orders": 69,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.8301617482501862,
+            "base_price_multiplier": 1.1308254394532817,
+            "price_volatility": 0.07224115585141232,
+            "lead_time_days": 9,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": true
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9081291522106205,
+            "base_price_multiplier": 1.0148988887202233,
+            "price_volatility": 0.09340562128528865,
+            "lead_time_days": 9,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_004",
+            "reliability": 0.9457589283924774,
+            "base_price_multiplier": 1.0649285596546838,
+            "price_volatility": 0.020992566885576807,
+            "lead_time_days": 10,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          }
+        ],
+        "offers": []
+      }
+    },
+    "processing_time_s": 6.786584700000276
+  },
+  {
+    "quarter_index": 8,
+    "fitness": {
+      "cost_efficiency": 0.6607632746935646,
+      "stockout_avoidance": 0.9951821830152576,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.9795918367346939
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6608,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9952,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9796,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 84382.46,
+      "spent_ratio": 0.1562,
+      "bankrupt": false,
+      "total_stockout_units": 13.11,
+      "total_holding_cost": 2223.74,
+      "n_orders_placed": 77,
+      "n_orders_delivered": 76,
+      "n_suppliers_defaulted": 1,
+      "action_counts": {
+        "urgent_reorder": 90
+      },
+      "supplier_order_counts": {
+        "supplier_003": 77
+      },
+      "strategy_counts": {
+        "urgent_reorder": 77
+      },
+      "entities": {
+        "seed": 49,
+        "day": 90,
+        "budget": 84382.45786945528,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "product_000",
+            "base_demand_per_day": 6.672099408568792,
+            "demand_volatility": 0.18264856328565188,
+            "holding_cost_per_unit": 0.665757100919208,
+            "stockout_penalty_per_unit": 16.28167192127801,
+            "current_stock": 43.6045224235628,
+            "reorder_point": 49.35613449353993,
+            "cumulative_stockout_units": 13.109099954528684,
+            "cumulative_holding_cost": 32.045310867334486
+          },
+          {
+            "product_id": "product_001",
+            "base_demand_per_day": 6.120187110891427,
+            "demand_volatility": 0.2471868772446029,
+            "holding_cost_per_unit": 0.7315246215628941,
+            "stockout_penalty_per_unit": 16.006173347539775,
+            "current_stock": 67.8174488602931,
+            "reorder_point": 67.53157123590309,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 50.72491970249702
+          },
+          {
+            "product_id": "product_002",
+            "base_demand_per_day": 26.394955346636145,
+            "demand_volatility": 0.2205114458292068,
+            "holding_cost_per_unit": 1.3600350026546622,
+            "stockout_penalty_per_unit": 11.001189540751266,
+            "current_stock": 176.52127002226678,
+            "reorder_point": 213.90218302475174,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 294.23214169273507
+          },
+          {
+            "product_id": "product_003",
+            "base_demand_per_day": 15.581143336174904,
+            "demand_volatility": 0.17521216619990315,
+            "holding_cost_per_unit": 1.65868879510124,
+            "stockout_penalty_per_unit": 9.02560040228414,
+            "current_stock": 288.78695722671534,
+            "reorder_point": 227.00074735906523,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 421.5941129317948
+          },
+          {
+            "product_id": "product_004",
+            "base_demand_per_day": 20.507169450134608,
+            "demand_volatility": 0.23225160600670317,
+            "holding_cost_per_unit": 1.5318516032130391,
+            "stockout_penalty_per_unit": 18.65172054031133,
+            "current_stock": 257.72880060044406,
+            "reorder_point": 269.93224447590103,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 461.0986847487069
+          },
+          {
+            "product_id": "product_005",
+            "base_demand_per_day": 6.639074750846084,
+            "demand_volatility": 0.15100400677423595,
+            "holding_cost_per_unit": 1.3936176247831793,
+            "stockout_penalty_per_unit": 9.776655972259814,
+            "current_stock": 83.02110627575827,
+            "reorder_point": 58.275564831066774,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 83.54288969945902
+          },
+          {
+            "product_id": "product_006",
+            "base_demand_per_day": 11.379443329304166,
+            "demand_volatility": 0.1874329357745572,
+            "holding_cost_per_unit": 1.4180589857292665,
+            "stockout_penalty_per_unit": 15.395296518003065,
+            "current_stock": 173.20892071511267,
+            "reorder_point": 114.16364848597237,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 167.60147341469258
+          },
+          {
+            "product_id": "product_007",
+            "base_demand_per_day": 29.15258175114352,
+            "demand_volatility": 0.25534428609966275,
+            "holding_cost_per_unit": 1.3219978998108441,
+            "stockout_penalty_per_unit": 13.134346222087474,
+            "current_stock": 406.60632308296044,
+            "reorder_point": 250.55625313549783,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 339.8392488214076
+          },
+          {
+            "product_id": "product_008",
+            "base_demand_per_day": 7.119127447481533,
+            "demand_volatility": 0.2883818998079607,
+            "holding_cost_per_unit": 1.74286506291666,
+            "stockout_penalty_per_unit": 5.943830466306116,
+            "current_stock": 99.79609512408288,
+            "reorder_point": 71.14711060869405,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 131.19227028481444
+          },
+          {
+            "product_id": "product_009",
+            "base_demand_per_day": 21.59880840372651,
+            "demand_volatility": 0.1874316705081504,
+            "holding_cost_per_unit": 0.9917717223211809,
+            "stockout_penalty_per_unit": 6.110552378983283,
+            "current_stock": 288.1734509126885,
+            "reorder_point": 224.87336344811507,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 241.87107838117834
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_000",
+            "reliability": 0.9362538551651332,
+            "base_price_multiplier": 0.8975211894391388,
+            "price_volatility": 0.05517966410013632,
+            "lead_time_days": 4,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.8195333933519033,
+            "base_price_multiplier": 0.9721663918213072,
+            "price_volatility": 0.08839963344118668,
+            "lead_time_days": 4,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.9804685877114526,
+            "base_price_multiplier": 1.031228374104301,
+            "price_volatility": 0.07174690838309075,
+            "lead_time_days": 6,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": true
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.8463179206649954,
+            "base_price_multiplier": 0.9517710175919306,
+            "price_volatility": 0.06512331299263568,
+            "lead_time_days": 3,
+            "reputation": 0.9900000000000002,
+            "total_orders": 76,
+            "successful_orders": 73,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_004",
+            "reliability": 0.9270490086373195,
+            "base_price_multiplier": 0.9615975045264626,
+            "price_volatility": 0.09044132596412176,
+            "lead_time_days": 4,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          }
+        ],
+        "offers": []
+      }
+    },
+    "processing_time_s": 7.102914199999759
+  },
+  {
+    "quarter_index": 9,
+    "fitness": {
+      "cost_efficiency": 0.7542497416143248,
+      "stockout_avoidance": 1.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7542,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 1.0,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 79257.83,
+      "spent_ratio": 0.2074,
+      "bankrupt": false,
+      "total_stockout_units": 0.0,
+      "total_holding_cost": 3457.99,
+      "n_orders_placed": 69,
+      "n_orders_delivered": 67,
+      "n_suppliers_defaulted": 0,
+      "action_counts": {
+        "urgent_reorder": 90
+      },
+      "supplier_order_counts": {
+        "supplier_002": 69
+      },
+      "strategy_counts": {
+        "urgent_reorder": 69
+      },
+      "entities": {
+        "seed": 50,
+        "day": 90,
+        "budget": 79257.83122295486,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "product_000",
+            "base_demand_per_day": 17.438414218965058,
+            "demand_volatility": 0.15323474461450812,
+            "holding_cost_per_unit": 1.4561167421655363,
+            "stockout_penalty_per_unit": 8.63719631275644,
+            "current_stock": 395.11674531570134,
+            "reorder_point": 257.43788913152497,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 429.18306289540016
+          },
+          {
+            "product_id": "product_001",
+            "base_demand_per_day": 7.129701625274919,
+            "demand_volatility": 0.16347578350364103,
+            "holding_cost_per_unit": 1.5146659302342251,
+            "stockout_penalty_per_unit": 6.278619758444114,
+            "current_stock": 133.54396114334315,
+            "reorder_point": 96.97956184288198,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 161.27073498457426
+          },
+          {
+            "product_id": "product_002",
+            "base_demand_per_day": 29.49307131534777,
+            "demand_volatility": 0.16386772874352964,
+            "holding_cost_per_unit": 0.7834534801774315,
+            "stockout_penalty_per_unit": 19.58562875512199,
+            "current_stock": 388.5321620063203,
+            "reorder_point": 348.91117920056394,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 306.2237823101559
+          },
+          {
+            "product_id": "product_003",
+            "base_demand_per_day": 20.187355210793605,
+            "demand_volatility": 0.2269977511300992,
+            "holding_cost_per_unit": 1.8730882398104303,
+            "stockout_penalty_per_unit": 19.436798251867856,
+            "current_stock": 213.7424393123708,
+            "reorder_point": 274.5324808162962,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 578.4280975990961
+          },
+          {
+            "product_id": "product_004",
+            "base_demand_per_day": 24.845714362446092,
+            "demand_volatility": 0.22862471764207892,
+            "holding_cost_per_unit": 1.1454382166906354,
+            "stockout_penalty_per_unit": 8.408316560549576,
+            "current_stock": 276.88840279853883,
+            "reorder_point": 358.77553690296963,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 476.687784514524
+          },
+          {
+            "product_id": "product_005",
+            "base_demand_per_day": 22.501647581194472,
+            "demand_volatility": 0.12115902930657957,
+            "holding_cost_per_unit": 1.8662184265558934,
+            "stockout_penalty_per_unit": 9.066287529416485,
+            "current_stock": 297.58343263523693,
+            "reorder_point": 240.31619494109265,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 482.2339765535404
+          },
+          {
+            "product_id": "product_006",
+            "base_demand_per_day": 11.741590727693763,
+            "demand_volatility": 0.1418507971377879,
+            "holding_cost_per_unit": 1.3686132631021195,
+            "stockout_penalty_per_unit": 11.176485160255034,
+            "current_stock": 108.2134992253345,
+            "reorder_point": 147.5666321113441,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 220.32851407006694
+          },
+          {
+            "product_id": "product_007",
+            "base_demand_per_day": 25.48601063295021,
+            "demand_volatility": 0.27063700257096734,
+            "holding_cost_per_unit": 1.438195773819737,
+            "stockout_penalty_per_unit": 19.49606406060636,
+            "current_stock": 479.8411519697407,
+            "reorder_point": 359.36298691050087,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 587.3287532963462
+          },
+          {
+            "product_id": "product_008",
+            "base_demand_per_day": 25.374406786974937,
+            "demand_volatility": 0.2635112072140381,
+            "holding_cost_per_unit": 0.6876637320898278,
+            "stockout_penalty_per_unit": 13.556541334080787,
+            "current_stock": 306.621268115535,
+            "reorder_point": 196.53284173585044,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 137.54810466953415
+          },
+          {
+            "product_id": "product_009",
+            "base_demand_per_day": 14.193491704422026,
+            "demand_volatility": 0.20334612600540442,
+            "holding_cost_per_unit": 0.5101154747426182,
+            "stockout_penalty_per_unit": 5.135265801626312,
+            "current_stock": 211.8344598546566,
+            "reorder_point": 146.01696707825545,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 78.7559661519443
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_000",
+            "reliability": 0.9858860705065459,
+            "base_price_multiplier": 1.105078832031885,
+            "price_volatility": 0.08630418630750297,
+            "lead_time_days": 6,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.8308319271199913,
+            "base_price_multiplier": 1.0218798945052616,
+            "price_volatility": 0.08706101962140615,
+            "lead_time_days": 7,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.8714543147678677,
+            "base_price_multiplier": 0.9237250775157025,
+            "price_volatility": 0.022680297871107636,
+            "lead_time_days": 3,
+            "reputation": 0.9800000000000001,
+            "total_orders": 67,
+            "successful_orders": 64,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9835009908848216,
+            "base_price_multiplier": 0.8736224352895948,
+            "price_volatility": 0.038969589878488226,
+            "lead_time_days": 7,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_004",
+            "reliability": 0.9003835227342393,
+            "base_price_multiplier": 0.9895201993976752,
+            "price_volatility": 0.05346128569134405,
+            "lead_time_days": 9,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          }
+        ],
+        "offers": []
+      }
+    },
+    "processing_time_s": 6.358068000000458
+  },
+  {
+    "quarter_index": 10,
+    "fitness": {
+      "cost_efficiency": 0.16949280753666796,
+      "stockout_avoidance": 0.9918036737288404,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 1.0
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.1695,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9918,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 1.0,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 78555.35,
+      "spent_ratio": 0.2144,
+      "bankrupt": false,
+      "total_stockout_units": 26.18,
+      "total_holding_cost": 3713.32,
+      "n_orders_placed": 69,
+      "n_orders_delivered": 67,
+      "n_suppliers_defaulted": 1,
+      "action_counts": {
+        "urgent_reorder": 89,
+        "wait_and_monitor": 1
+      },
+      "supplier_order_counts": {
+        "supplier_001": 69
+      },
+      "strategy_counts": {
+        "urgent_reorder": 69
+      },
+      "entities": {
+        "seed": 51,
+        "day": 90,
+        "budget": 78555.35466900449,
+        "initial_budget": 100000.0,
+        "bankrupt": false,
+        "products": [
+          {
+            "product_id": "product_000",
+            "base_demand_per_day": 11.087944067733424,
+            "demand_volatility": 0.20044179790063119,
+            "holding_cost_per_unit": 0.7429062714362089,
+            "stockout_penalty_per_unit": 17.31833323764922,
+            "current_stock": 177.69940409051495,
+            "reorder_point": 126.60912106939577,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 98.70460259229331
+          },
+          {
+            "product_id": "product_001",
+            "base_demand_per_day": 28.158935619009117,
+            "demand_volatility": 0.17947575084610243,
+            "holding_cost_per_unit": 1.951801837946709,
+            "stockout_penalty_per_unit": 15.97207874386816,
+            "current_stock": 607.9250709086064,
+            "reorder_point": 338.7910533902251,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 736.16474196858
+          },
+          {
+            "product_id": "product_002",
+            "base_demand_per_day": 19.65160933521436,
+            "demand_volatility": 0.17204422114308143,
+            "holding_cost_per_unit": 1.9950769202153702,
+            "stockout_penalty_per_unit": 11.058408956665225,
+            "current_stock": 368.88040395070146,
+            "reorder_point": 271.5967680364222,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 622.1922921250456
+          },
+          {
+            "product_id": "product_003",
+            "base_demand_per_day": 5.708615135202714,
+            "demand_volatility": 0.15164043312160985,
+            "holding_cost_per_unit": 1.2166461573090996,
+            "stockout_penalty_per_unit": 17.21894587689513,
+            "current_stock": 64.18255497718117,
+            "reorder_point": 68.08508107975915,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 89.1730141620737
+          },
+          {
+            "product_id": "product_004",
+            "base_demand_per_day": 14.180234828785888,
+            "demand_volatility": 0.2571357843181265,
+            "holding_cost_per_unit": 1.8896377927365324,
+            "stockout_penalty_per_unit": 16.431765330808446,
+            "current_stock": 292.7365506452114,
+            "reorder_point": 185.51013947776175,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 393.2498847905209
+          },
+          {
+            "product_id": "product_005",
+            "base_demand_per_day": 15.954057417131866,
+            "demand_volatility": 0.2674444469332411,
+            "holding_cost_per_unit": 1.2051830926479394,
+            "stockout_penalty_per_unit": 18.59965120188179,
+            "current_stock": 185.22898960802274,
+            "reorder_point": 216.87534989732052,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 294.9116060113174
+          },
+          {
+            "product_id": "product_006",
+            "base_demand_per_day": 25.652016389384425,
+            "demand_volatility": 0.2638075914874121,
+            "holding_cost_per_unit": 1.3881908853460962,
+            "stockout_penalty_per_unit": 7.622899623504364,
+            "current_stock": 388.8139039660461,
+            "reorder_point": 274.82057848585094,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 433.1345988075194
+          },
+          {
+            "product_id": "product_007",
+            "base_demand_per_day": 5.404954270160804,
+            "demand_volatility": 0.1868917613210686,
+            "holding_cost_per_unit": 1.1224648607326966,
+            "stockout_penalty_per_unit": 8.013037366177594,
+            "current_stock": 24.05240516566822,
+            "reorder_point": 42.67858170779577,
+            "cumulative_stockout_units": 26.183925372413807,
+            "cumulative_holding_cost": 47.78374841461906
+          },
+          {
+            "product_id": "product_008",
+            "base_demand_per_day": 27.603590222146146,
+            "demand_volatility": 0.20995217975641112,
+            "holding_cost_per_unit": 0.7679177625784996,
+            "stockout_penalty_per_unit": 10.37406213468242,
+            "current_stock": 213.05723888166423,
+            "reorder_point": 219.1977246984015,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 179.21661689739122
+          },
+          {
+            "product_id": "product_009",
+            "base_demand_per_day": 24.07542374728743,
+            "demand_volatility": 0.23031920196165476,
+            "holding_cost_per_unit": 1.9734531987541963,
+            "stockout_penalty_per_unit": 17.448550746550133,
+            "current_stock": 620.4330828750034,
+            "reorder_point": 360.5357342412839,
+            "cumulative_stockout_units": 0.0,
+            "cumulative_holding_cost": 818.7842252261191
+          }
+        ],
+        "suppliers": [
+          {
+            "supplier_id": "supplier_000",
+            "reliability": 0.9770596676124204,
+            "base_price_multiplier": 1.0431941081174938,
+            "price_volatility": 0.06314117377974608,
+            "lead_time_days": 7,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_001",
+            "reliability": 0.9758123054428073,
+            "base_price_multiplier": 1.0991521577389995,
+            "price_volatility": 0.08713215034339074,
+            "lead_time_days": 3,
+            "reputation": 1.0,
+            "total_orders": 67,
+            "successful_orders": 61,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_002",
+            "reliability": 0.8622373844677179,
+            "base_price_multiplier": 1.0085525075060688,
+            "price_volatility": 0.0903467551381743,
+            "lead_time_days": 9,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_003",
+            "reliability": 0.9065391222388735,
+            "base_price_multiplier": 1.1073924555144212,
+            "price_volatility": 0.037992931548288464,
+            "lead_time_days": 10,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": false
+          },
+          {
+            "supplier_id": "supplier_004",
+            "reliability": 0.911420464530604,
+            "base_price_multiplier": 0.9139286878947565,
+            "price_volatility": 0.09827787312291461,
+            "lead_time_days": 3,
+            "reputation": 0.5,
+            "total_orders": 0,
+            "successful_orders": 0,
+            "is_defaulted": true
+          }
+        ],
+        "offers": []
+      }
+    },
+    "processing_time_s": 6.086196400000517
+  }
+]

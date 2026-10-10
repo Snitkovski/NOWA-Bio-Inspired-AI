@@ -1,0 +1,33 @@
+arXiv submission metadata
+=========================
+
+Primary category: cs.AI
+
+Title:
+NOWA: Neural Networks with Reward-Based Learning and Evolutionary Architecture Growth
+
+Authors:
+Mikhail Burlakov
+
+Comments:
+Cognitive architecture with reward-based local plasticity, sleep consolidation, and evolutionary genome growth; evaluated in a multi-agent chinchilla-colony simulation.
+
+License:
+Choose on the arXiv form (CC BY 4.0 is a common choice).
+
+Abstract (paste as plain text; keep the blank line between paragraphs):
+
+This paper presents NOWA (Neural Networks with Reward-Based Learning and Evolutionary Architecture Growth), a cognitive architecture for autonomous agents. Learning is based not on gradient descent over a global loss function, but on local strengthening of those behavioural pathways that led to a positive outcome, together with evolutionary tuning of architectural parameters through an inheritable genome. Unlike conventional artificial neural networks, NOWA separates waking and sleep. During active behaviour, experience is written into episodic memory and changes the agent's affective state. Consolidation of habits, cortical patterns, and action-selection channels occurs predominantly during sleep. A neuromodulatory system -- dopamine, serotonin, norepinephrine, and cortisol -- implements a biologically motivated evaluation of state value from reward-prediction error and regulates the plasticity of individual subsystems without requiring error backpropagation through the entire network.
+
+The experimental platform is a multi-agent simulation of a chinchilla colony. Each individual is a complete NOWA agent with homeostasis, social behaviour, reproduction, and mortality. Long runs exhibit emergent effects: formation of social ties, generational turnover, adaptive allocation of limited resources, and a risk of extinction under sex-ratio imbalance, chronic stress, or a shortage of reproductive windows. The architecture exhibits both stable collective dynamics and pathological regimes -- for example, cortisol saturation in ageing individuals and a rising extinction risk when the share of females in estrus is low. We discuss the prospects of the approach for biologically plausible artificial intelligence and the associated ethical risks.
+
+What to upload
+--------------
+Upload only the source archive nowa-arxiv.zip (contains nowa.tex).
+Do not upload a pre-built PDF: arXiv compiles LaTeX itself.
+Processor: PDFLaTeX.
+
+Build locally (optional check)
+------------------------------
+pdflatex nowa.tex
+pdflatex nowa.tex

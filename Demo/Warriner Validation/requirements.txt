@@ -1,0 +1,15 @@
+# Core dashboard/runtime dependencies
+streamlit>=1.30
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+plotly>=5.15
+scikit-learn>=1.3
+
+# Optional NLP enrichment for sbert_neighbors mode
+sentence-transformers>=2.2
+nrclex>=3.0
+
+# Optional stats helpers
+pingouin>=0.5
+torch>=2.0

@@ -1,0 +1,55 @@
+# Single tuning point for the procurement sandbox.
+#
+# run_sandbox.py accepts --config path/to/this.yaml in addition to the CLI
+# arguments; explicit CLI arguments override the YAML values.
+
+world:
+  initial_budget: 100000.0
+  n_products: 10
+  n_suppliers: 5
+  days_per_quarter: 90
+  demand_shock_probability: 0.05
+  supplier_default_probability: 0.003
+  late_delivery_probability_base: 0.05
+  # seed: base seed for quarter 1; each later quarter uses seed + (quarter - 1)
+  seed: 42
+  # Q3b difficulty bounding (spec v1.3) — caps structurally impossible quarters
+  max_lead_time_days: 10
+  max_demand_per_day: 30.0
+  min_reorder_days: 7.0
+  max_reorder_days: 15.0
+  min_initial_stock_days: 15.0
+  max_initial_stock_days: 25.0
+  max_demand_volatility: 0.30
+  min_supplier_reliability: 0.80
+  max_price_volatility: 0.10
+
+training:
+  n_quarters: 30
+  sleep_every_n_days: 7
+  stop_on_graduation: true
+  seed: 42
+  # Pre-load the hippocampus with affective business episodes before day one.
+  seed_intuition: true
+  # Curriculum stage (spec v1.1 section 26). "1a" rotates suppliers every
+  # quarter and gates on the four identity-independent criteria; "1b" keeps
+  # suppliers across quarters and gates on the two relationship criteria.
+  # Run 1b only after 1a has graduated, and pass --baseline-from.
+  stage: "1a"
+
+# All six criteria are always measured and reported. Which of them gate
+# graduation depends on training.stage; the rest are monitored and guarded
+# against regression instead.
+graduation_thresholds:
+  # Stage 1a gating criteria
+  cost_efficiency: 0.60
+  stockout_avoidance: 0.85
+  budget_discipline: 0.95
+  reaction_to_risk_events: 0.50
+  # Stage 1b gating criteria
+  supplier_diversification: 0.40
+  decision_consistency: 0.60
+
+output:
+  results_dir: "results/"
+  save_per_quarter_snapshots: true

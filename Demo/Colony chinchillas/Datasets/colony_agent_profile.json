@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "profile_name": "colony_agent_basics",
+  "base_abilities": [
+    { "id": "explore", "group": "navigation" },
+    { "id": "eat", "group": "survival" },
+    { "id": "drink", "group": "survival" },
+    { "id": "sleep", "group": "rest" },
+    { "id": "groom_self", "group": "self_care" },
+    { "id": "run_wheel", "group": "activity" },
+    { "id": "hide", "group": "defense" },
+    { "id": "socialize", "group": "social" },
+    { "id": "play", "group": "social" },
+    { "id": "rest", "group": "rest" }
+  ],
+  "unconditioned_reflexes": [
+    {
+      "id": "panic_hide",
+      "trigger_any": ["alarm_call", "high_stress"],
+      "action": "hide",
+      "priority": 1.0,
+      "cooldown_s": 18.0,
+      "override_exclusive": true
+    },
+    {
+      "id": "urgent_drink",
+      "trigger_any": ["water_critical"],
+      "action": "drink",
+      "priority": 0.95,
+      "cooldown_s": 8.0,
+      "override_exclusive": false
+    },
+    {
+      "id": "urgent_feed",
+      "trigger_any": ["food_critical"],
+      "action": "eat",
+      "priority": 0.9,
+      "cooldown_s": 12.0,
+      "override_exclusive": false
+    }
+  ],
+  "habits": [
+    { "context": ["food_low"], "action": "eat", "strength": 1.4 },
+    { "context": ["food_critical"], "action": "eat", "strength": 2.2 },
+    { "context": ["hunger_high"], "action": "eat", "strength": 1.7 },
+    { "context": ["hunger_critical"], "action": "eat", "strength": 2.4 },
+    { "context": ["water_critical"], "action": "drink", "strength": 2.2 },
+    { "context": ["thirst_high"], "action": "drink", "strength": 1.8 },
+    { "context": ["thirst_critical"], "action": "drink", "strength": 2.5 },
+    { "context": ["wakefulness_high"], "action": "sleep", "strength": 1.8 },
+    { "context": ["wakefulness_critical"], "action": "sleep", "strength": 2.6 },
+    { "context": ["bored"], "action": "run_wheel", "strength": 0.9 },
+    { "context": ["social_contact:1"], "action": "socialize", "strength": 1.1 },
+    { "context": ["social_contact:2"], "action": "socialize", "strength": 1.25 },
+    { "context": ["estrus"], "action": "socialize", "strength": 1.55 },
+    { "context": ["high_stress"], "action": "hide", "strength": 1.6 }
+  ],
+  "social_interactions": [
+    { "id": "sniff_greet", "kind": "greeting", "reciprocal": true },
+    { "id": "allogroom", "kind": "care", "reciprocal": true },
+    { "id": "play_invite", "kind": "play", "reciprocal": true },
+    { "id": "sleep_together", "kind": "bonding", "reciprocal": true },
+    { "id": "share_knowledge", "kind": "communication", "reciprocal": true },
+    { "id": "chase", "kind": "conflict", "reciprocal": false },
+    { "id": "mount_display", "kind": "courtship", "reciprocal": false },
+    { "id": "nurse", "kind": "offspring_care", "reciprocal": false }
+  ],
+  "scenario_datasets": [
+    "chinchilla_realizations_basic.json",
+    "chinchilla_realizations_extended.json",
+    "chinchilla_realizations_advanced.json",
+    "chinchilla_realizations_colony_social.json"
+  ],
+  "scenario_categories": [
+    "greeting_affiliation",
+    "cooperative_routines",
+    "play_sessions",
+    "hierarchy_conflict",
+    "deescalation_repair",
+    "courtship_pair_bond",
+    "parental_kin_care",
+    "alarm_regroup_coordination"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "entries": [
+    {
+      "timestamp": 25.500000000000092,
+      "chain_name": "territorial_patrol",
+      "interaction_type": null,
+      "affect_before": {},
+      "affect_after": {
+        "valence": 0.053539972982246664,
+        "arousal": 0.35612008179623067,
+        "dominance": 0.00043565402883307905,
+        "stress": 0.11752984758995556,
+        "trust": 0.0005445675360413483,
+        "curiosity": 0.10889273839541991,
+        "stability": 0.015284591254979727,
+        "attachment": 0.0003267405216248091,
+        "hunger": 0.0004289856222004911,
+        "tiredness": 0.10177083333333432,
+        "boredom": 0.9981804192413044
+      },
+      "affect_delta": {},
+      "success": false,
+      "reward": 0.0
+    }
+  ],
+  "chain_preferences": {
+    "territorial_patrol": {
+      "chain_name": "territorial_patrol",
+      "success_count": 0,
+      "total_attempts": 1,
+      "average_reward": 0.0,
+      "success_rate": 0.0,
+      "preference_weight": 0.1963636363636364
+    }
+  },
+  "interaction_preferences": {}
+}

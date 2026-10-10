@@ -1,0 +1,135 @@
+{
+  "neuromodulators": {
+    "dopamine": 0.10053189296214127,
+    "norepinephrine": 0.10165382286984334,
+    "serotonin": 0.09910156403756547,
+    "cortisol": 0.050598957308289706,
+    "acetylcholine": 0.1,
+    "ach_baseline": 0.1,
+    "ach_decay_rate": 0.02,
+    "ach_novelty_gain": 0.25,
+    "ach_repetition_penalty": 0.05,
+    "ach_novelty_filter": 0.7,
+    "ach_novelty_trace": 0.0,
+    "ach_alpha_gain": 0.4,
+    "ach_replay_gain": 0.5,
+    "timestamp": 1773736232.6805313
+  },
+  "drives": {
+    "curiosity": 0.003073565833562944,
+    "social_drive": 0.0017377562502460104,
+    "goal_tension": 0.0016263215624630985,
+    "exploration": 0.0021703281251230057,
+    "energy_need": 0.0003851204995029376
+  },
+  "wakefulness": {
+    "current": 0.10000694444444445,
+    "cognitive_reliability": 0.8999930555555555,
+    "accumulated_waking_hours": 2.777777777777778e-05,
+    "total_sleep_hours": 0.0
+  },
+  "bg_channels": {
+    "morning_awakening": {
+      "go_weight": 0.5805786188392569,
+      "nogo_weight": 0.42618402218530865,
+      "habit_strength": 0.04884398678027247,
+      "selection_count": 6,
+      "success_count": 6
+    },
+    "eating_and_grooming": {
+      "go_weight": 0.5233481925941402,
+      "nogo_weight": 0.45479923530786703,
+      "habit_strength": 0.04601343238914797,
+      "selection_count": 9,
+      "success_count": 9
+    },
+    "activity_burst": {
+      "go_weight": 0.5348793139817416,
+      "nogo_weight": 0.44903367461406635,
+      "habit_strength": 0.023809548606465104,
+      "selection_count": 1,
+      "success_count": 1
+    },
+    "exploration": {
+      "go_weight": 0.4776488877366248,
+      "nogo_weight": 0.4776488877366248,
+      "habit_strength": 0.013851423352590106,
+      "selection_count": 1,
+      "success_count": 1
+    },
+    "full_grooming": {
+      "go_weight": 0.4776488877366248,
+      "nogo_weight": 0.4776488877366248,
+      "habit_strength": 0.03240488460533123,
+      "selection_count": 6,
+      "success_count": 5
+    },
+    "dust_bathing": {
+      "go_weight": 0.4776488877366248,
+      "nogo_weight": 0.4776488877366248,
+      "habit_strength": 0.013851423352590106,
+      "selection_count": 1,
+      "success_count": 1
+    },
+    "social_contact": {
+      "go_weight": 0.511527060428462,
+      "nogo_weight": 0.4607098013907062,
+      "habit_strength": 0.09541739631944354,
+      "selection_count": 63,
+      "success_count": 58
+    },
+    "mild_fear": {
+      "go_weight": 0.4776488877366248,
+      "nogo_weight": 0.4776488877366248,
+      "habit_strength": 0.024121506777418394,
+      "selection_count": 5,
+      "success_count": 4
+    },
+    "extreme_fear": {
+      "go_weight": 0.5848136562517436,
+      "nogo_weight": 0.4240665034790654,
+      "habit_strength": 0.027864199687546748,
+      "selection_count": 2,
+      "success_count": 2
+    },
+    "chronic_stress": {
+      "go_weight": 0.4776488877366248,
+      "nogo_weight": 0.4776488877366248,
+      "habit_strength": 0.0,
+      "selection_count": 1,
+      "success_count": 0
+    },
+    "bedtime_routine": {
+      "go_weight": 0.5233481925941402,
+      "nogo_weight": 0.45479923530786703,
+      "habit_strength": 0.038885861526397475,
+      "selection_count": 11,
+      "success_count": 11
+    },
+    "territorial_patrol": {
+      "go_weight": 0.4776488877366248,
+      "nogo_weight": 0.4776488877366248,
+      "habit_strength": 0.017906074433671752,
+      "selection_count": 2,
+      "success_count": 2
+    },
+    "nesting": {
+      "go_weight": 0.4776488877366248,
+      "nogo_weight": 0.4776488877366248,
+      "habit_strength": 0.0,
+      "selection_count": 1,
+      "success_count": 1
+    },
+    "hyperactivity": {
+      "go_weight": 0.4776488877366248,
+      "nogo_weight": 0.4776488877366248,
+      "habit_strength": 0.054608213727929705,
+      "selection_count": 6,
+      "success_count": 6
+    }
+  },
+  "cortex_patterns": 0,
+  "hippocampus_size": 0,
+  "total_sim_time": 123.5,
+  "tick_count": 322
+}

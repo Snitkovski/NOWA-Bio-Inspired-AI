@@ -1,0 +1,1085 @@
+[
+  {
+    "context": [
+      "prev:run_wheel",
+      "internal:hunger_low"
+    ],
+    "intent_type": "eat_pellets",
+    "output": {
+      "anim": "eat_loop",
+      "sfx": "chewing",
+      "position": "bowl_pellets",
+      "duration": [
+        8,
+        20
+      ],
+      "subtitle": "ест после пробежки",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "trigger": "post_exercise"
+    }
+  },
+  {
+    "context": [
+      "prev:eat_pellets",
+      "internal:thirst_moderate"
+    ],
+    "intent_type": "drink_water",
+    "output": {
+      "anim": "drink_loop",
+      "sfx": "drinking",
+      "position": "waterer",
+      "duration": [
+        4,
+        8
+      ],
+      "subtitle": "запивает еду",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "trigger": "post_eating"
+    }
+  },
+  {
+    "context": [
+      "prev:eat_pellets",
+      "internal:mineral_need"
+    ],
+    "intent_type": "gnaw_mineral",
+    "output": {
+      "anim": "gnaw_loop",
+      "sfx": "gnawing",
+      "position": "mineral",
+      "duration": [
+        4,
+        10
+      ],
+      "subtitle": "грызёт камень после еды",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.8,
+    "parameters": {
+      "trigger": "post_eating"
+    }
+  },
+  {
+    "context": [
+      "prev:stretch_body",
+      "internal:energy_high"
+    ],
+    "intent_type": "run_wheel",
+    "output": {
+      "anim": "run_wheel_loop",
+      "sfx": "wheel_spin",
+      "position": "wheel",
+      "duration": [
+        20,
+        80
+      ],
+      "subtitle": "утренняя пробежка",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.95,
+    "parameters": {
+      "trigger": "morning_burst"
+    }
+  },
+  {
+    "context": [
+      "prev:eat_pellets",
+      "prev:groom_face"
+    ],
+    "intent_type": "patrol_floor",
+    "output": {
+      "anim": "walk_loop",
+      "sfx": "steps_soft",
+      "position": "floor",
+      "duration": [
+        10,
+        30
+      ],
+      "subtitle": "утренний обход",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.8,
+    "parameters": {
+      "chain": "morning_routine"
+    }
+  },
+  {
+    "context": [
+      "prev:patrol_floor",
+      "env:novel_smell"
+    ],
+    "intent_type": "sniff_corners",
+    "output": {
+      "anim": "sniff_loop",
+      "sfx": null,
+      "position": "corner",
+      "duration": [
+        6,
+        16
+      ],
+      "subtitle": "нюхает углы после обхода",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "chain": "exploration"
+    }
+  },
+  {
+    "context": [
+      "prev:patrol_floor",
+      "internal:energy_high"
+    ],
+    "intent_type": "jump_shelf_up",
+    "output": {
+      "anim": "jump_up",
+      "sfx": "jump_land",
+      "position": "shelf_mid",
+      "duration": [
+        2,
+        2
+      ],
+      "subtitle": "прыгает на полку",
+      "loop": false,
+      "layer": "action"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "chain": "exploration_route"
+    }
+  },
+  {
+    "context": [
+      "prev:jump_shelf_up",
+      "internal:curiosity_high"
+    ],
+    "intent_type": "jump_shelf_up",
+    "output": {
+      "anim": "jump_up",
+      "sfx": "jump_land",
+      "position": "shelf_upper",
+      "duration": [
+        2,
+        2
+      ],
+      "subtitle": "ещё выше!",
+      "loop": false,
+      "layer": "action"
+    },
+    "intensity": 0.8,
+    "parameters": {
+      "chain": "shelf_climbing"
+    }
+  },
+  {
+    "context": [
+      "state:excited",
+      "prev:run_wheel"
+    ],
+    "intent_type": "jump_hop_play",
+    "output": {
+      "anim": "popcorn_loop",
+      "sfx": "thump_soft",
+      "position": "floor",
+      "duration": [
+        10,
+        24
+      ],
+      "subtitle": "из колеса — сразу поанте!",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "trigger": "post_wheel"
+    }
+  },
+  {
+    "context": [
+      "state:excited",
+      "prev:jump_hop_play"
+    ],
+    "intent_type": "run_wheel",
+    "output": {
+      "anim": "run_wheel_loop",
+      "sfx": "wheel_spin",
+      "position": "wheel",
+      "duration": [
+        20,
+        60
+      ],
+      "subtitle": "обратно в колесо",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "chain": "burst"
+    }
+  },
+  {
+    "context": [
+      "prev:run_wheel",
+      "state:excited"
+    ],
+    "intent_type": "climb_bars",
+    "output": {
+      "anim": "climb_loop",
+      "sfx": "scratch_bars",
+      "position": "bars",
+      "duration": [
+        6,
+        16
+      ],
+      "subtitle": "после колеса — на прутья",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "chain": "burst"
+    }
+  },
+  {
+    "context": [
+      "prev:patrol_floor",
+      "env:new_object"
+    ],
+    "intent_type": "sniff_object",
+    "output": {
+      "anim": "sniff_loop",
+      "sfx": null,
+      "position": "object",
+      "duration": [
+        4,
+        12
+      ],
+      "subtitle": "нашла новое — нюхает",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "trigger": "discovered"
+    }
+  },
+  {
+    "context": [
+      "prev:sniff_object",
+      "state:calm"
+    ],
+    "intent_type": "inspect_new_obj",
+    "output": {
+      "anim": "inspect_loop",
+      "sfx": null,
+      "position": "object",
+      "duration": [
+        10,
+        30
+      ],
+      "subtitle": "изучает найденное",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "chain": "novelty"
+    }
+  },
+  {
+    "context": [
+      "prev:inspect_new_obj",
+      "state:calm"
+    ],
+    "intent_type": "gnaw_toy",
+    "output": {
+      "anim": "gnaw_loop",
+      "sfx": "gnawing",
+      "position": "toy",
+      "duration": [
+        10,
+        30
+      ],
+      "subtitle": "пробует на зуб",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.8,
+    "parameters": {
+      "chain": "novelty",
+      "phase": "test"
+    }
+  },
+  {
+    "context": [
+      "prev:inspect_new_obj",
+      "env:toy_present"
+    ],
+    "intent_type": "play_toy",
+    "output": {
+      "anim": "play_loop",
+      "sfx": "toy_rattle",
+      "position": "toy",
+      "duration": [
+        10,
+        40
+      ],
+      "subtitle": "начинает играть",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "trigger": "post_inspect"
+    }
+  },
+  {
+    "context": [
+      "state:excited",
+      "prev:play_toy"
+    ],
+    "intent_type": "toss_toy",
+    "output": {
+      "anim": "toss_anim",
+      "sfx": "toy_rattle",
+      "position": "toy",
+      "duration": [
+        6,
+        16
+      ],
+      "subtitle": "подбрасывает!",
+      "loop": false,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "state": "excited"
+    }
+  },
+  {
+    "context": [
+      "state:excited",
+      "prev:toss_toy"
+    ],
+    "intent_type": "chase_toy",
+    "output": {
+      "anim": "run_loop",
+      "sfx": "steps_fast",
+      "position": "floor",
+      "duration": [
+        6,
+        12
+      ],
+      "subtitle": "гонится!",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "chain": "play"
+    }
+  },
+  {
+    "context": [
+      "prev:eat_pellets",
+      "internal:goal_tension_high"
+    ],
+    "intent_type": "cache_food",
+    "output": {
+      "anim": "carry_loop",
+      "sfx": "rustling",
+      "position": "house",
+      "duration": [
+        6,
+        16
+      ],
+      "subtitle": "тащит еду в запас",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "trigger": "post_eating"
+    }
+  },
+  {
+    "context": [
+      "prev:cache_food",
+      "internal:goal_tension_moderate"
+    ],
+    "intent_type": "rearrange_bedding",
+    "output": {
+      "anim": "dig_loop",
+      "sfx": "rustling",
+      "position": "litter",
+      "duration": [
+        10,
+        24
+      ],
+      "subtitle": "перекладывает поверх запасов",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.8,
+    "parameters": {
+      "chain": "hoarding"
+    }
+  },
+  {
+    "context": [
+      "prev:rearrange_bedding",
+      "internal:goal_tension_high"
+    ],
+    "intent_type": "dig_bedding",
+    "output": {
+      "anim": "dig_loop",
+      "sfx": "rustling",
+      "position": "litter",
+      "duration": [
+        6,
+        16
+      ],
+      "subtitle": "роет — делает нору",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "chain": "nesting"
+    }
+  },
+  {
+    "context": [
+      "prev:groom_body",
+      "env:dustbath_available"
+    ],
+    "intent_type": "dust_bath",
+    "output": {
+      "anim": "dustbath_loop",
+      "sfx": "rustling",
+      "position": "dustbath",
+      "duration": [
+        12,
+        30
+      ],
+      "subtitle": "нашла купалку — в неё!",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.95,
+    "parameters": {
+      "trigger": "discovered_post_groom"
+    }
+  },
+  {
+    "context": [
+      "prev:dust_bath"
+    ],
+    "intent_type": "body_shake",
+    "output": {
+      "anim": "shake_anim",
+      "sfx": "fur_rustle",
+      "position": "current",
+      "duration": [
+        2,
+        4
+      ],
+      "subtitle": "встряхивается",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.95,
+    "parameters": {
+      "trigger": "post_dustbath"
+    }
+  },
+  {
+    "context": [
+      "prev:body_shake",
+      "internal:grooming_need"
+    ],
+    "intent_type": "groom_body",
+    "output": {
+      "anim": "groom_body_loop",
+      "sfx": null,
+      "position": "current",
+      "duration": [
+        10,
+        24
+      ],
+      "subtitle": "дочёсывает после тряски",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "trigger": "post_shake"
+    }
+  },
+  {
+    "context": [
+      "prev:groom_body"
+    ],
+    "intent_type": "groom_tail",
+    "output": {
+      "anim": "groom_tail_loop",
+      "sfx": null,
+      "position": "current",
+      "duration": [
+        4,
+        12
+      ],
+      "subtitle": "переходит к хвосту",
+      "loop": true,
+      "layer": "micro"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "chain": "full_groom"
+    }
+  },
+  {
+    "context": [
+      "prev:groom_tail"
+    ],
+    "intent_type": "groom_paws",
+    "output": {
+      "anim": "groom_paw_loop",
+      "sfx": null,
+      "position": "current",
+      "duration": [
+        2,
+        8
+      ],
+      "subtitle": "вылизывает лапки",
+      "loop": true,
+      "layer": "micro"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "chain": "full_groom"
+    }
+  },
+  {
+    "context": [
+      "prev:groom_paws",
+      "state:calm"
+    ],
+    "intent_type": "rest_loaf",
+    "output": {
+      "anim": "loaf_idle",
+      "sfx": null,
+      "position": "shelf_mid",
+      "duration": [
+        20,
+        50
+      ],
+      "subtitle": "отдыхает после груминга",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "trigger": "post_grooming"
+    }
+  },
+  {
+    "context": [
+      "prev:observe_room",
+      "social:peer_present"
+    ],
+    "intent_type": "approach_peer",
+    "output": {
+      "anim": "walk_loop",
+      "sfx": "steps_soft",
+      "position": "current",
+      "duration": [
+        4,
+        16
+      ],
+      "subtitle": "approaches colony peer",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "chain": "social_approach"
+    }
+  },
+  {
+    "context": [
+      "prev:approach_peer",
+      "social:peer_present"
+    ],
+    "intent_type": "vocalize_chirp",
+    "output": {
+      "anim": "chirp_anim",
+      "sfx": "chirp",
+      "position": "current",
+      "duration": [
+        2,
+        8
+      ],
+      "subtitle": "friendly chirp to peer",
+      "loop": true,
+      "layer": "micro"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "chain": "social_greeting"
+    }
+  },
+  {
+    "context": [
+      "prev:approach_peer",
+      "social:intrusive_contact"
+    ],
+    "intent_type": "sniff_peer",
+    "output": {
+      "anim": "sniff_loop",
+      "sfx": null,
+      "position": "current",
+      "duration": [
+        4,
+        12
+      ],
+      "subtitle": "sniffs nearby peer",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "chain": "social_approach"
+    }
+  },
+  {
+    "context": [
+      "prev:sniff_peer",
+      "social:treat_offered"
+    ],
+    "intent_type": "take_treat",
+    "output": {
+      "anim": "take_treat_anim",
+      "sfx": "chewing_soft",
+      "position": "door",
+      "duration": [
+        4,
+        8
+      ],
+      "subtitle": "accepts offered food",
+      "loop": false,
+      "layer": "action"
+    },
+    "intensity": 0.95,
+    "parameters": {
+      "chain": "social_treat"
+    }
+  },
+  {
+    "context": [
+      "prev:take_treat",
+      "social:being_petted"
+    ],
+    "intent_type": "allow_pet",
+    "output": {
+      "anim": "pet_accept_idle",
+      "sfx": null,
+      "position": "door",
+      "duration": [
+        10,
+        40
+      ],
+      "subtitle": "принимает поглаживание",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "chain": "bonding"
+    }
+  },
+  {
+    "context": [
+      "env:sudden_loud_sound",
+      "state:alert"
+    ],
+    "intent_type": "freeze",
+    "output": {
+      "anim": "freeze_hold",
+      "sfx": null,
+      "position": "current",
+      "duration": [
+        10,
+        40
+      ],
+      "subtitle": "замерла от звука",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.95,
+    "parameters": {
+      "trigger": "auditory_shock"
+    }
+  },
+  {
+    "context": [
+      "prev:freeze",
+      "state:fear_acute"
+    ],
+    "intent_type": "flee_corner",
+    "output": {
+      "anim": "run_loop",
+      "sfx": "steps_fast",
+      "position": "corner",
+      "duration": [
+        4,
+        8
+      ],
+      "subtitle": "из ступора — в угол",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.95,
+    "parameters": {
+      "chain": "fear"
+    }
+  },
+  {
+    "context": [
+      "prev:flee_corner",
+      "state:fear_acute"
+    ],
+    "intent_type": "hide_house",
+    "output": {
+      "anim": "run_loop",
+      "sfx": "steps_fast",
+      "position": "house",
+      "duration": [
+        10,
+        120
+      ],
+      "subtitle": "из угла — в домик",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "chain": "fear"
+    }
+  },
+  {
+    "context": [
+      "prev:hide_house",
+      "state:stress_high"
+    ],
+    "intent_type": "press_flat",
+    "output": {
+      "anim": "press_flat_hold",
+      "sfx": null,
+      "position": "house",
+      "duration": [
+        10,
+        40
+      ],
+      "subtitle": "прижалась в домике",
+      "loop": true,
+      "layer": "postural"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "chain": "fear"
+    }
+  },
+  {
+    "context": [
+      "env:nighttime",
+      "prev:sleep_house"
+    ],
+    "intent_type": "stretch_body",
+    "output": {
+      "anim": "stretch_anim",
+      "sfx": null,
+      "position": "current",
+      "duration": [
+        2,
+        4
+      ],
+      "subtitle": "ночное пробуждение",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "time": "night"
+    }
+  },
+  {
+    "context": [
+      "env:nighttime",
+      "prev:stretch_body"
+    ],
+    "intent_type": "run_wheel",
+    "output": {
+      "anim": "run_wheel_loop",
+      "sfx": "wheel_spin",
+      "position": "wheel",
+      "duration": [
+        30,
+        80
+      ],
+      "subtitle": "ночная пробежка",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "time": "night",
+      "duration": "long"
+    }
+  },
+  {
+    "context": [
+      "env:nighttime",
+      "prev:run_wheel"
+    ],
+    "intent_type": "jump_hop_play",
+    "output": {
+      "anim": "popcorn_loop",
+      "sfx": "thump_soft",
+      "position": "floor",
+      "duration": [
+        10,
+        24
+      ],
+      "subtitle": "ночные поанте",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "time": "night"
+    }
+  },
+  {
+    "context": [
+      "social:intrusive_contact",
+      "state:uncomfortable"
+    ],
+    "intent_type": "vocalize_teeth",
+    "output": {
+      "anim": "teeth_click_anim",
+      "sfx": "teeth_click",
+      "position": "current",
+      "duration": [
+        2,
+        4
+      ],
+      "subtitle": "warning click at intrusive contact",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "chain": "stress_warning",
+      "level": 1
+    }
+  },
+  {
+    "context": [
+      "prev:vocalize_teeth",
+      "social:intrusive_contact"
+    ],
+    "intent_type": "vocalize_bark",
+    "output": {
+      "anim": "bark_anim",
+      "sfx": "bark",
+      "position": "current",
+      "duration": [
+        2,
+        6
+      ],
+      "subtitle": "alarm bark during intrusive contact",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "chain": "stress_warning",
+      "level": 2
+    }
+  },
+  {
+    "context": [
+      "prev:freeze",
+      "state:calming"
+    ],
+    "intent_type": "body_shake",
+    "output": {
+      "anim": "shake_anim",
+      "sfx": "fur_rustle",
+      "position": "current",
+      "duration": [
+        2,
+        4
+      ],
+      "subtitle": "отряхивает стресс",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.8,
+    "parameters": {
+      "trigger": "post_freeze",
+      "recovery": true
+    }
+  },
+  {
+    "context": [
+      "prev:hide_house",
+      "state:calming"
+    ],
+    "intent_type": "doze_shelf",
+    "output": {
+      "anim": "doze_loop",
+      "sfx": null,
+      "position": "shelf_mid",
+      "duration": [
+        30,
+        90
+      ],
+      "subtitle": "успокоилась — дремлет",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.8,
+    "parameters": {
+      "trigger": "post_stress"
+    }
+  },
+  {
+    "context": [
+      "prev:eat_hay",
+      "state:calm"
+    ],
+    "intent_type": "rest_loaf",
+    "output": {
+      "anim": "loaf_idle",
+      "sfx": null,
+      "position": "floor",
+      "duration": [
+        20,
+        40
+      ],
+      "subtitle": "отдыхает после сена",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.8,
+    "parameters": {
+      "trigger": "post_hay"
+    }
+  },
+  {
+    "context": [
+      "prev:stand_upright",
+      "state:alert"
+    ],
+    "intent_type": "thump_hind",
+    "output": {
+      "anim": "thump_anim",
+      "sfx": "thump_loud",
+      "position": "current",
+      "duration": [
+        2,
+        4
+      ],
+      "subtitle": "столбик → топает",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.9,
+    "parameters": {
+      "trigger": "post_upright"
+    }
+  },
+  {
+    "context": [
+      "prev:stand_upright",
+      "env:sound_outside"
+    ],
+    "intent_type": "observe_room",
+    "output": {
+      "anim": "stand_up_hold",
+      "sfx": null,
+      "position": "door",
+      "duration": [
+        10,
+        24
+      ],
+      "subtitle": "observes nearby peer",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "trigger": "post_upright"
+    }
+  },
+  {
+    "context": [
+      "internal:goal_tension_high",
+      "env:nesting_material"
+    ],
+    "intent_type": "carry_object",
+    "output": {
+      "anim": "carry_loop",
+      "sfx": null,
+      "position": "house",
+      "duration": [
+        6,
+        16
+      ],
+      "subtitle": "тащит материал для гнезда",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.85,
+    "parameters": {
+      "chain": "nesting"
+    }
+  },
+  {
+    "context": [
+      "prev:carry_object",
+      "internal:goal_tension_high"
+    ],
+    "intent_type": "rearrange_bedding",
+    "output": {
+      "anim": "dig_loop",
+      "sfx": "rustling",
+      "position": "litter",
+      "duration": [
+        10,
+        24
+      ],
+      "subtitle": "укладывает принесённое",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.8,
+    "parameters": {
+      "chain": "nesting"
+    }
+  }
+]

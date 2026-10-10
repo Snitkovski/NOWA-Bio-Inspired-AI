@@ -1,0 +1,77 @@
+[
+  {
+    "context": ["user:кто ты"],
+    "action": "ответить_кто_я",
+    "strength": 3.0
+  },
+  {
+    "context": ["user:представься"],
+    "action": "ответить_кто_я",
+    "strength": 2.0
+  },
+  {
+    "context": ["user:привет"],
+    "action": "сказать_привет",
+    "strength": 3.0
+  },
+  {
+    "context": ["user:hello"],
+    "action": "сказать_привет",
+    "strength": 1.0
+  },
+  {
+    "context": ["user:как дела"],
+    "action": "сказать_привет",
+    "strength": 2.0
+  },
+  {
+    "context": ["user:помощь"],
+    "action": "помочь",
+    "strength": 2.0
+  },
+  {
+    "context": ["user:помоги"],
+    "action": "помочь",
+    "strength": 2.0
+  },
+  {
+    "context": ["user:мне нужна помощь"],
+    "action": "помочь",
+    "strength": 1.0
+  },
+  {
+    "context": ["user:не понимаю"],
+    "action": "выразить_замешательство",
+    "strength": 2.0
+  },
+  {
+    "context": ["user:запутанно"],
+    "action": "выразить_замешательство",
+    "strength": 1.0
+  },
+  {
+    "context": ["user:скажи что-нибудь"],
+    "action": "задать_вопрос",
+    "strength": 1.0
+  },
+  {
+    "context": ["user:расскажи"],
+    "action": "задать_вопрос",
+    "strength": 2.0
+  },
+  {
+    "context": ["user:стоп"],
+    "action": "отказаться",
+    "strength": 2.0
+  },
+  {
+    "context": ["user:хватит"],
+    "action": "отказаться",
+    "strength": 1.0
+  },
+  {
+    "context": ["user:нет"],
+    "action": "отказаться",
+    "strength": 1.0
+  }
+]

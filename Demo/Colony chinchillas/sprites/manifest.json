@@ -1,0 +1,681 @@
+{
+  "alarm_anim": {
+    "file": "alarm_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "approach_walk": {
+    "file": "approach_walk.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "bar_chew_loop": {
+    "file": "bar_chew_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "bark_anim": {
+    "file": "bark_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "cache_food_loop": {
+    "file": "cache_food_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "carry_loop": {
+    "file": "carry_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "chirp_anim": {
+    "file": "chirp_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "climb_loop": {
+    "file": "climb_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "dig_loop": {
+    "file": "dig_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "doze_loop": {
+    "file": "doze_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "drink_loop": {
+    "file": "drink_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "dustbath_loop": {
+    "file": "dustbath_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 6,
+    "fps": 8
+  },
+  "ears_flat_hold": {
+    "file": "ears_flat_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "ears_forward_hold": {
+    "file": "ears_forward_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "eat_hay_loop": {
+    "file": "eat_hay_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "eat_loop": {
+    "file": "eat_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "eat_treat": {
+    "file": "eat_treat.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "eyes_droop_hold": {
+    "file": "eyes_droop_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "flee_loop": {
+    "file": "flee_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "freeze_hold": {
+    "file": "freeze_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "fur_slip_anim": {
+    "file": "fur_slip_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "gnaw_loop": {
+    "file": "gnaw_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "groom_body_loop": {
+    "file": "groom_body_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "groom_paw_loop": {
+    "file": "groom_paw_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "groom_tail_loop": {
+    "file": "groom_tail_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "hang_idle": {
+    "file": "hang_idle.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "head_bump_anim": {
+    "file": "head_bump_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "head_track_loop": {
+    "file": "head_track_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 6,
+    "fps": 8
+  },
+  "hide_loop": {
+    "file": "hide_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "inspect_loop": {
+    "file": "inspect_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "jump_down": {
+    "file": "jump_down.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "jump_up": {
+    "file": "jump_up.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "loaf_idle": {
+    "file": "loaf_idle.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "mark_loop": {
+    "file": "mark_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "nose_twitch_loop": {
+    "file": "nose_twitch_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "overgroom_loop": {
+    "file": "overgroom_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "pace_loop": {
+    "file": "pace_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 8,
+    "fps": 8
+  },
+  "paw_reach_loop": {
+    "file": "paw_reach_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "pet_accept_idle": {
+    "file": "pet_accept_idle.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "play_loop": {
+    "file": "play_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "popcorn_loop": {
+    "file": "popcorn_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 6,
+    "fps": 8
+  },
+  "press_flat_hold": {
+    "file": "press_flat_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "problem_solve_anim": {
+    "file": "problem_solve_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "rearrange_bedding_loop": {
+    "file": "rearrange_bedding_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "run_loop": {
+    "file": "run_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "run_wheel_loop": {
+    "file": "run_wheel_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 6,
+    "fps": 8
+  },
+  "scratch_loop": {
+    "file": "scratch_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "shake_anim": {
+    "file": "shake_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 5,
+    "fps": 8
+  },
+  "sleep_loop": {
+    "file": "sleep_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "sniff_air_loop": {
+    "file": "sniff_air_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "sniff_hand": {
+    "file": "sniff_hand.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "sniff_loop": {
+    "file": "sniff_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "squeak_anim": {
+    "file": "squeak_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "stand_up_hold": {
+    "file": "stand_up_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "stretch_anim": {
+    "file": "stretch_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "tail_up_hold": {
+    "file": "tail_up_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "take_treat_anim": {
+    "file": "take_treat_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "teeth_click_anim": {
+    "file": "teeth_click_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "thump_anim": {
+    "file": "thump_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "toilet_loop": {
+    "file": "toilet_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "toss_anim": {
+    "file": "toss_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "walk_loop": {
+    "file": "walk_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "wall_jump_loop": {
+    "file": "wall_jump_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "wash_face_loop": {
+    "file": "wash_face_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "whisker_loop": {
+    "file": "whisker_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "yawn_anim": {
+    "file": "yawn_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "nose_touch_anim": {
+    "file": "nose_touch_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "allogroom_loop": {
+    "file": "allogroom_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "reconcile_touch_anim": {
+    "file": "reconcile_touch_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "social_huddle_loop": {
+    "file": "social_huddle_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "share_knowledge_anim": {
+    "file": "share_knowledge_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "food_share_anim": {
+    "file": "food_share_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "queue_wait_loop": {
+    "file": "queue_wait_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "wheel_wait_loop": {
+    "file": "wheel_wait_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "cooperative_patrol_loop": {
+    "file": "cooperative_patrol_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "play_invite_anim": {
+    "file": "play_invite_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "play_chase_loop": {
+    "file": "play_chase_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "threat_posture_hold": {
+    "file": "threat_posture_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "chase_rival_loop": {
+    "file": "chase_rival_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "flee_recovery_loop": {
+    "file": "flee_recovery_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 3,
+    "fps": 8
+  },
+  "corner_block_hold": {
+    "file": "corner_block_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "dominance_display_anim": {
+    "file": "dominance_display_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "submissive_flat_hold": {
+    "file": "submissive_flat_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "territorial_patrol_loop": {
+    "file": "territorial_patrol_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "scuffle_loop": {
+    "file": "scuffle_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "deescalate_posture_loop": {
+    "file": "deescalate_posture_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "courtship_dance_anim": {
+    "file": "courtship_dance_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "pair_bond_rest_loop": {
+    "file": "pair_bond_rest_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "mating_pair_loop": {
+    "file": "mating_pair_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "mating_approach_anim": {
+    "file": "mating_approach_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "nest_guard_hold": {
+    "file": "nest_guard_hold.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "retrieve_pup_anim": {
+    "file": "retrieve_pup_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "carry_pup_loop": {
+    "file": "carry_pup_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "protect_juvenile_loop": {
+    "file": "protect_juvenile_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "alloparent_watch_loop": {
+    "file": "alloparent_watch_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 2,
+    "fps": 8
+  },
+  "regroup_call_anim": {
+    "file": "regroup_call_anim.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  },
+  "regroup_move_loop": {
+    "file": "regroup_move_loop.png",
+    "frame_w": 96,
+    "frame_h": 96,
+    "frames": 4,
+    "fps": 8
+  }
+}

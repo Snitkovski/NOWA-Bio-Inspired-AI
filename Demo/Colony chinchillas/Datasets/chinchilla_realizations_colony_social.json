@@ -1,0 +1,497 @@
+[
+  {
+    "context": ["social:unknown_nearby", "social:contact"],
+    "intent_type": "sniff_greet",
+    "output": {
+      "anim": "nose_touch_anim",
+      "sfx": "social_chirp",
+      "position": "current",
+      "duration": [3, 8],
+      "subtitle": "careful greeting sniff",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.72,
+    "parameters": { "scenario": "greeting", "multi_agent": true }
+  },
+  {
+    "context": ["social:contact_known", "social:affinity_high"],
+    "intent_type": "allogroom",
+    "output": {
+      "anim": "allogroom_loop",
+      "sfx": "groom_social",
+      "position": "current",
+      "duration": [10, 36],
+      "subtitle": "mutual grooming",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.92,
+    "parameters": { "scenario": "affiliation", "multi_agent": true }
+  },
+  {
+    "context": ["social:bond_repair", "social:contact_known"],
+    "intent_type": "reconcile_touch",
+    "output": {
+      "anim": "reconcile_touch_anim",
+      "sfx": "appease_chirp",
+      "position": "current",
+      "duration": [2, 6],
+      "subtitle": "reconciliation touch",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.7,
+    "parameters": { "scenario": "deescalation", "multi_agent": true }
+  },
+  {
+    "context": ["social:bonded_peer_near", "state:calm"],
+    "intent_type": "sleep_together",
+    "output": {
+      "anim": "social_huddle_loop",
+      "sfx": "bonding_coo",
+      "position": "house",
+      "duration": [24, 120],
+      "subtitle": "social huddle sleep",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.78,
+    "parameters": { "scenario": "bonding", "multi_agent": true }
+  },
+  {
+    "context": ["social:contact_known", "state:curious"],
+    "intent_type": "share_knowledge",
+    "output": {
+      "anim": "share_knowledge_anim",
+      "sfx": "social_chirp",
+      "position": "current",
+      "duration": [2, 8],
+      "subtitle": "social signal exchange",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.68,
+    "parameters": { "scenario": "communication", "multi_agent": true }
+  },
+  {
+    "context": ["social:food_access", "social:kin_near"],
+    "intent_type": "food_share",
+    "output": {
+      "anim": "food_share_anim",
+      "sfx": "chewing_soft",
+      "position": "bowl_pellets",
+      "duration": [4, 12],
+      "subtitle": "shares feeding spot",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.62,
+    "parameters": { "scenario": "cooperation", "multi_agent": true }
+  },
+  {
+    "context": ["social:resource_queue", "resource:water"],
+    "intent_type": "queue_wait",
+    "output": {
+      "anim": "queue_wait_loop",
+      "sfx": "queue_murmur",
+      "position": "waterer",
+      "duration": [6, 16],
+      "subtitle": "waits turn at water",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.45,
+    "parameters": { "scenario": "resource_coordination", "multi_agent": true }
+  },
+  {
+    "context": ["social:resource_queue", "resource:wheel"],
+    "intent_type": "wheel_turn_taking",
+    "output": {
+      "anim": "wheel_wait_loop",
+      "sfx": "wheel_spin",
+      "position": "wheel",
+      "duration": [8, 24],
+      "subtitle": "turn-taking near wheel",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.5,
+    "parameters": { "scenario": "resource_coordination", "multi_agent": true }
+  },
+  {
+    "context": ["social:group_patrol", "state:calm"],
+    "intent_type": "cooperative_patrol",
+    "output": {
+      "anim": "cooperative_patrol_loop",
+      "sfx": "steps_soft",
+      "position": "floor",
+      "duration": [10, 24],
+      "subtitle": "cooperative patrol",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.64,
+    "parameters": { "scenario": "coordination", "multi_agent": true }
+  },
+  {
+    "context": ["social:contact_known", "state:playful"],
+    "intent_type": "play_invite",
+    "output": {
+      "anim": "play_invite_anim",
+      "sfx": "chirp",
+      "position": "floor",
+      "duration": [6, 18],
+      "subtitle": "invites peer to play",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.84,
+    "parameters": { "scenario": "play", "multi_agent": true }
+  },
+  {
+    "context": ["social:play_session", "state:aroused"],
+    "intent_type": "play_chase",
+    "output": {
+      "anim": "play_chase_loop",
+      "sfx": "steps_fast",
+      "position": "floor",
+      "duration": [6, 18],
+      "subtitle": "play chase",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.82,
+    "parameters": { "scenario": "play", "multi_agent": true }
+  },
+  {
+    "context": ["social:play_session", "toy:present"],
+    "intent_type": "play_toss",
+    "output": {
+      "anim": "toss_anim",
+      "sfx": "toy_rattle",
+      "position": "floor",
+      "duration": [4, 12],
+      "subtitle": "interactive toy toss",
+      "loop": false,
+      "layer": "action"
+    },
+    "intensity": 0.78,
+    "parameters": { "scenario": "play_object", "multi_agent": true }
+  },
+  {
+    "context": ["social:territorial_conflict", "state:aggressive"],
+    "intent_type": "threat_posture",
+    "output": {
+      "anim": "threat_posture_hold",
+      "sfx": "warning_chatter",
+      "position": "current",
+      "duration": [3, 10],
+      "subtitle": "threat posture",
+      "loop": true,
+      "layer": "postural"
+    },
+    "intensity": 0.9,
+    "parameters": { "scenario": "conflict_escalation", "multi_agent": true }
+  },
+  {
+    "context": ["social:territorial_conflict", "state:aggressive"],
+    "intent_type": "warning_teeth",
+    "output": {
+      "anim": "teeth_click_anim",
+      "sfx": "warning_chatter",
+      "position": "current",
+      "duration": [2, 6],
+      "subtitle": "teeth warning",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.88,
+    "parameters": { "scenario": "conflict_warning", "multi_agent": true }
+  },
+  {
+    "context": ["social:territorial_conflict", "state:aggressive"],
+    "intent_type": "chase",
+    "output": {
+      "anim": "chase_rival_loop",
+      "sfx": "scuffle",
+      "position": "floor",
+      "duration": [4, 14],
+      "subtitle": "aggressive chase",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.95,
+    "parameters": { "scenario": "conflict", "multi_agent": true, "role": "attacker" }
+  },
+  {
+    "context": ["social:dominance_pressure", "state:fearful"],
+    "intent_type": "flee_rival",
+    "output": {
+      "anim": "flee_recovery_loop",
+      "sfx": "steps_fast",
+      "position": "corner",
+      "duration": [4, 14],
+      "subtitle": "retreat from rival",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": { "scenario": "conflict", "multi_agent": true, "role": "defender" }
+  },
+  {
+    "context": ["social:stand_off", "state:high_arousal"],
+    "intent_type": "corner_block",
+    "output": {
+      "anim": "corner_block_hold",
+      "sfx": "dominance_stomp",
+      "position": "corner",
+      "duration": [3, 12],
+      "subtitle": "corner blocking",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.86,
+    "parameters": { "scenario": "dominance", "multi_agent": true }
+  },
+  {
+    "context": ["social:status_challenge", "state:aggressive"],
+    "intent_type": "dominance_display",
+    "output": {
+      "anim": "dominance_display_anim",
+      "sfx": "dominance_stomp",
+      "position": "current",
+      "duration": [3, 10],
+      "subtitle": "dominance display",
+      "loop": false,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": { "scenario": "hierarchy", "multi_agent": true }
+  },
+  {
+    "context": ["social:status_lost", "state:fearful"],
+    "intent_type": "submissive_flatten",
+    "output": {
+      "anim": "submissive_flat_hold",
+      "sfx": "submissive_squeak",
+      "position": "current",
+      "duration": [4, 14],
+      "subtitle": "submissive flattening",
+      "loop": true,
+      "layer": "postural"
+    },
+    "intensity": 0.82,
+    "parameters": { "scenario": "hierarchy", "multi_agent": true }
+  },
+  {
+    "context": ["social:territory_guard", "state:alert"],
+    "intent_type": "territorial_patrol",
+    "output": {
+      "anim": "territorial_patrol_loop",
+      "sfx": "steps_soft",
+      "position": "floor",
+      "duration": [8, 20],
+      "subtitle": "territorial patrol",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.77,
+    "parameters": { "scenario": "territoriality", "multi_agent": true }
+  },
+  {
+    "context": ["social:conflict_peak", "state:aggressive"],
+    "intent_type": "scuffle",
+    "output": {
+      "anim": "scuffle_loop",
+      "sfx": "scuffle",
+      "position": "current",
+      "duration": [2, 8],
+      "subtitle": "brief scuffle",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.96,
+    "parameters": { "scenario": "conflict_peak", "multi_agent": true }
+  },
+  {
+    "context": ["social:conflict_cooling", "state:uncertain"],
+    "intent_type": "deescalate_posture",
+    "output": {
+      "anim": "deescalate_posture_loop",
+      "sfx": "appease_chirp",
+      "position": "current",
+      "duration": [3, 10],
+      "subtitle": "deescalation posture",
+      "loop": true,
+      "layer": "postural"
+    },
+    "intensity": 0.62,
+    "parameters": { "scenario": "deescalation", "multi_agent": true }
+  },
+  {
+    "context": ["social:courtship", "state:estrus_partner_present"],
+    "intent_type": "courtship_display",
+    "output": {
+      "anim": "courtship_dance_anim",
+      "sfx": "bonding_coo",
+      "position": "current",
+      "duration": [4, 12],
+      "subtitle": "courtship approach",
+      "loop": false,
+      "layer": "action"
+    },
+    "intensity": 0.84,
+    "parameters": { "scenario": "courtship", "multi_agent": true }
+  },
+  {
+    "context": ["social:courtship", "state:estrus_partner_present"],
+    "intent_type": "mount_display",
+    "output": {
+      "anim": "mating_pair_loop",
+      "sfx": "mating_coo",
+      "position": "current",
+      "duration": [3, 10],
+      "subtitle": "mating pair display",
+      "loop": false,
+      "layer": "action"
+    },
+    "intensity": 0.86,
+    "parameters": { "scenario": "courtship", "multi_agent": true }
+  },
+  {
+    "context": ["social:mate_bonded", "state:calm"],
+    "intent_type": "pair_bond_rest",
+    "output": {
+      "anim": "pair_bond_rest_loop",
+      "sfx": "bonding_coo",
+      "position": "house",
+      "duration": [16, 60],
+      "subtitle": "pair resting",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.72,
+    "parameters": { "scenario": "pair_bond", "multi_agent": true }
+  },
+  {
+    "context": ["social:offspring_near", "state:lactating"],
+    "intent_type": "nurse",
+    "output": {
+      "anim": "nest_guard_hold",
+      "sfx": "maternal_hum",
+      "position": "house",
+      "duration": [24, 90],
+      "subtitle": "nursing in nest",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": { "scenario": "parental_care", "multi_agent": true }
+  },
+  {
+    "context": ["social:offspring_near", "event:pup_displaced"],
+    "intent_type": "retrieve_pup",
+    "output": {
+      "anim": "retrieve_pup_anim",
+      "sfx": "pup_call",
+      "position": "house",
+      "duration": [4, 14],
+      "subtitle": "retrieves wandering pup",
+      "loop": false,
+      "layer": "action"
+    },
+    "intensity": 0.88,
+    "parameters": { "scenario": "parental_retrieval", "multi_agent": true }
+  },
+  {
+    "context": ["social:offspring_near", "state:alert"],
+    "intent_type": "carry_pup",
+    "output": {
+      "anim": "carry_pup_loop",
+      "sfx": "nest_rustle",
+      "position": "house",
+      "duration": [6, 18],
+      "subtitle": "relocates pup",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.82,
+    "parameters": { "scenario": "parental_transport", "multi_agent": true }
+  },
+  {
+    "context": ["social:juvenile_threatened", "state:aggressive"],
+    "intent_type": "protect_juvenile",
+    "output": {
+      "anim": "protect_juvenile_loop",
+      "sfx": "warning_chatter",
+      "position": "current",
+      "duration": [4, 14],
+      "subtitle": "protects juvenile",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.93,
+    "parameters": { "scenario": "parental_defense", "multi_agent": true }
+  },
+  {
+    "context": ["social:juvenile_group", "state:alert"],
+    "intent_type": "alloparent_watch",
+    "output": {
+      "anim": "alloparent_watch_loop",
+      "sfx": "social_chirp",
+      "position": "house",
+      "duration": [8, 20],
+      "subtitle": "alloparent vigilance",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.66,
+    "parameters": { "scenario": "kin_cooperation", "multi_agent": true }
+  },
+  {
+    "context": ["event:alarm_call", "social:group_near"],
+    "intent_type": "regroup_call",
+    "output": {
+      "anim": "regroup_call_anim",
+      "sfx": "alarm_call",
+      "position": "current",
+      "duration": [2, 8],
+      "subtitle": "group regroup call",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.92,
+    "parameters": { "scenario": "alarm_coordination", "multi_agent": true }
+  },
+  {
+    "context": ["event:alarm_call", "state:fearful"],
+    "intent_type": "regroup_move",
+    "output": {
+      "anim": "regroup_move_loop",
+      "sfx": "steps_fast",
+      "position": "house",
+      "duration": [4, 12],
+      "subtitle": "moves to regroup point",
+      "loop": true,
+      "layer": "action"
+    },
+    "intensity": 0.9,
+    "parameters": { "scenario": "alarm_coordination", "multi_agent": true }
+  },
+  {
+    "context": ["social:post_conflict", "social:contact_known"],
+    "intent_type": "reconciliation_after_chase",
+    "output": {
+      "anim": "reconcile_touch_anim",
+      "sfx": "appease_chirp",
+      "position": "current",
+      "duration": [3, 8],
+      "subtitle": "post-conflict reconciliation",
+      "loop": false,
+      "layer": "micro"
+    },
+    "intensity": 0.61,
+    "parameters": { "scenario": "post_conflict_repair", "multi_agent": true }
+  }
+]

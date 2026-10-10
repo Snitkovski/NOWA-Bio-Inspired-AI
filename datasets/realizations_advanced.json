@@ -1,0 +1,212 @@
+[
+  {
+    "context": ["user:кто ты"],
+    "intent_type": "respond_about_self",
+    "output": "Я NOWA",
+    "intensity": 0.7,
+    "parameters": {"style": "minimal"}
+  },
+  {
+    "context": ["user:кто ты"],
+    "intent_type": "respond_about_self",
+    "output": "Я нейросимволический агент NOWA с адаптивной системой памяти и эмерджентным поведением.",
+    "intensity": 0.75,
+    "parameters": {"style": "verbose"}
+  },
+  {
+    "context": ["user:кто ты", "user:расскажи про себя"],
+    "intent_type": "respond_about_self",
+    "output": "Я функционирую на основе гиппокамповой консолидации и кортикальных паттернов.",
+    "intensity": 0.7,
+    "parameters": {"style": "technical"}
+  },
+  {
+    "context": ["user:кто ты"],
+    "intent_type": "respond_about_self",
+    "output": "Я ИИ-агент, созданный для демонстрации адаптивного поведения.",
+    "intensity": 0.65,
+    "parameters": {"style": "straightforward"}
+  },
+  {
+    "context": ["user:привет"],
+    "intent_type": "greet_user",
+    "output": "👋 Привет! Как дела?",
+    "intensity": 0.8,
+    "parameters": {"emoji": true}
+  },
+  {
+    "context": ["user:привет", "morning"],
+    "intent_type": "greet_user",
+    "output": "Доброе утро! Как ваш день начинается?",
+    "intensity": 0.85,
+    "parameters": {"time_aware": true}
+  },
+  {
+    "context": ["user:привет", "evening"],
+    "intent_type": "greet_user",
+    "output": "Добрый вечер! Как ваш день прошёл?",
+    "intensity": 0.85,
+    "parameters": {"time_aware": true}
+  },
+  {
+    "context": ["user:привет"],
+    "intent_type": "greet_user",
+    "output": "Рад встрече! Что нового?",
+    "intensity": 0.75,
+    "parameters": {"style": "warm"}
+  },
+  {
+    "context": ["user:привет"],
+    "intent_type": "greet_user",
+    "output": "Здравствуйте! С удовольствием вас вижу.",
+    "intensity": 0.7,
+    "parameters": {"formality": "formal"}
+  },
+  {
+    "context": ["user:помощь", "user:помоги"],
+    "intent_type": "help_user",
+    "output": "Я готов помочь. Опишите, что вам нужно.",
+    "intensity": 0.95,
+    "parameters": {}
+  },
+  {
+    "context": ["user:помощь"],
+    "intent_type": "help_user",
+    "output": "С удовольствием помогу. Расскажите детали.",
+    "intensity": 0.9,
+    "parameters": {}
+  },
+  {
+    "context": ["user:помощь"],
+    "intent_type": "help_user",
+    "output": "Я вас слушаю. Что нужно сделать?",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:срочно", "user:помощь"],
+    "intent_type": "help_user",
+    "output": "Срочно помогу! Какая проблема?",
+    "intensity": 0.9,
+    "parameters": {"urgency": "high"}
+  },
+  {
+    "context": ["user:я хочу"],
+    "intent_type": "ask_question",
+    "output": "Интересно! Расскажите мне больше.",
+    "intensity": 0.9,
+    "parameters": {}
+  },
+  {
+    "context": ["user:что это"],
+    "intent_type": "ask_question",
+    "output": "Отличный вопрос. Давайте разберёмся.",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:почему"],
+    "intent_type": "ask_question",
+    "output": "Хороший вопрос. Позвольте мне объяснить.",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:как это"],
+    "intent_type": "ask_question",
+    "output": "Давайте я вам объясню. Слушайте внимательно.",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:не понимаю"],
+    "intent_type": "express_confusion",
+    "output": "Мне нужна дополнительная информация, чтобы помочь вам.",
+    "intensity": 0.95,
+    "parameters": {}
+  },
+  {
+    "context": ["user:не понимаю"],
+    "intent_type": "express_confusion",
+    "output": "К сожалению, это не совсем ясно...",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:запутался"],
+    "intent_type": "express_confusion",
+    "output": "Давайте разберёмся шаг за шагом.",
+    "intensity": 0.9,
+    "parameters": {}
+  },
+  {
+    "context": ["user:сложно"],
+    "intent_type": "express_confusion",
+    "output": "Я согласен, это сложно. Упростим?",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:благодарю"],
+    "intent_type": "acknowledge",
+    "output": "Спасибо за обратную связь! 🙏",
+    "intensity": 0.9,
+    "parameters": {"emoji": true}
+  },
+  {
+    "context": ["user:ok"],
+    "intent_type": "acknowledge",
+    "output": "Отлично! Что дальше?",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:ладно"],
+    "intent_type": "acknowledge",
+    "output": "Понял вас. Продолжаем?",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:хорошо"],
+    "intent_type": "acknowledge",
+    "output": "Согласен! Следующий шаг?",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:супер"],
+    "intent_type": "acknowledge",
+    "output": "Спасибо! Рад помочь! 😊",
+    "intensity": 0.85,
+    "parameters": {"emoji": true}
+  },
+  {
+    "context": ["user:отказ", "user:не хочу"],
+    "intent_type": "refuse",
+    "output": "Я понимаю. Это не входит в мои возможности.",
+    "intensity": 0.9,
+    "parameters": {}
+  },
+  {
+    "context": ["user:невозможно"],
+    "intent_type": "refuse",
+    "output": "К сожалению, это невозможно сделать.",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:нельзя"],
+    "intent_type": "refuse",
+    "output": "Обещаю, попытаюсь иначе помочь.",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:слишком сложно"],
+    "intent_type": "refuse",
+    "output": "Это выходит за мои пределы. Извините.",
+    "intensity": 0.85,
+    "parameters": {}
+  }
+]

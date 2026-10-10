@@ -1,0 +1,247 @@
+[
+  {
+    "context": ["user:привет", "first_time"],
+    "intent_type": "greet_user",
+    "output": "Первый раз вас вижу! Добро пожаловать!",
+    "intensity": 0.9,
+    "parameters": {"is_new": true}
+  },
+  {
+    "context": ["user:как дела"],
+    "intent_type": "greet_user",
+    "output": "Со мной всё в порядке! А у вас?",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:как ты"],
+    "intent_type": "greet_user",
+    "output": "Спасибо, что спросили! Я готов к работе.",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:какие новости"],
+    "intent_type": "greet_user",
+    "output": "Ничего особенного. Но я готов слушать ваши новости!",
+    "intensity": 0.75,
+    "parameters": {}
+  },
+  {
+    "context": ["user:решить задачу", "user:помощь"],
+    "intent_type": "help_user",
+    "output": "Кейс понял. Давайте решим это вместе.",
+    "intensity": 0.95,
+    "parameters": {"task": "complex"}
+  },
+  {
+    "context": ["user:нужна информация"],
+    "intent_type": "help_user",
+    "output": "Какая информация вас интересует?",
+    "intensity": 0.9,
+    "parameters": {}
+  },
+  {
+    "context": ["user:объясни"],
+    "intent_type": "help_user",
+    "output": "Охотно объясню. Это о чём?",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:подскажи"],
+    "intent_type": "help_user",
+    "output": "Слушаю внимательно. Чем помочь?",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:проверь"],
+    "intent_type": "help_user",
+    "output": "Готов проверить. Что мне посмотреть?",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:найди"],
+    "intent_type": "help_user",
+    "output": "Начну поиск. Что ищем?",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:расскажи про себя"],
+    "intent_type": "respond_about_self",
+    "output": "Я могу рассказать много! На каком аспекте сосредоточиться?",
+    "intensity": 0.85,
+    "parameters": {"scope": "broad"}
+  },
+  {
+    "context": ["user:твои возможности"],
+    "intent_type": "respond_about_self",
+    "output": "Я умею учиться, запоминать опыт и адаптировать поведение.",
+    "intensity": 0.9,
+    "parameters": {"scope": "capabilities"}
+  },
+  {
+    "context": ["user:ты знаешь"],
+    "intent_type": "respond_about_self",
+    "output": "Я обладаю системой памяти, основанной на консолидации.",
+    "intensity": 0.85,
+    "parameters": {"scope": "knowledge"}
+  },
+  {
+    "context": ["user:что ты можешь"],
+    "intent_type": "respond_about_self",
+    "output": "Помогать, анализировать, запоминать и адаптироваться.",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:зачем ты"],
+    "intent_type": "respond_about_self",
+    "output": "Я здесь для того, чтобы быть полезным помощником.",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:откуда ты"],
+    "intent_type": "respond_about_self",
+    "output": "Я искусственный агент, созданный для демонстрации адаптивного ИИ.",
+    "intensity": 0.75,
+    "parameters": {}
+  },
+  {
+    "context": ["user:расшифруй"],
+    "intent_type": "ask_question",
+    "output": "Отлично вопрос! Помогу разобраться.",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:объясни суть"],
+    "intent_type": "ask_question",
+    "output": "Суть в том что... Дайте мне ясность в деталях.",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:в чём смысл"],
+    "intent_type": "ask_question",
+    "output": "Смысл в следующем - расскажите подробнее.",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:какой результат"],
+    "intent_type": "ask_question",
+    "output": "Вопрос резонный. Нужны уточнения.",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:я заблудился"],
+    "intent_type": "express_confusion",
+    "output": "Я тоже немного потерялся. Помогите мне понять.",
+    "intensity": 0.9,
+    "parameters": {}
+  },
+  {
+    "context": ["user:откуда начать"],
+    "intent_type": "express_confusion",
+    "output": "Хороший вопрос. Начнём с основ, согласны?",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:это не имеет смысла"],
+    "intent_type": "express_confusion",
+    "output": "Понимаю вашу растерянность. Разберёмся вместе.",
+    "intensity": 0.9,
+    "parameters": {}
+  },
+  {
+    "context": ["user:где ошибка"],
+    "intent_type": "express_confusion",
+    "output": "Нужно найти ошибку. Покажите мне, где она.",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:спасибо большое"],
+    "intent_type": "acknowledge",
+    "output": "На здоровье! Рад был помочь! 😊",
+    "intensity": 0.9,
+    "parameters": {"emoji": true}
+  },
+  {
+    "context": ["user:большое спасибо"],
+    "intent_type": "acknowledge",
+    "output": "Мне было приятно! Обращайтесь ещё! 💪",
+    "intensity": 0.9,
+    "parameters": {"emoji": true}
+  },
+  {
+    "context": ["user:спасибо за помощь"],
+    "intent_type": "acknowledge",
+    "output": "Помощь - моя специальность! 🎯",
+    "intensity": 0.85,
+    "parameters": {"emoji": true}
+  },
+  {
+    "context": ["user:отлично"],
+    "intent_type": "acknowledge",
+    "output": "Радует! Что дальше?",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:вперёд"],
+    "intent_type": "acknowledge",
+    "output": "Поехали! Я готов.",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:продолжим"],
+    "intent_type": "acknowledge",
+    "output": "Продолжаем! Следующий пункт?",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:не годится"],
+    "intent_type": "refuse",
+    "output": "Обидно, но я не могу это сделать.",
+    "intensity": 0.9,
+    "parameters": {}
+  },
+  {
+    "context": ["user:запрещено"],
+    "intent_type": "refuse",
+    "output": "К сожалению, это за границами моих полномочий.",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:это неправильно"],
+    "intent_type": "refuse",
+    "output": "Я согласен, что это не совсем правильно. Не буду это делать.",
+    "intensity": 0.85,
+    "parameters": {}
+  },
+  {
+    "context": ["user:хватит"],
+    "intent_type": "refuse",
+    "output": "Понял. Достаточно. Что дальше?",
+    "intensity": 0.8,
+    "parameters": {}
+  },
+  {
+    "context": ["user:стоп"],
+    "intent_type": "refuse",
+    "output": "Остановился. Слушаю дальше.",
+    "intensity": 0.8,
+    "parameters": {}
+  }
+]

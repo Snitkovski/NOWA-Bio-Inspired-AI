@@ -1,0 +1,233 @@
+{
+  "entries": [
+    {
+      "timestamp": 6698.600000006838,
+      "chain_name": "hyperactivity",
+      "interaction_type": null,
+      "affect_before": {},
+      "affect_after": {
+        "valence": 0.28236092454804823,
+        "arousal": 0.8278409580605367,
+        "dominance": 1.9186880799910827e-05,
+        "stress": 0.8849615083045296,
+        "trust": 2.398360099988768e-05,
+        "curiosity": 0.5472813709287208,
+        "stability": 0.6151379979526889,
+        "attachment": 1.4390160599932485e-05,
+        "hunger": 0.0010686298616326062,
+        "tiredness": 0.03461111111111114,
+        "boredom": 0.9971267295650299
+      },
+      "affect_delta": {},
+      "success": true,
+      "reward": 0.15
+    },
+    {
+      "timestamp": 6765.700000007082,
+      "chain_name": "social_contact",
+      "interaction_type": null,
+      "affect_before": {
+        "valence": 0.2804347639231645,
+        "arousal": 0.8312943057726887,
+        "dominance": 1.934808934949603e-05,
+        "stress": 0.8883857985881493,
+        "trust": 2.4185111686869185e-05,
+        "curiosity": 0.5391784359829521,
+        "stability": 0.6152636902123327,
+        "attachment": 1.4511067012121386e-05,
+        "hunger": 0.010158576868855395,
+        "tiredness": 0.03469444444444444,
+        "boredom": 0.9629231806025931
+      },
+      "affect_after": {
+        "valence": 0.39574041648981334,
+        "arousal": 0.8523477385793722,
+        "dominance": 1.929113816744041e-05,
+        "stress": 0.8200459088786136,
+        "trust": 2.411392270929961e-05,
+        "curiosity": 0.25825643578528074,
+        "stability": 0.7048732394080263,
+        "attachment": 1.4468353625579681e-05,
+        "hunger": 0.47141014680671345,
+        "tiredness": 0.0392708333333313,
+        "boredom": 0.0
+      },
+      "affect_delta": {
+        "valence": 0.11530565256664882,
+        "arousal": 0.02105343280668348,
+        "dominance": -5.695118205562274e-08,
+        "stress": -0.06833988970953564,
+        "trust": -7.118897756957501e-08,
+        "curiosity": -0.2809220001976714,
+        "stability": 0.08960954919569353,
+        "attachment": -4.271338654170435e-08,
+        "hunger": 0.46125156993785804,
+        "tiredness": 0.004576388888886861,
+        "boredom": -0.9629231806025931
+      },
+      "success": true,
+      "reward": 0.026621009795444232
+    },
+    {
+      "timestamp": 6951.400000007758,
+      "chain_name": "bedtime_routine",
+      "interaction_type": null,
+      "affect_before": {
+        "valence": 0.4041145092339503,
+        "arousal": 0.8530312264875987,
+        "dominance": 1.9175180578480197e-05,
+        "stress": 0.8214263562149872,
+        "trust": 2.3968975723099354e-05,
+        "curiosity": 0.24762479867779613,
+        "stability": 0.7098204152704427,
+        "attachment": 1.4381385433859522e-05,
+        "hunger": 0.5154997336000786,
+        "tiredness": 0.039708333333331104,
+        "boredom": 0.0
+      },
+      "affect_after": {
+        "valence": 0.47590712779955696,
+        "arousal": 0.5452992155904897,
+        "dominance": 2.484808944658736e-05,
+        "stress": 0.6411049730178177,
+        "trust": 3.106011180823302e-05,
+        "curiosity": 0.2906415487376337,
+        "stability": 0.8599020267993559,
+        "attachment": 1.863606708493971e-05,
+        "hunger": 0.0,
+        "tiredness": 0.014791666666663032,
+        "boredom": 0.0
+      },
+      "affect_delta": {
+        "valence": 0.07179261856560665,
+        "arousal": -0.307732010897109,
+        "dominance": 5.672908868107164e-06,
+        "stress": -0.1803213831971695,
+        "trust": 7.0911360851336644e-06,
+        "curiosity": 0.04301675005983757,
+        "stability": 0.1500816115289132,
+        "attachment": 4.254681651080189e-06,
+        "hunger": -0.5154997336000786,
+        "tiredness": -0.024916666666668072,
+        "boredom": 0.0
+      },
+      "success": true,
+      "reward": 0.3418274947096948
+    }
+  ],
+  "chain_preferences": {
+    "hyperactivity": {
+      "chain_name": "hyperactivity",
+      "success_count": 3,
+      "total_attempts": 3,
+      "average_reward": 0.12805275650737158,
+      "success_rate": 1.0,
+      "preference_weight": 0.7630769230769232
+    },
+    "activity_burst": {
+      "chain_name": "activity_burst",
+      "success_count": 1,
+      "total_attempts": 1,
+      "average_reward": 0.18728962196386875,
+      "success_rate": 1.0,
+      "preference_weight": 0.7854545454545456
+    },
+    "morning_awakening": {
+      "chain_name": "morning_awakening",
+      "success_count": 5,
+      "total_attempts": 5,
+      "average_reward": 0.048636599442956244,
+      "success_rate": 1.0,
+      "preference_weight": 0.7466666666666667
+    },
+    "social_contact": {
+      "chain_name": "social_contact",
+      "success_count": 6,
+      "total_attempts": 6,
+      "average_reward": 0.04923322812789554,
+      "success_rate": 1.0,
+      "preference_weight": 0.7400000000000001
+    },
+    "extreme_fear": {
+      "chain_name": "extreme_fear",
+      "success_count": 2,
+      "total_attempts": 2,
+      "average_reward": 0.05945051511910476,
+      "success_rate": 1.0,
+      "preference_weight": 0.7733333333333334
+    },
+    "mild_fear": {
+      "chain_name": "mild_fear",
+      "success_count": 3,
+      "total_attempts": 3,
+      "average_reward": 0.047459883984196385,
+      "success_rate": 1.0,
+      "preference_weight": 0.7630769230769232
+    },
+    "eating_and_grooming": {
+      "chain_name": "eating_and_grooming",
+      "success_count": 3,
+      "total_attempts": 3,
+      "average_reward": 0.15526344655118166,
+      "success_rate": 1.0,
+      "preference_weight": 0.7630769230769232
+    },
+    "bedtime_routine": {
+      "chain_name": "bedtime_routine",
+      "success_count": 3,
+      "total_attempts": 3,
+      "average_reward": 0.3522318074997518,
+      "success_rate": 1.0,
+      "preference_weight": 0.7630769230769232
+    },
+    "full_grooming": {
+      "chain_name": "full_grooming",
+      "success_count": 2,
+      "total_attempts": 2,
+      "average_reward": 0.04360082910696915,
+      "success_rate": 1.0,
+      "preference_weight": 0.7733333333333334
+    },
+    "territorial_patrol": {
+      "chain_name": "territorial_patrol",
+      "success_count": 2,
+      "total_attempts": 2,
+      "average_reward": 0.044501602594548474,
+      "success_rate": 1.0,
+      "preference_weight": 0.7733333333333334
+    },
+    "dust_bathing": {
+      "chain_name": "dust_bathing",
+      "success_count": 1,
+      "total_attempts": 1,
+      "average_reward": 0.2527991142574738,
+      "success_rate": 1.0,
+      "preference_weight": 0.7854545454545456
+    },
+    "exploration": {
+      "chain_name": "exploration",
+      "success_count": 1,
+      "total_attempts": 1,
+      "average_reward": 0.04537173076685352,
+      "success_rate": 1.0,
+      "preference_weight": 0.7854545454545456
+    },
+    "nesting": {
+      "chain_name": "nesting",
+      "success_count": 1,
+      "total_attempts": 1,
+      "average_reward": 0.037872091885344836,
+      "success_rate": 1.0,
+      "preference_weight": 0.7854545454545456
+    },
+    "chronic_stress": {
+      "chain_name": "chronic_stress",
+      "success_count": 0,
+      "total_attempts": 1,
+      "average_reward": -0.4,
+      "success_rate": 0.0,
+      "preference_weight": 0.1963636363636364
+    }
+  },
+  "interaction_preferences": {}
+}

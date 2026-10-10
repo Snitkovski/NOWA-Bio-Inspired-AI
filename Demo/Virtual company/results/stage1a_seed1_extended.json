@@ -1,0 +1,6802 @@
+[
+  {
+    "quarter_index": 1,
+    "fitness": {
+      "cost_efficiency": 0.665776739574208,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.4818181818181818,
+      "decision_consistency": 0.9,
+      "reaction_to_risk_events": 0.5975609756097561
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6658,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4818,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.5976,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 79687.34,
+      "spent_ratio": 0.2031,
+      "bankrupt": false,
+      "total_stockout_units": 7278.62,
+      "total_holding_cost": 2780.09,
+      "n_orders_placed": 22,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 21.87915819999762
+  },
+  {
+    "quarter_index": 2,
+    "fitness": {
+      "cost_efficiency": 0.5674519656703889,
+      "stockout_avoidance": 0.33274968467085664,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.7310344827586207,
+      "decision_consistency": 0.55,
+      "reaction_to_risk_events": 0.6911764705882353
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.5675,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.3327,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.731,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.55,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6912,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 70785.3,
+      "spent_ratio": 0.2921,
+      "bankrupt": false,
+      "total_stockout_units": 3448.35,
+      "total_holding_cost": 4754.68,
+      "n_orders_placed": 29,
+      "n_orders_delivered": 27,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 17.35310509998817
+  },
+  {
+    "quarter_index": 3,
+    "fitness": {
+      "cost_efficiency": 0.8189921579166543,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.5615384615384615,
+      "decision_consistency": 0.75,
+      "reaction_to_risk_events": 0.6216216216216216
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.819,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.5615,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.75,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6216,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74627.0,
+      "spent_ratio": 0.2537,
+      "bankrupt": false,
+      "total_stockout_units": 5571.16,
+      "total_holding_cost": 4432.08,
+      "n_orders_placed": 26,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 27.73077020002529
+  },
+  {
+    "quarter_index": 4,
+    "fitness": {
+      "cost_efficiency": 0.9173896618490831,
+      "stockout_avoidance": 0.17813524203067732,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.6029411764705882
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9174,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.1781,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6029,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 71083.27,
+      "spent_ratio": 0.2892,
+      "bankrupt": false,
+      "total_stockout_units": 4755.34,
+      "total_holding_cost": 4692.49,
+      "n_orders_placed": 29,
+      "n_orders_delivered": 23,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 21.065356699982658
+  },
+  {
+    "quarter_index": 5,
+    "fitness": {
+      "cost_efficiency": 0.3993914125133836,
+      "stockout_avoidance": 0.9128459085643813,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.46,
+      "decision_consistency": 0.9,
+      "reaction_to_risk_events": 0.9545454545454546
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.3994,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9128,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.46,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9545,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74780.24,
+      "spent_ratio": 0.2522,
+      "bankrupt": false,
+      "total_stockout_units": 352.73,
+      "total_holding_cost": 4332.86,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 8.927102000045124
+  },
+  {
+    "quarter_index": 6,
+    "fitness": {
+      "cost_efficiency": 0.6660033267898329,
+      "stockout_avoidance": 0.8379368410822614,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.6181818181818182,
+      "decision_consistency": 0.6333333333333333,
+      "reaction_to_risk_events": 0.8518518518518519
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.666,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.8379,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.6182,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8519,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 64977.87,
+      "spent_ratio": 0.3502,
+      "bankrupt": false,
+      "total_stockout_units": 880.18,
+      "total_holding_cost": 6791.47,
+      "n_orders_placed": 33,
+      "n_orders_delivered": 31,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 9.677065399999265
+  },
+  {
+    "quarter_index": 7,
+    "fitness": {
+      "cost_efficiency": 0.6862524871519031,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.4927536231884058
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6863,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.4928,
+        "threshold": 0.5,
+        "passed": false,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 77695.19,
+      "spent_ratio": 0.223,
+      "bankrupt": false,
+      "total_stockout_units": 5983.76,
+      "total_holding_cost": 3261.99,
+      "n_orders_placed": 26,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 27.088684500020463
+  },
+  {
+    "quarter_index": 8,
+    "fitness": {
+      "cost_efficiency": 0.6759066220721557,
+      "stockout_avoidance": 0.9747466520317749,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.5125,
+      "decision_consistency": 0.8083333333333333,
+      "reaction_to_risk_events": 0.7222222222222222
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6759,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9747,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.5125,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.8083,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7222,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 72004.13,
+      "spent_ratio": 0.28,
+      "bankrupt": false,
+      "total_stockout_units": 114.95,
+      "total_holding_cost": 5000.04,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 10.767947299988009
+  },
+  {
+    "quarter_index": 9,
+    "fitness": {
+      "cost_efficiency": 0.8103439821289846,
+      "stockout_avoidance": 0.9946357708391032,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.28484848484848485,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.75
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8103,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9946,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2848,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.75,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 67159.86,
+      "spent_ratio": 0.3284,
+      "bankrupt": false,
+      "total_stockout_units": 28.4,
+      "total_holding_cost": 5933.94,
+      "n_orders_placed": 33,
+      "n_orders_delivered": 31,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 6.821035199973267
+  },
+  {
+    "quarter_index": 10,
+    "fitness": {
+      "cost_efficiency": 0.834317726005564,
+      "stockout_avoidance": 0.20402032100810508,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.4866666666666667,
+      "decision_consistency": 0.6666666666666666,
+      "reaction_to_risk_events": 0.8289473684210527
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8343,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.204,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4867,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8289,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 63303.1,
+      "spent_ratio": 0.367,
+      "bankrupt": false,
+      "total_stockout_units": 5422.59,
+      "total_holding_cost": 5803.96,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 25,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 9.28709820000222
+  },
+  {
+    "quarter_index": 11,
+    "fitness": {
+      "cost_efficiency": 0.8834920123602943,
+      "stockout_avoidance": 0.4809919862783688,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.75
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8835,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.481,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.75,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73110.35,
+      "spent_ratio": 0.2689,
+      "bankrupt": false,
+      "total_stockout_units": 2701.96,
+      "total_holding_cost": 4041.35,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 29,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 19.154100899992045
+  },
+  {
+    "quarter_index": 12,
+    "fitness": {
+      "cost_efficiency": 0.897386820962312,
+      "stockout_avoidance": 0.835133011969883,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.8363636363636363
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8974,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.8351,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8364,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 80471.82,
+      "spent_ratio": 0.1953,
+      "bankrupt": false,
+      "total_stockout_units": 619.09,
+      "total_holding_cost": 3241.27,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 29,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 7.739533900050446
+  },
+  {
+    "quarter_index": 13,
+    "fitness": {
+      "cost_efficiency": 0.8402432819221048,
+      "stockout_avoidance": 0.3763889567828982,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.5972222222222222
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8402,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.3764,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.5972,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 78166.42,
+      "spent_ratio": 0.2183,
+      "bankrupt": false,
+      "total_stockout_units": 2482.87,
+      "total_holding_cost": 3676.36,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 28,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 9.72101290000137
+  },
+  {
+    "quarter_index": 14,
+    "fitness": {
+      "cost_efficiency": 0.8567030467908519,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.6666666666666666
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8567,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6667,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 80727.09,
+      "spent_ratio": 0.1927,
+      "bankrupt": false,
+      "total_stockout_units": 8668.7,
+      "total_holding_cost": 2806.74,
+      "n_orders_placed": 23,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 20.991107500041835
+  },
+  {
+    "quarter_index": 15,
+    "fitness": {
+      "cost_efficiency": 0.9143699368304845,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2897435897435897,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.8734177215189873
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9144,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2897,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8734,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 72782.54,
+      "spent_ratio": 0.2722,
+      "bankrupt": false,
+      "total_stockout_units": 7938.0,
+      "total_holding_cost": 4874.77,
+      "n_orders_placed": 26,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 3
+    },
+    "processing_time_s": 17.954805300047155
+  },
+  {
+    "quarter_index": 16,
+    "fitness": {
+      "cost_efficiency": 0.9118714572484896,
+      "stockout_avoidance": 0.009701592295967343,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.44285714285714284,
+      "decision_consistency": 0.9333333333333333,
+      "reaction_to_risk_events": 0.6527777777777778
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9119,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0097,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4429,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6528,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76925.38,
+      "spent_ratio": 0.2307,
+      "bankrupt": false,
+      "total_stockout_units": 4770.72,
+      "total_holding_cost": 3289.49,
+      "n_orders_placed": 28,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 20.648505499993917
+  },
+  {
+    "quarter_index": 17,
+    "fitness": {
+      "cost_efficiency": 0.7274222870535283,
+      "stockout_avoidance": 0.09554948474364955,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.7887323943661971
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7274,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0955,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7887,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76105.38,
+      "spent_ratio": 0.2389,
+      "bankrupt": false,
+      "total_stockout_units": 4258.57,
+      "total_holding_cost": 3578.64,
+      "n_orders_placed": 28,
+      "n_orders_delivered": 25,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 16.47640970000066
+  },
+  {
+    "quarter_index": 18,
+    "fitness": {
+      "cost_efficiency": 0.4565169114438281,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.5692307692307692
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.4565,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.5692,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 77234.33,
+      "spent_ratio": 0.2277,
+      "bankrupt": false,
+      "total_stockout_units": 4358.7,
+      "total_holding_cost": 2712.42,
+      "n_orders_placed": 28,
+      "n_orders_delivered": 22,
+      "n_suppliers_defaulted": 3
+    },
+    "processing_time_s": 14.489888999960385
+  },
+  {
+    "quarter_index": 19,
+    "fitness": {
+      "cost_efficiency": 0.6916880408125368,
+      "stockout_avoidance": 0.9876230689189811,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.7
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6917,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9876,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74006.23,
+      "spent_ratio": 0.2599,
+      "bankrupt": false,
+      "total_stockout_units": 53.78,
+      "total_holding_cost": 5108.62,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 13.368134499993175
+  },
+  {
+    "quarter_index": 20,
+    "fitness": {
+      "cost_efficiency": 0.9001350273658132,
+      "stockout_avoidance": 0.5983893071922315,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.44313725490196076,
+      "decision_consistency": 0.7,
+      "reaction_to_risk_events": 0.8823529411764706
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9001,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.5984,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4431,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.7,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8824,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 67906.66,
+      "spent_ratio": 0.3209,
+      "bankrupt": false,
+      "total_stockout_units": 2227.1,
+      "total_holding_cost": 5082.65,
+      "n_orders_placed": 34,
+      "n_orders_delivered": 26,
+      "n_suppliers_defaulted": 3
+    },
+    "processing_time_s": 15.517936299962457
+  },
+  {
+    "quarter_index": 21,
+    "fitness": {
+      "cost_efficiency": 0.9298833642122822,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.6923076923076923
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9299,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6923,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76500.4,
+      "spent_ratio": 0.235,
+      "bankrupt": false,
+      "total_stockout_units": 6971.43,
+      "total_holding_cost": 4260.35,
+      "n_orders_placed": 25,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 14.967571299988776
+  },
+  {
+    "quarter_index": 22,
+    "fitness": {
+      "cost_efficiency": 0.5993409379813239,
+      "stockout_avoidance": 0.7158485042565719,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.9516129032258065
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.5993,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.7158,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9516,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 65900.36,
+      "spent_ratio": 0.341,
+      "bankrupt": false,
+      "total_stockout_units": 1618.9,
+      "total_holding_cost": 5512.75,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 29,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 17.57724239997333
+  },
+  {
+    "quarter_index": 23,
+    "fitness": {
+      "cost_efficiency": 0.8374303295495864,
+      "stockout_avoidance": 1.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.6216216216216216
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8374,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 1.0,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6216,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73782.39,
+      "spent_ratio": 0.2622,
+      "bankrupt": false,
+      "total_stockout_units": 0.0,
+      "total_holding_cost": 6010.75,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 24.11732010002015
+  },
+  {
+    "quarter_index": 24,
+    "fitness": {
+      "cost_efficiency": 0.966242007480867,
+      "stockout_avoidance": 0.2157811275524243,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.8055555555555556
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9662,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.2158,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8056,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 69079.65,
+      "spent_ratio": 0.3092,
+      "bankrupt": false,
+      "total_stockout_units": 4754.72,
+      "total_holding_cost": 4294.69,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 25,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 22.240923100034706
+  },
+  {
+    "quarter_index": 25,
+    "fitness": {
+      "cost_efficiency": 0.852912099033253,
+      "stockout_avoidance": 0.08978629072127953,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.6231884057971014
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8529,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0898,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6232,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 79784.6,
+      "spent_ratio": 0.2022,
+      "bankrupt": false,
+      "total_stockout_units": 3548.78,
+      "total_holding_cost": 3205.78,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 23,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 36.805351999995764
+  },
+  {
+    "quarter_index": 26,
+    "fitness": {
+      "cost_efficiency": 0.8480629059106584,
+      "stockout_avoidance": 0.9185130244290352,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.8260869565217391
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8481,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9185,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8261,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 60816.5,
+      "spent_ratio": 0.3918,
+      "bankrupt": false,
+      "total_stockout_units": 551.95,
+      "total_holding_cost": 6852.48,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 45.414200600003824
+  },
+  {
+    "quarter_index": 27,
+    "fitness": {
+      "cost_efficiency": 0.9175988413406952,
+      "stockout_avoidance": 0.44779320248055976,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.8888888888888888
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9176,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.4478,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8889,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 78500.87,
+      "spent_ratio": 0.215,
+      "bankrupt": false,
+      "total_stockout_units": 2343.88,
+      "total_holding_cost": 4906.37,
+      "n_orders_placed": 28,
+      "n_orders_delivered": 24,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 19.79228430002695
+  },
+  {
+    "quarter_index": 28,
+    "fitness": {
+      "cost_efficiency": 0.7594080294310629,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.5066666666666666,
+      "decision_consistency": 0.5833333333333333,
+      "reaction_to_risk_events": 0.5522388059701493
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7594,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.5067,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.5833,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.5522,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 88687.72,
+      "spent_ratio": 0.1131,
+      "bankrupt": false,
+      "total_stockout_units": 2896.59,
+      "total_holding_cost": 1835.35,
+      "n_orders_placed": 25,
+      "n_orders_delivered": 25,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 39.95690879999893
+  },
+  {
+    "quarter_index": 29,
+    "fitness": {
+      "cost_efficiency": 0.776358457332848,
+      "stockout_avoidance": 0.4239577962210733,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.66,
+      "decision_consistency": 0.6333333333333333,
+      "reaction_to_risk_events": 0.6545454545454545
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7764,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.424,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.66,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6545,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 69958.74,
+      "spent_ratio": 0.3004,
+      "bankrupt": false,
+      "total_stockout_units": 3096.0,
+      "total_holding_cost": 5496.97,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 25.862952600000426
+  },
+  {
+    "quarter_index": 30,
+    "fitness": {
+      "cost_efficiency": 0.31193030940867905,
+      "stockout_avoidance": 0.23901803087931617,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.6785714285714286,
+      "decision_consistency": 0.6,
+      "reaction_to_risk_events": 0.7662337662337663
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.3119,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.239,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.6786,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7662,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73974.2,
+      "spent_ratio": 0.2603,
+      "bankrupt": false,
+      "total_stockout_units": 3612.92,
+      "total_holding_cost": 3225.94,
+      "n_orders_placed": 28,
+      "n_orders_delivered": 25,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 31.268899400020018
+  },
+  {
+    "quarter_index": 31,
+    "fitness": {
+      "cost_efficiency": 0.6862254200259241,
+      "stockout_avoidance": 0.2275503351616217,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.7310344827586207,
+      "decision_consistency": 0.6333333333333333,
+      "reaction_to_risk_events": 0.8615384615384616
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6862,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.2276,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.731,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8615,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73862.96,
+      "spent_ratio": 0.2614,
+      "bankrupt": false,
+      "total_stockout_units": 3665.76,
+      "total_holding_cost": 3684.92,
+      "n_orders_placed": 29,
+      "n_orders_delivered": 22,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 35.922980699979234
+  },
+  {
+    "quarter_index": 32,
+    "fitness": {
+      "cost_efficiency": 0.4944542141735395,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.6000000000000001,
+      "decision_consistency": 0.8166666666666667,
+      "reaction_to_risk_events": 0.6233766233766234
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.4945,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.6,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.8167,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6234,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 78834.46,
+      "spent_ratio": 0.2117,
+      "bankrupt": false,
+      "total_stockout_units": 7196.76,
+      "total_holding_cost": 3288.84,
+      "n_orders_placed": 24,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 52.05275370000163
+  },
+  {
+    "quarter_index": 33,
+    "fitness": {
+      "cost_efficiency": 0.4403785881469451,
+      "stockout_avoidance": 0.2767539817159079,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.6689655172413793,
+      "decision_consistency": 0.6833333333333333,
+      "reaction_to_risk_events": 0.6578947368421053
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.4404,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.2768,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.669,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6833,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6579,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73106.93,
+      "spent_ratio": 0.2689,
+      "bankrupt": false,
+      "total_stockout_units": 3270.05,
+      "total_holding_cost": 4579.52,
+      "n_orders_placed": 29,
+      "n_orders_delivered": 27,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 33.88548810000066
+  },
+  {
+    "quarter_index": 34,
+    "fitness": {
+      "cost_efficiency": 0.6245534069342422,
+      "stockout_avoidance": 0.640487513100841,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.7310344827586207,
+      "decision_consistency": 0.6166666666666666,
+      "reaction_to_risk_events": 0.828125
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6246,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.6405,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.731,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6167,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8281,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 69668.53,
+      "spent_ratio": 0.3033,
+      "bankrupt": false,
+      "total_stockout_units": 1992.82,
+      "total_holding_cost": 5109.62,
+      "n_orders_placed": 29,
+      "n_orders_delivered": 28,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 23.389912700047716
+  },
+  {
+    "quarter_index": 35,
+    "fitness": {
+      "cost_efficiency": 0.48146088055829694,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.5714285714285714,
+      "decision_consistency": 0.7333333333333333,
+      "reaction_to_risk_events": 0.8292682926829268
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.4815,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.5714,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.7333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8293,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73433.5,
+      "spent_ratio": 0.2657,
+      "bankrupt": false,
+      "total_stockout_units": 4910.24,
+      "total_holding_cost": 4132.54,
+      "n_orders_placed": 28,
+      "n_orders_delivered": 23,
+      "n_suppliers_defaulted": 4
+    },
+    "processing_time_s": 33.94793690001825
+  },
+  {
+    "quarter_index": 36,
+    "fitness": {
+      "cost_efficiency": 0.8299256343496203,
+      "stockout_avoidance": 0.045720116417518164,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.6068965517241379,
+      "decision_consistency": 0.65,
+      "reaction_to_risk_events": 0.7887323943661971
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8299,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0457,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.6069,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.65,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7887,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 79083.22,
+      "spent_ratio": 0.2092,
+      "bankrupt": false,
+      "total_stockout_units": 3911.64,
+      "total_holding_cost": 3118.95,
+      "n_orders_placed": 29,
+      "n_orders_delivered": 22,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 28.186623999965377
+  },
+  {
+    "quarter_index": 37,
+    "fitness": {
+      "cost_efficiency": 0.807286609565008,
+      "stockout_avoidance": 0.7047848649523067,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.32666666666666666,
+      "decision_consistency": 0.9166666666666666,
+      "reaction_to_risk_events": 0.8135593220338984
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8073,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.7048,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.3267,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9167,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8136,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 68456.66,
+      "spent_ratio": 0.3154,
+      "bankrupt": false,
+      "total_stockout_units": 1610.35,
+      "total_holding_cost": 5388.05,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 28,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 22.12920500000473
+  },
+  {
+    "quarter_index": 38,
+    "fitness": {
+      "cost_efficiency": 0.9065308286917401,
+      "stockout_avoidance": 0.8073882465375642,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.48,
+      "decision_consistency": 0.85,
+      "reaction_to_risk_events": 0.8181818181818182
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9065,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.8074,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.48,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.85,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8182,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 67496.02,
+      "spent_ratio": 0.325,
+      "bankrupt": false,
+      "total_stockout_units": 1126.64,
+      "total_holding_cost": 6968.83,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 28,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 14.12276950001251
+  },
+  {
+    "quarter_index": 39,
+    "fitness": {
+      "cost_efficiency": 0.7858841231459981,
+      "stockout_avoidance": 0.5607122579550474,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2860215053763441,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.7777777777777778
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7859,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.5607,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.286,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7778,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 82700.57,
+      "spent_ratio": 0.173,
+      "bankrupt": false,
+      "total_stockout_units": 1368.27,
+      "total_holding_cost": 2621.77,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 28,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 16.820174099993892
+  },
+  {
+    "quarter_index": 40,
+    "fitness": {
+      "cost_efficiency": 0.7284433719628416,
+      "stockout_avoidance": 0.08258280153933273,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.28735632183908044,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.8271604938271605
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7284,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0826,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2874,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8272,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74028.73,
+      "spent_ratio": 0.2597,
+      "bankrupt": false,
+      "total_stockout_units": 4375.21,
+      "total_holding_cost": 3983.1,
+      "n_orders_placed": 29,
+      "n_orders_delivered": 26,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 27.747891300008632
+  },
+  {
+    "quarter_index": 41,
+    "fitness": {
+      "cost_efficiency": 0.8759094372073519,
+      "stockout_avoidance": 0.5593439038352318,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2860215053763441,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.9154929577464789
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8759,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.5593,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.286,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9155,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73678.48,
+      "spent_ratio": 0.2632,
+      "bankrupt": false,
+      "total_stockout_units": 2081.34,
+      "total_holding_cost": 3657.81,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 28,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 20.723597400006838
+  },
+  {
+    "quarter_index": 42,
+    "fitness": {
+      "cost_efficiency": 0.5950813371946363,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.5846153846153846,
+      "decision_consistency": 0.7166666666666666,
+      "reaction_to_risk_events": 0.7733333333333333
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.5951,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.5846,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.7167,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7733,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 70627.08,
+      "spent_ratio": 0.2937,
+      "bankrupt": false,
+      "total_stockout_units": 8437.03,
+      "total_holding_cost": 3847.77,
+      "n_orders_placed": 26,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 30.32359839999117
+  },
+  {
+    "quarter_index": 43,
+    "fitness": {
+      "cost_efficiency": 0.953810339220539,
+      "stockout_avoidance": 0.5648240373876816,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.6709677419354839,
+      "decision_consistency": 0.65,
+      "reaction_to_risk_events": 0.8363636363636363
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9538,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.5648,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.671,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.65,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8364,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 69008.88,
+      "spent_ratio": 0.3099,
+      "bankrupt": false,
+      "total_stockout_units": 2504.39,
+      "total_holding_cost": 5416.81,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 19.4107001000084
+  },
+  {
+    "quarter_index": 44,
+    "fitness": {
+      "cost_efficiency": 0.8545331750415969,
+      "stockout_avoidance": 0.9240620059658535,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.4774193548387097,
+      "decision_consistency": 0.8666666666666666,
+      "reaction_to_risk_events": 0.9361702127659575
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8545,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9241,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4774,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.8667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9362,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74286.96,
+      "spent_ratio": 0.2571,
+      "bankrupt": false,
+      "total_stockout_units": 348.39,
+      "total_holding_cost": 4473.18,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 31,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 8.54782300000079
+  },
+  {
+    "quarter_index": 45,
+    "fitness": {
+      "cost_efficiency": 0.7602390974620016,
+      "stockout_avoidance": 0.9559285663879279,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.4375,
+      "decision_consistency": 0.9416666666666667,
+      "reaction_to_risk_events": 0.8461538461538461
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7602,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9559,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4375,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9417,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8462,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74296.48,
+      "spent_ratio": 0.257,
+      "bankrupt": false,
+      "total_stockout_units": 196.24,
+      "total_holding_cost": 4066.55,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 31,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 7.458763800037559
+  },
+  {
+    "quarter_index": 46,
+    "fitness": {
+      "cost_efficiency": 0.7092354708954024,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.34848484848484845,
+      "decision_consistency": 0.8666666666666666,
+      "reaction_to_risk_events": 0.5714285714285714
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7092,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.3485,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.8667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.5714,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 78661.13,
+      "spent_ratio": 0.2134,
+      "bankrupt": false,
+      "total_stockout_units": 8655.65,
+      "total_holding_cost": 3514.55,
+      "n_orders_placed": 22,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 14.734292700013611
+  },
+  {
+    "quarter_index": 47,
+    "fitness": {
+      "cost_efficiency": 0.9022686642026232,
+      "stockout_avoidance": 0.8541150764722663,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.49375,
+      "decision_consistency": 0.8416666666666666,
+      "reaction_to_risk_events": 0.8163265306122449
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9023,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.8541,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4938,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.8417,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8163,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73687.88,
+      "spent_ratio": 0.2631,
+      "bankrupt": false,
+      "total_stockout_units": 636.01,
+      "total_holding_cost": 6180.22,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 29,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 9.890362199977972
+  },
+  {
+    "quarter_index": 48,
+    "fitness": {
+      "cost_efficiency": 0.7827231918510863,
+      "stockout_avoidance": 0.5274344476812222,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2866666666666667,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.8309859154929577
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7827,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.5274,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2867,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.831,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76509.71,
+      "spent_ratio": 0.2349,
+      "bankrupt": false,
+      "total_stockout_units": 2007.74,
+      "total_holding_cost": 3922.11,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 26,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 13.843061299994588
+  },
+  {
+    "quarter_index": 49,
+    "fitness": {
+      "cost_efficiency": 0.8281694695221455,
+      "stockout_avoidance": 0.8902579132525362,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.4375,
+      "decision_consistency": 0.9333333333333333,
+      "reaction_to_risk_events": 0.7543859649122807
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8282,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.8903,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4375,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7544,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 75239.97,
+      "spent_ratio": 0.2476,
+      "bankrupt": false,
+      "total_stockout_units": 458.47,
+      "total_holding_cost": 4534.23,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 14.300902399991173
+  },
+  {
+    "quarter_index": 50,
+    "fitness": {
+      "cost_efficiency": 0.6161612142077153,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.4888888888888889,
+      "decision_consistency": 0.6166666666666666,
+      "reaction_to_risk_events": 0.4461538461538462
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6162,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4889,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6167,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.4462,
+        "threshold": 0.5,
+        "passed": false,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 71236.4,
+      "spent_ratio": 0.2876,
+      "bankrupt": false,
+      "total_stockout_units": 6000.16,
+      "total_holding_cost": 4084.75,
+      "n_orders_placed": 27,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 11.717193000018597
+  },
+  {
+    "quarter_index": 51,
+    "fitness": {
+      "cost_efficiency": 0.9527327161942414,
+      "stockout_avoidance": 0.957724216565822,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2860215053763441,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.7948717948717948
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9527,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9577,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.286,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7949,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 70371.32,
+      "spent_ratio": 0.2963,
+      "bankrupt": false,
+      "total_stockout_units": 212.66,
+      "total_holding_cost": 7331.34,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 29,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 10.933075100008864
+  },
+  {
+    "quarter_index": 52,
+    "fitness": {
+      "cost_efficiency": 0.9357468801395069,
+      "stockout_avoidance": 0.7775811016128953,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2866666666666667,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.7222222222222222
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9357,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.7776,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2867,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7222,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 68614.27,
+      "spent_ratio": 0.3139,
+      "bankrupt": false,
+      "total_stockout_units": 1285.03,
+      "total_holding_cost": 6196.62,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 13.175801299978048
+  },
+  {
+    "quarter_index": 53,
+    "fitness": {
+      "cost_efficiency": 0.7710476876853861,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.6933333333333334
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.771,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6933,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76996.16,
+      "spent_ratio": 0.23,
+      "bankrupt": false,
+      "total_stockout_units": 8135.25,
+      "total_holding_cost": 3701.19,
+      "n_orders_placed": 24,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 28.27630319999298
+  },
+  {
+    "quarter_index": 54,
+    "fitness": {
+      "cost_efficiency": 0.5675008235275393,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.28809523809523807,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.7926829268292683
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.5675,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2881,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7927,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76002.37,
+      "spent_ratio": 0.24,
+      "bankrupt": false,
+      "total_stockout_units": 4910.51,
+      "total_holding_cost": 3058.82,
+      "n_orders_placed": 28,
+      "n_orders_delivered": 22,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 44.17282580002211
+  },
+  {
+    "quarter_index": 55,
+    "fitness": {
+      "cost_efficiency": 0.7232083599483902,
+      "stockout_avoidance": 0.17023614012019694,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.6571428571428571
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7232,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.1702,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6571,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 77526.65,
+      "spent_ratio": 0.2247,
+      "bankrupt": false,
+      "total_stockout_units": 3421.53,
+      "total_holding_cost": 3147.88,
+      "n_orders_placed": 29,
+      "n_orders_delivered": 24,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 36.52376680000452
+  },
+  {
+    "quarter_index": 56,
+    "fitness": {
+      "cost_efficiency": 0.6026464235523278,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.6973684210526315
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6026,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6974,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 77337.27,
+      "spent_ratio": 0.2266,
+      "bankrupt": false,
+      "total_stockout_units": 6267.61,
+      "total_holding_cost": 2658.66,
+      "n_orders_placed": 25,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 29.506930600036867
+  },
+  {
+    "quarter_index": 57,
+    "fitness": {
+      "cost_efficiency": 0.8926770749779058,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.7435897435897436
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8927,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7436,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 79752.7,
+      "spent_ratio": 0.2025,
+      "bankrupt": false,
+      "total_stockout_units": 5293.45,
+      "total_holding_cost": 3921.55,
+      "n_orders_placed": 25,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 34.134898699994665
+  },
+  {
+    "quarter_index": 58,
+    "fitness": {
+      "cost_efficiency": 0.9424973339446269,
+      "stockout_avoidance": 0.937179335304953,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.45625000000000004,
+      "decision_consistency": 0.9083333333333334,
+      "reaction_to_risk_events": 0.875
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9425,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9372,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4563,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9083,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.875,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 71439.88,
+      "spent_ratio": 0.2856,
+      "bankrupt": false,
+      "total_stockout_units": 312.93,
+      "total_holding_cost": 5620.79,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 27.961152800009586
+  },
+  {
+    "quarter_index": 59,
+    "fitness": {
+      "cost_efficiency": 0.943486308154538,
+      "stockout_avoidance": 0.5381937923163347,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.66,
+      "decision_consistency": 0.6666666666666666,
+      "reaction_to_risk_events": 0.9411764705882353
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9435,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.5382,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.66,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9412,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 68363.49,
+      "spent_ratio": 0.3164,
+      "bankrupt": false,
+      "total_stockout_units": 2694.5,
+      "total_holding_cost": 5791.64,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 26,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 28.678487299999688
+  },
+  {
+    "quarter_index": 60,
+    "fitness": {
+      "cost_efficiency": 0.983966988127404,
+      "stockout_avoidance": 0.9880731698020979,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.918918918918919
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.984,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9881,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9189,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74722.53,
+      "spent_ratio": 0.2528,
+      "bankrupt": false,
+      "total_stockout_units": 53.07,
+      "total_holding_cost": 4876.06,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 31,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 20.947989899956156
+  },
+  {
+    "quarter_index": 61,
+    "fitness": {
+      "cost_efficiency": 0.8421712678995876,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.5774647887323944
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8422,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.5775,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74717.48,
+      "spent_ratio": 0.2528,
+      "bankrupt": false,
+      "total_stockout_units": 8035.92,
+      "total_holding_cost": 3855.98,
+      "n_orders_placed": 25,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 29.225973599997815
+  },
+  {
+    "quarter_index": 62,
+    "fitness": {
+      "cost_efficiency": 0.9376992105352221,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2888888888888889,
+      "decision_consistency": 0.95,
+      "reaction_to_risk_events": 0.6973684210526315
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9377,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2889,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.95,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6974,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74977.48,
+      "spent_ratio": 0.2502,
+      "bankrupt": false,
+      "total_stockout_units": 6336.47,
+      "total_holding_cost": 3838.83,
+      "n_orders_placed": 27,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 29.3608561999863
+  },
+  {
+    "quarter_index": 63,
+    "fitness": {
+      "cost_efficiency": 0.9132602728347929,
+      "stockout_avoidance": 0.8114188042952142,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.47500000000000003,
+      "decision_consistency": 0.8666666666666666,
+      "reaction_to_risk_events": 0.9807692307692307
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9133,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.8114,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.475,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.8667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9808,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 72282.52,
+      "spent_ratio": 0.2772,
+      "bankrupt": false,
+      "total_stockout_units": 872.92,
+      "total_holding_cost": 5470.91,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 28,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 29.820919599966146
+  },
+  {
+    "quarter_index": 64,
+    "fitness": {
+      "cost_efficiency": 0.832801160443045,
+      "stockout_avoidance": 0.8304799997725327,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.46,
+      "decision_consistency": 0.9,
+      "reaction_to_risk_events": 0.7627118644067796
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8328,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.8305,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.46,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7627,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76361.34,
+      "spent_ratio": 0.2364,
+      "bankrupt": false,
+      "total_stockout_units": 723.5,
+      "total_holding_cost": 4432.91,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 29,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 49.155952299945056
+  },
+  {
+    "quarter_index": 65,
+    "fitness": {
+      "cost_efficiency": 0.7932767152824807,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.31282051282051276,
+      "decision_consistency": 0.9166666666666666,
+      "reaction_to_risk_events": 0.6944444444444444
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7933,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.3128,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9167,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6944,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76950.57,
+      "spent_ratio": 0.2305,
+      "bankrupt": false,
+      "total_stockout_units": 6404.97,
+      "total_holding_cost": 2894.25,
+      "n_orders_placed": 26,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 57.9690372000332
+  },
+  {
+    "quarter_index": 66,
+    "fitness": {
+      "cost_efficiency": 0.9765289934937037,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.5555555555555556
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9765,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.5556,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 80374.07,
+      "spent_ratio": 0.1963,
+      "bankrupt": false,
+      "total_stockout_units": 6753.83,
+      "total_holding_cost": 3659.48,
+      "n_orders_placed": 24,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 70.84909050003625
+  },
+  {
+    "quarter_index": 67,
+    "fitness": {
+      "cost_efficiency": 0.8390124040151612,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.448,
+      "decision_consistency": 0.9333333333333333,
+      "reaction_to_risk_events": 0.6578947368421053
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.839,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.448,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6579,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 80851.28,
+      "spent_ratio": 0.1915,
+      "bankrupt": false,
+      "total_stockout_units": 5490.25,
+      "total_holding_cost": 2646.04,
+      "n_orders_placed": 25,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 56.67779869999504
+  },
+  {
+    "quarter_index": 68,
+    "fitness": {
+      "cost_efficiency": 0.9589734559999813,
+      "stockout_avoidance": 0.9097308915459374,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.28484848484848485,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.875
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.959,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9097,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2848,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.875,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 63737.87,
+      "spent_ratio": 0.3626,
+      "bankrupt": false,
+      "total_stockout_units": 523.95,
+      "total_holding_cost": 7940.85,
+      "n_orders_placed": 33,
+      "n_orders_delivered": 31,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 54.72415359999286
+  },
+  {
+    "quarter_index": 69,
+    "fitness": {
+      "cost_efficiency": 0.8780915838157046,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.4444444444444445,
+      "decision_consistency": 0.9333333333333333,
+      "reaction_to_risk_events": 0.5714285714285714
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8781,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4444,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.5714,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76594.17,
+      "spent_ratio": 0.2341,
+      "bankrupt": false,
+      "total_stockout_units": 5893.51,
+      "total_holding_cost": 3027.02,
+      "n_orders_placed": 27,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 38.017739599978086
+  },
+  {
+    "quarter_index": 70,
+    "fitness": {
+      "cost_efficiency": 0.5152383552231378,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.47536231884057967,
+      "decision_consistency": 0.65,
+      "reaction_to_risk_events": 0.8023255813953488
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.5152,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4754,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.65,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8023,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 81836.22,
+      "spent_ratio": 0.1816,
+      "bankrupt": false,
+      "total_stockout_units": 6075.96,
+      "total_holding_cost": 3828.1,
+      "n_orders_placed": 23,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 39.975766799994744
+  },
+  {
+    "quarter_index": 71,
+    "fitness": {
+      "cost_efficiency": 0.859425980896526,
+      "stockout_avoidance": 0.6637262860283104,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2860215053763441,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.8461538461538461
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8594,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.6637,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.286,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8462,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 75029.9,
+      "spent_ratio": 0.2497,
+      "bankrupt": false,
+      "total_stockout_units": 1600.22,
+      "total_holding_cost": 3106.85,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 43.468391600006726
+  },
+  {
+    "quarter_index": 72,
+    "fitness": {
+      "cost_efficiency": 0.9810273417976522,
+      "stockout_avoidance": 0.5174447123854562,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2860215053763441,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.921875
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.981,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.5174,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.286,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9219,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76866.31,
+      "spent_ratio": 0.2313,
+      "bankrupt": false,
+      "total_stockout_units": 2062.85,
+      "total_holding_cost": 4083.53,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 27,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 34.356575099984184
+  },
+  {
+    "quarter_index": 73,
+    "fitness": {
+      "cost_efficiency": 0.7345925973633947,
+      "stockout_avoidance": 0.3731351344875615,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.46,
+      "decision_consistency": 0.9,
+      "reaction_to_risk_events": 0.8591549295774648
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7346,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.3731,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.46,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8592,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 78558.06,
+      "spent_ratio": 0.2144,
+      "bankrupt": false,
+      "total_stockout_units": 2451.3,
+      "total_holding_cost": 3347.14,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 27,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 32.166215499979444
+  },
+  {
+    "quarter_index": 74,
+    "fitness": {
+      "cost_efficiency": 0.7390935310352644,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.3866666666666666,
+      "decision_consistency": 0.8333333333333334,
+      "reaction_to_risk_events": 0.7333333333333333
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7391,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.3867,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.8333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7333,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74685.31,
+      "spent_ratio": 0.2531,
+      "bankrupt": false,
+      "total_stockout_units": 6184.53,
+      "total_holding_cost": 3495.95,
+      "n_orders_placed": 25,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 27.96031639998546
+  },
+  {
+    "quarter_index": 75,
+    "fitness": {
+      "cost_efficiency": 0.766702319152443,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.40512820512820513,
+      "decision_consistency": 0.8,
+      "reaction_to_risk_events": 0.7283950617283951
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4051,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.8,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7284,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 77065.68,
+      "spent_ratio": 0.2293,
+      "bankrupt": false,
+      "total_stockout_units": 5835.14,
+      "total_holding_cost": 3687.03,
+      "n_orders_placed": 26,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 31.065995900018606
+  },
+  {
+    "quarter_index": 76,
+    "fitness": {
+      "cost_efficiency": 0.6617232946237437,
+      "stockout_avoidance": 0.9480972270211494,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2860215053763441,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.8048780487804879
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6617,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9481,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.286,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8049,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73190.6,
+      "spent_ratio": 0.2681,
+      "bankrupt": false,
+      "total_stockout_units": 228.83,
+      "total_holding_cost": 4846.93,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 26.076885899994522
+  },
+  {
+    "quarter_index": 77,
+    "fitness": {
+      "cost_efficiency": 0.9445405441814128,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2888888888888889,
+      "decision_consistency": 0.95,
+      "reaction_to_risk_events": 0.7051282051282052
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9445,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2889,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.95,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7051,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 82161.94,
+      "spent_ratio": 0.1784,
+      "bankrupt": false,
+      "total_stockout_units": 4648.77,
+      "total_holding_cost": 2663.71,
+      "n_orders_placed": 27,
+      "n_orders_delivered": 20,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 38.67894439998781
+  },
+  {
+    "quarter_index": 78,
+    "fitness": {
+      "cost_efficiency": 0.8804928336779844,
+      "stockout_avoidance": 0.8522705586498667,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.28541666666666665,
+      "decision_consistency": 0.975,
+      "reaction_to_risk_events": 0.8163265306122449
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8805,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.8523,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2854,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.975,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8163,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 64684.93,
+      "spent_ratio": 0.3532,
+      "bankrupt": false,
+      "total_stockout_units": 868.45,
+      "total_holding_cost": 8116.01,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 45.706691900035366
+  },
+  {
+    "quarter_index": 79,
+    "fitness": {
+      "cost_efficiency": 0.5977289924071258,
+      "stockout_avoidance": 0.7486015641863486,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.9117647058823529
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.5977,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.7486,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9118,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 66412.35,
+      "spent_ratio": 0.3359,
+      "bankrupt": false,
+      "total_stockout_units": 1354.34,
+      "total_holding_cost": 4732.59,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 27,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 50.498069099965505
+  },
+  {
+    "quarter_index": 80,
+    "fitness": {
+      "cost_efficiency": 0.842206662755036,
+      "stockout_avoidance": 0.8161554800811502,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.88
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8422,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.8162,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.88,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 70115.02,
+      "spent_ratio": 0.2988,
+      "bankrupt": false,
+      "total_stockout_units": 925.67,
+      "total_holding_cost": 5566.41,
+      "n_orders_placed": 33,
+      "n_orders_delivered": 31,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 29.05198280001059
+  },
+  {
+    "quarter_index": 81,
+    "fitness": {
+      "cost_efficiency": 0.9485868553079623,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2888888888888889,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.8181818181818182
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9486,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2889,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8182,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 72523.75,
+      "spent_ratio": 0.2748,
+      "bankrupt": false,
+      "total_stockout_units": 6850.36,
+      "total_holding_cost": 4166.52,
+      "n_orders_placed": 27,
+      "n_orders_delivered": 22,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 30.041642900032457
+  },
+  {
+    "quarter_index": 82,
+    "fitness": {
+      "cost_efficiency": 0.9249074036375077,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.6438356164383562
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9249,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6438,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 77480.06,
+      "spent_ratio": 0.2252,
+      "bankrupt": false,
+      "total_stockout_units": 5119.42,
+      "total_holding_cost": 2909.27,
+      "n_orders_placed": 27,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 48.76909270003671
+  },
+  {
+    "quarter_index": 83,
+    "fitness": {
+      "cost_efficiency": 0.49884242288299696,
+      "stockout_avoidance": 0.7993139074257682,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.4967741935483871,
+      "decision_consistency": 0.8333333333333334,
+      "reaction_to_risk_events": 0.8444444444444444
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.4988,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.7993,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4968,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.8333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8444,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73627.17,
+      "spent_ratio": 0.2637,
+      "bankrupt": false,
+      "total_stockout_units": 872.83,
+      "total_holding_cost": 4233.83,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 28,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 27.796858599991538
+  },
+  {
+    "quarter_index": 84,
+    "fitness": {
+      "cost_efficiency": 0.34529064623958006,
+      "stockout_avoidance": 0.37679732019372847,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2866666666666667,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.7391304347826086
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.3453,
+        "threshold": 0.6,
+        "passed": false,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.3768,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2867,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7391,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 71382.89,
+      "spent_ratio": 0.2862,
+      "bankrupt": false,
+      "total_stockout_units": 2982.42,
+      "total_holding_cost": 3269.69,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 27,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 34.03235069999937
+  },
+  {
+    "quarter_index": 85,
+    "fitness": {
+      "cost_efficiency": 0.7300762965472993,
+      "stockout_avoidance": 0.9114734516242899,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.28541666666666665,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.8333333333333334
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7301,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9115,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2854,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8333,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 66307.59,
+      "spent_ratio": 0.3369,
+      "bankrupt": false,
+      "total_stockout_units": 478.42,
+      "total_holding_cost": 7100.84,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 34.034900500031654
+  },
+  {
+    "quarter_index": 86,
+    "fitness": {
+      "cost_efficiency": 0.9365250703951691,
+      "stockout_avoidance": 0.14281585733081448,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.28735632183908044,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.8243243243243243
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9365,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.1428,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.2874,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8243,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 74927.86,
+      "spent_ratio": 0.2507,
+      "bankrupt": false,
+      "total_stockout_units": 3975.53,
+      "total_holding_cost": 4620.89,
+      "n_orders_placed": 29,
+      "n_orders_delivered": 26,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 43.0018560999888
+  },
+  {
+    "quarter_index": 87,
+    "fitness": {
+      "cost_efficiency": 0.7579335296685336,
+      "stockout_avoidance": 0.4807429522425266,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.4666666666666667,
+      "decision_consistency": 0.6666666666666666,
+      "reaction_to_risk_events": 0.5882352941176471
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7579,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.4807,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4667,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.5882,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73127.61,
+      "spent_ratio": 0.2687,
+      "bankrupt": false,
+      "total_stockout_units": 2500.65,
+      "total_holding_cost": 4995.14,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 33.023409500019625
+  },
+  {
+    "quarter_index": 88,
+    "fitness": {
+      "cost_efficiency": 0.9472114462969855,
+      "stockout_avoidance": 1.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.8536585365853658
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9472,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 1.0,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.8537,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73320.78,
+      "spent_ratio": 0.2668,
+      "bankrupt": false,
+      "total_stockout_units": 0.0,
+      "total_holding_cost": 6269.18,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 28.616297199972905
+  },
+  {
+    "quarter_index": 89,
+    "fitness": {
+      "cost_efficiency": 0.9527106014056036,
+      "stockout_avoidance": 0.9343113900111957,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.9302325581395349
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9527,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9343,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9302,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 69674.07,
+      "spent_ratio": 0.3033,
+      "bankrupt": false,
+      "total_stockout_units": 347.8,
+      "total_holding_cost": 6299.4,
+      "n_orders_placed": 32,
+      "n_orders_delivered": 29,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 32.10438560001785
+  },
+  {
+    "quarter_index": 90,
+    "fitness": {
+      "cost_efficiency": 0.9418904836513758,
+      "stockout_avoidance": 0.9701816852552547,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2860215053763441,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.875
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9419,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9702,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.286,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.875,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 69993.03,
+      "spent_ratio": 0.3001,
+      "bankrupt": false,
+      "total_stockout_units": 149.18,
+      "total_holding_cost": 7402.02,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 28.301512600039132
+  },
+  {
+    "quarter_index": 91,
+    "fitness": {
+      "cost_efficiency": 0.8608587252446984,
+      "stockout_avoidance": 0.030182817421851138,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.47435897435897434,
+      "decision_consistency": 0.65,
+      "reaction_to_risk_events": 0.5396825396825397
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8609,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0302,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4744,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.65,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.5397,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 76763.49,
+      "spent_ratio": 0.2324,
+      "bankrupt": false,
+      "total_stockout_units": 4502.78,
+      "total_holding_cost": 4172.33,
+      "n_orders_placed": 26,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 35.24887539999327
+  },
+  {
+    "quarter_index": 92,
+    "fitness": {
+      "cost_efficiency": 0.7926750149036446,
+      "stockout_avoidance": 0.8765350659392825,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.44,
+      "decision_consistency": 0.9333333333333333,
+      "reaction_to_risk_events": 0.5869565217391305
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7927,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.8765,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.44,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.587,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73241.72,
+      "spent_ratio": 0.2676,
+      "bankrupt": false,
+      "total_stockout_units": 561.03,
+      "total_holding_cost": 5856.31,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 30,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 28.17669280001428
+  },
+  {
+    "quarter_index": 93,
+    "fitness": {
+      "cost_efficiency": 0.9576436797627621,
+      "stockout_avoidance": 0.8559644653152857,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2860215053763441,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.7636363636363637
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9576,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.856,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.286,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7636,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73543.48,
+      "spent_ratio": 0.2646,
+      "bankrupt": false,
+      "total_stockout_units": 675.82,
+      "total_holding_cost": 6061.03,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 29,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 28.830059100000653
+  },
+  {
+    "quarter_index": 94,
+    "fitness": {
+      "cost_efficiency": 0.7411713139719891,
+      "stockout_avoidance": 0.7256753248261492,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.46021505376344085,
+      "decision_consistency": 0.675,
+      "reaction_to_risk_events": 0.9344262295081968
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.7412,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.7257,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4602,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.675,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9344,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 70580.54,
+      "spent_ratio": 0.2942,
+      "bankrupt": false,
+      "total_stockout_units": 1487.7,
+      "total_holding_cost": 4035.25,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 29,
+      "n_suppliers_defaulted": 3
+    },
+    "processing_time_s": 33.82775680004852
+  },
+  {
+    "quarter_index": 95,
+    "fitness": {
+      "cost_efficiency": 0.8893367080141118,
+      "stockout_avoidance": 0.0,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.47435897435897434,
+      "decision_consistency": 0.65,
+      "reaction_to_risk_events": 0.7922077922077922
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8893,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.0,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.4744,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.65,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7922,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 75665.58,
+      "spent_ratio": 0.2433,
+      "bankrupt": false,
+      "total_stockout_units": 5623.25,
+      "total_holding_cost": 3744.37,
+      "n_orders_placed": 26,
+      "n_orders_delivered": 21,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 46.96428430004744
+  },
+  {
+    "quarter_index": 96,
+    "fitness": {
+      "cost_efficiency": 0.9337536096344043,
+      "stockout_avoidance": 0.34291391638714064,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.7285714285714285
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9338,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.3429,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.7286,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 67184.36,
+      "spent_ratio": 0.3282,
+      "bankrupt": false,
+      "total_stockout_units": 4166.56,
+      "total_holding_cost": 4427.7,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 26,
+      "n_suppliers_defaulted": 0
+    },
+    "processing_time_s": 42.37024640000891
+  },
+  {
+    "quarter_index": 97,
+    "fitness": {
+      "cost_efficiency": 0.8846107243539467,
+      "stockout_avoidance": 0.28919833017060537,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.6275862068965518,
+      "decision_consistency": 0.6333333333333333,
+      "reaction_to_risk_events": 0.640625
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.8846,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.2892,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.6276,
+        "threshold": 0.4,
+        "passed": true,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.6333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6406,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 71326.7,
+      "spent_ratio": 0.2867,
+      "bankrupt": false,
+      "total_stockout_units": 4011.67,
+      "total_holding_cost": 4450.58,
+      "n_orders_placed": 29,
+      "n_orders_delivered": 22,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 20.611545199993998
+  },
+  {
+    "quarter_index": 98,
+    "fitness": {
+      "cost_efficiency": 0.9673496129976147,
+      "stockout_avoidance": 0.9409335510315155,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.30196078431372547,
+      "decision_consistency": 0.9333333333333333,
+      "reaction_to_risk_events": 0.9767441860465116
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.9673,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.9409,
+        "threshold": 0.85,
+        "passed": true,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.302,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9333,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.9767,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": true,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 71748.7,
+      "spent_ratio": 0.2825,
+      "bankrupt": false,
+      "total_stockout_units": 274.85,
+      "total_holding_cost": 5292.65,
+      "n_orders_placed": 34,
+      "n_orders_delivered": 31,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 21.64674759999616
+  },
+  {
+    "quarter_index": 99,
+    "fitness": {
+      "cost_efficiency": 0.6808935346412128,
+      "stockout_avoidance": 0.49892124320752074,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.13333333333333333,
+      "decision_consistency": 1.0,
+      "reaction_to_risk_events": 0.6666666666666666
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.6809,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.4989,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.1333,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 1.0,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.6667,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 68123.98,
+      "spent_ratio": 0.3188,
+      "bankrupt": false,
+      "total_stockout_units": 2807.62,
+      "total_holding_cost": 5172.26,
+      "n_orders_placed": 30,
+      "n_orders_delivered": 28,
+      "n_suppliers_defaulted": 2
+    },
+    "processing_time_s": 28.42910180002218
+  },
+  {
+    "quarter_index": 100,
+    "fitness": {
+      "cost_efficiency": 0.8659802513845299,
+      "stockout_avoidance": 0.31159968775787394,
+      "budget_discipline": 1.0,
+      "supplier_diversification": 0.2860215053763441,
+      "decision_consistency": 0.9666666666666666,
+      "reaction_to_risk_events": 0.9130434782608695
+    },
+    "n_days": 90,
+    "n_decisions": 90,
+    "graduation": {
+      "cost_efficiency": {
+        "value": 0.866,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": true
+      },
+      "stockout_avoidance": {
+        "value": 0.3116,
+        "threshold": 0.85,
+        "passed": false,
+        "gating": true
+      },
+      "budget_discipline": {
+        "value": 1.0,
+        "threshold": 0.95,
+        "passed": true,
+        "gating": true
+      },
+      "supplier_diversification": {
+        "value": 0.286,
+        "threshold": 0.4,
+        "passed": false,
+        "gating": false
+      },
+      "decision_consistency": {
+        "value": 0.9667,
+        "threshold": 0.6,
+        "passed": true,
+        "gating": false
+      },
+      "reaction_to_risk_events": {
+        "value": 0.913,
+        "threshold": 0.5,
+        "passed": true,
+        "gating": true
+      },
+      "stage": "1a",
+      "all_passed": false,
+      "n_days": 90,
+      "n_orders": 90
+    },
+    "non_regression": null,
+    "world_summary": {
+      "day": 90,
+      "budget": 73857.23,
+      "spent_ratio": 0.2614,
+      "bankrupt": false,
+      "total_stockout_units": 3342.65,
+      "total_holding_cost": 4048.67,
+      "n_orders_placed": 31,
+      "n_orders_delivered": 27,
+      "n_suppliers_defaulted": 1
+    },
+    "processing_time_s": 29.660795000032522
+  }
+]

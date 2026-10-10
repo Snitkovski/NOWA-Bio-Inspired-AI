@@ -1,0 +1,69 @@
+# nowa_roles/procurement/config.yaml
+
+role_id: procurement
+display_name: "Procurement Manager"
+
+# --- Capability registry (raw data → MCPCapability instances) -------------
+mcp_capabilities:
+  - tool_id: mcp__1c__get_stock_levels
+    server_name: 1c_erp
+    display_name: "Get stock levels"
+    description: "READ stock"
+    risk_level: read_only
+    domain_tags: [procurement]
+    requires_approval: false
+
+  - tool_id: mcp__1c__get_suppliers
+    server_name: 1c_erp
+    display_name: "Get suppliers"
+    description: "READ suppliers"
+    risk_level: read_only
+    domain_tags: [procurement]
+    requires_approval: false
+
+  - tool_id: mcp__1c__get_budget
+    server_name: 1c_erp
+    display_name: "Get budget"
+    description: "READ budget"
+    risk_level: read_only
+    domain_tags: [finance]
+    requires_approval: false
+
+  - tool_id: mcp__1c__create_purchase_order
+    server_name: 1c_erp
+    display_name: "Create purchase order"
+    description: "WRITE purchase order"
+    risk_level: medium_write
+    domain_tags: [procurement]
+    requires_approval: true
+    action_types:
+      - place_order_reliable_supplier
+      - place_order_cheap_supplier
+      - urgent_reorder
+      - diversify_supplier
+
+# --- Affective mapping (named business event → VAD + tags) ----------------
+affective_mapping:
+  stock_critical_low:
+    valence: -0.7
+    arousal: 0.8
+    tags: [procurement, urgency, risk]
+  supplier_defaulted:
+    valence: -0.5
+    arousal: 0.6
+    tags: [procurement, risk]
+  deal_closed_favorable:
+    valence: 0.8
+    arousal: 0.6
+    tags: [procurement, success]
+  budget_exceeded:
+    valence: -0.8
+    arousal: 0.7
+    tags: [finance, risk]
+
+# Existing PROCUREMENT_SEED_EPISODES stays the source of truth (spec §4.2).
+seed_corpus_module: "nowa_roles.procurement.seed_corpus:PROCUREMENT_SEED_EPISODES"
+
+# --- Code pointers (escape hatch — real logic stays in Python) ------------
+motor_adapter: "nowa_roles.procurement.motor_adapter:ProcurementBodyMotorAdapter"
+event_classifier: "nowa_roles.procurement.event_classifier:classify_procurement_events"

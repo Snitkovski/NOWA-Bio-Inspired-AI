@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "quarters": {
+    "1": {
+      "budget": 100000.0,
+      "products": [
+        {
+          "product_id": "product_001",
+          "base_demand_per_day": 10.0,
+          "demand_volatility": 0.15,
+          "holding_cost_per_unit": 1.0,
+          "stockout_penalty_per_unit": 10.0,
+          "current_stock": 200.0,
+          "reorder_point": 80.0
+        }
+      ],
+      "suppliers": [
+        {
+          "supplier_id": "supplier_001",
+          "reputation": 0.5,
+          "is_defaulted": false
+        },
+        {
+          "supplier_id": "supplier_002",
+          "reputation": 0.5,
+          "is_defaulted": false
+        }
+      ],
+      "offers": [
+        {
+          "product_id": "product_001",
+          "supplier_id": "supplier_001",
+          "unit_price": 1.0,
+          "lead_time_days": 5,
+          "reliability": 0.92,
+          "price_volatility": 0.05
+        },
+        {
+          "product_id": "product_001",
+          "supplier_id": "supplier_002",
+          "unit_price": 0.85,
+          "lead_time_days": 8,
+          "reliability": 0.8,
+          "price_volatility": 0.08
+        }
+      ]
+    }
+  }
+}

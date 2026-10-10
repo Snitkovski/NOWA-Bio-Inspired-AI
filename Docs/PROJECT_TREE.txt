@@ -1,0 +1,108 @@
+﻿NOWA-Cognitive/
+
+  src/                          [ИСХОДНЫЙ КОД - 24 файла]
+    action_intent.py
+    action_realizer.py
+    agent.py
+    affect.py                     Аффективная система
+    cortex.py
+    dataset.py
+    experience.py
+    gui.py
+    hippocampus.py
+    intent_memory.py
+    loader.py
+    player.py
+    sample.py
+    selector.py
+    sleep_manager.py
+    sleep.py
+    storage.py
+    train_from_dataset.py
+    trainer.py
+    usage_example.py
+    __pycache__/
+    dataset/
+        dialog_experience.json
+
+  tests/                        [ТЕСТЫ - 22 файла, 45+ тестов]
+    test_adaptive_mouth.py
+    test_affective_regulators.py  25 тестов
+    test_affect_integration.py    12 тестов
+    test_agent.py
+    test_dataset_loading.py
+    test_dialog_loading.py
+    test_experience_immutability.py
+    test_fix.py
+    test_gui_affective.py         Перемещён из корня
+    test_gui_refactoring.py
+    test_habits_loading.py        Перемещён из корня
+    test_hippocampus.py
+    test_intent_memory.py
+    test_intent_memory_integration.py
+    test_save_load_affect.py      Перемещён из корня
+    test_selector.py
+    test_sleep_consolidation.py
+    test_trainer.py
+    test_trainer_deprecated.py
+    __pycache__/
+
+  Docs/                         [ДОКУМЕНТАЦИЯ - 44 файла]
+    README.md
+    START_HERE.md
+    QUICK_START_RU.md
+    INDEX.md
+    PROJECT_STRUCTURE_ORGANIZED.md
+    REORGANIZATION_COMPLETE.md
+    README_AFFECTIVE_SYSTEM.md
+    GUI_QUICK_REFERENCE.md
+    SAVE_LOAD_AFFECT_STATE.md
+    IMPLEMENTATION_REPORT.md
+    DELIVERY_SUMMARY.md
+    FINAL_PROJECT_SUMMARY.md
+    PROJECT_COMPLETION_CONFIRMATION.md
+    [+38 других документов...]
+     (полный список в INDEX.md)
+
+  Demo/                         [ПРИМЕРЫ - 3 файла]
+    demo_intent_memory.py
+    demo_realizations.py
+    examples_training.py
+
+  datasets/                     [ДАННЫЕ - 5 JSON файлов]
+    habits.json
+    realizations_advanced.json
+    realizations_basic.json
+    realizations_extended.json
+    test.json
+
+  saves/                        [СОХРАНЁННЫЕ СОСТОЯНИЯ]
+    (автоматически создаются при сохранении)
+
+  .venv/                        [ВИРТУАЛЬНОЕ ОКРУЖЕНИЕ]
+  .pytest_cache/                [КЭШ PYTEST]
+  .git/                         [РЕПОЗИТОРИЙ GIT]
+
+  README.md                     [ГЛАВНЫЙ README]
+  LICENSE                       [ЛИЦЕНЗИЯ POLYFORM STRICT 1.0.0]
+  .gitignore
+  test_results.txt
+
+
+
+СТАТИСТИКА:
+   Всего документов:        44 файла в Docs/
+   Всего тестов:           22 файла (45+ тестов)
+   Всего исходного кода:    24 файла в src/
+   Примеров:                3 файла в Demo/
+   Данных:                  5 JSON файлов
+
+СТАТУС ТЕСТОВ:
+   test_affective_regulators.py:     25/25 PASSED
+   test_affect_integration.py:       12/12 PASSED
+   test_save_load_affect.py:          8/8 PASSED
+   (и другие тесты...)
+  
+   ИТОГО:                            45/45 PASSED (100%)
+
+

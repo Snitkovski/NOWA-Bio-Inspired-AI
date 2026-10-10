@@ -1,0 +1,50 @@
+schema_version: 1
+presets:
+  - id: crisis
+    label_en: Crisis
+    label_ru: Кризис
+    valence: -0.80
+    arousal: 0.70
+    dominance: -0.25
+    stress: 0.75
+    trust: -0.15
+    curiosity: 0.20
+    stability: -0.45
+    attachment: 0.00
+    intensity: 0.35
+  - id: success
+    label_en: Success
+    label_ru: Успех
+    valence: 0.80
+    arousal: 0.60
+    dominance: 0.20
+    stress: -0.35
+    trust: 0.40
+    curiosity: 0.15
+    stability: 0.25
+    attachment: 0.10
+    intensity: 0.30
+  - id: trust_break
+    label_en: Trust break
+    label_ru: Разрыв доверия
+    valence: -0.70
+    arousal: 0.65
+    dominance: -0.10
+    stress: 0.55
+    trust: -0.80
+    curiosity: 0.10
+    stability: -0.35
+    attachment: -0.25
+    intensity: 0.35
+  - id: routine
+    label_en: Routine
+    label_ru: Рутина
+    valence: 0.00
+    arousal: 0.10
+    dominance: 0.00
+    stress: 0.00
+    trust: 0.10
+    curiosity: 0.00
+    stability: 0.20
+    attachment: 0.00
+    intensity: 0.20
