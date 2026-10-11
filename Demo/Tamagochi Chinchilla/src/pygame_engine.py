@@ -25,6 +25,8 @@ try:
 except ImportError:
     PYGAME_AVAILABLE = False
 
+from tama_i18n import get_language, toggle_language, tr
+
 # ============================================================================
 # POSITION MAPPING
 # ============================================================================
@@ -228,10 +230,12 @@ class PygameEngine:
 
         # Fonts
         pygame.font.init()
-        self.font_sub  = pygame.font.SysFont("Arial", 22)
-        self.font_dbg  = pygame.font.SysFont("Arial", 14)
-        self.font_ui   = pygame.font.SysFont("Arial", 16)
-        self.font_ui_title = pygame.font.SysFont("Arial", 20, bold=True)
+        _ui_font = "DejaVu Sans, Liberation Sans, Arial"
+        self.font_sub  = pygame.font.SysFont(_ui_font, 22)
+        self.font_dbg  = pygame.font.SysFont(_ui_font, 14)
+        self.font_ui   = pygame.font.SysFont(_ui_font, 16)
+        self.font_ui_title = pygame.font.SysFont(_ui_font, 20, bold=True)
+        self.lang_button_rect = pygame.Rect(self.width - 58, 8, 46, 22)
 
         # Bottom UI row is below cage border (cage bottom is y = height - 40)
         self.state_button_rect = pygame.Rect((self.width - 360) // 2, self.height - 34, 360, 24)
@@ -513,6 +517,7 @@ class PygameEngine:
         self._draw_rating_buttons()
         self._draw_state_button()
         self._draw_audio_button()
+        self._draw_lang_button()
         if self.show_state_window:
             self._draw_state_window()
 
@@ -554,7 +559,7 @@ class PygameEngine:
         for hy in (510, 560, 610):
             pygame.draw.circle(s, (140, 120, 90), (918, hy), 3)
         # Door label (tiny)
-        lbl = self.font_dbg.render("дверь", True, (30, 20, 10))
+        lbl = self.font_dbg.render(tr("дверь"), True, (30, 20, 10))
         s.blit(lbl, (912, 635))
 
         # Left back-corner wall mark (zone "corner": cx≈80)
@@ -586,7 +591,7 @@ class PygameEngine:
             gx = 218 + (i * 37) % 84
             gy = 582 + (i * 13) % 28
             pygame.draw.circle(s, (195, 178, 148), (gx, gy), 2)
-        lbl = self.font_dbg.render("купалка", True, (30, 20, 10))
+        lbl = self.font_dbg.render(tr("купалка"), True, (30, 20, 10))
         s.blit(lbl, (218, 620))
 
         # ── Water bottle (zone "waterer": cx≈350, cy≈595) ─────────────────
@@ -601,7 +606,7 @@ class PygameEngine:
         # Wall mount clip
         pygame.draw.rect(s, (130, 120, 110), (326, 548, 6, 20))
         pygame.draw.rect(s, (130, 120, 110), (326, 572, 6, 16))
-        lbl = self.font_dbg.render("поилка", True, (30, 20, 10))
+        lbl = self.font_dbg.render(tr("поилка"), True, (30, 20, 10))
         s.blit(lbl, (326, 620))
 
         # ── Food bowl / pellets (zone "bowl_pellets": cx≈430, cy≈610) ─────
@@ -610,7 +615,7 @@ class PygameEngine:
         # Pellets inside (small rounded rects)
         for px, py in [(404,605),(418,603),(432,606),(446,604),(412,610),(428,610),(442,609)]:
             pygame.draw.ellipse(s, (180, 148, 95), (px, py, 8, 5))
-        lbl = self.font_dbg.render("корм", True, (30, 20, 10))
+        lbl = self.font_dbg.render(tr("корм"), True, (30, 20, 10))
         s.blit(lbl, (414, 630))
 
         # ── Hay rack (zone "bowl_hay": cx≈510, cy≈610) ─────────────────────
@@ -628,7 +633,7 @@ class PygameEngine:
             ex = hx + int(18 * math.cos(math.radians(ang - 80)))
             ey = hy + int(18 * math.sin(math.radians(ang - 80)))
             pygame.draw.line(s, hay_c, (hx, hy), (ex, ey), 2)
-        lbl = self.font_dbg.render("сено", True, (30, 20, 10))
+        lbl = self.font_dbg.render(tr("сено"), True, (30, 20, 10))
         s.blit(lbl, (494, 630))
 
         # ── Mineral stone (zone "mineral": cx≈620, cy≈610) ─────────────────
@@ -639,7 +644,7 @@ class PygameEngine:
         # Salt crystal glints
         for gx, gy in [(606,600),(618,596),(626,604),(612,610)]:
             pygame.draw.circle(s, (240, 238, 232), (gx, gy), 2)
-        lbl = self.font_dbg.render("минерал", True, (30, 20, 10))
+        lbl = self.font_dbg.render(tr("минерал"), True, (30, 20, 10))
         s.blit(lbl, (596, 630))
 
         # ── Litter box (zone "litter": cx≈870, cy≈590) ────────────────────
@@ -655,7 +660,7 @@ class PygameEngine:
             pygame.draw.circle(s, (170, 156, 132), (lx, ly), 2)
         # Rim
         pygame.draw.rect(s, (128, 114, 90), (828, 568, 88, 12), border_radius=4)
-        lbl = self.font_dbg.render("лоток", True, (30, 20, 10))
+        lbl = self.font_dbg.render(tr("лоток"), True, (30, 20, 10))
         s.blit(lbl, (846, 630))
 
         # ── Exercise wheel (zone "wheel": cx≈730, cy≈420) ─────────────────
@@ -678,7 +683,7 @@ class PygameEngine:
             pygame.draw.line(s, (150, 138, 122), (x1, y1), (x2, y2), 2)
         # Hub
         pygame.draw.circle(s, (140, 128, 110), (wh_cx, wh_cy), 8)
-        lbl = self.font_dbg.render("колесо", True, (30, 20, 10))
+        lbl = self.font_dbg.render(tr("колесо"), True, (30, 20, 10))
         s.blit(lbl, (690, 530))
 
         # ── Toy (zone "toy": cx≈720, cy≈510) ──────────────────────────────
@@ -691,7 +696,7 @@ class PygameEngine:
             pygame.draw.ellipse(s, (185, 155, 100), (toy_x-14, ry-8, 28, 16), 3)
         # Small bell at bottom
         pygame.draw.circle(s, (195, 175, 110), (toy_x, toy_y + 22), 7, 2)
-        lbl = self.font_dbg.render("игрушка", True, (30, 20, 10))
+        lbl = self.font_dbg.render(tr("игрушка"), True, (30, 20, 10))
         s.blit(lbl, (toy_x - 24, toy_y + 36))
 
         # ── Mystery object (zone "object": cx≈800, cy≈540) ─────────────────
@@ -750,13 +755,13 @@ class PygameEngine:
         pygame.draw.rect(s, (50, 50, 50), bar_rect.inflate(2, 2))  # рамка
         pygame.draw.rect(s, color, bar_rect)
 
-        lbl = self.font_dbg.render("Самочувствие", True, (30, 20, 10))
+        lbl = self.font_dbg.render(tr("Самочувствие"), True, (30, 20, 10))
         s.blit(lbl, (self.width - 58, 145))
 
     def _draw_subtitle(self) -> None:
         # Fade out in last second
         alpha = min(255, int(self.subtitle_timer * 180))
-        surf = self.font_sub.render(self.subtitle, True, (20, 10, 5))
+        surf = self.font_sub.render(tr(self.subtitle), True, (20, 10, 5))
         surf.set_alpha(alpha)
         rect = surf.get_rect(center=(self.width // 2, self.height - 70))
         self.screen.blit(surf, rect)
@@ -857,20 +862,20 @@ class PygameEngine:
         bg_top3 = nowa.get("bg_top3") or []
 
         drive_labels = {
-            "energy_need": "голод/энергия",
-            "exploration": "исследование",
-            "social_drive": "соц. контакт",
-            "curiosity": "любопытство",
-            "goal_tension": "целенаправленность",
+            "energy_need": tr("голод/энергия"),
+            "exploration": tr("исследование"),
+            "social_drive": tr("соц. контакт"),
+            "curiosity": tr("любопытство"),
+            "goal_tension": tr("целенаправленность"),
         }
         drive_items = sorted(drives.items(), key=lambda kv: kv[1], reverse=True)[:4]
         drive_lines = (
             [f"  {drive_labels.get(k, k)}={float(v):.2f}" for k, v in drive_items]
-            if drive_items else ["  нет данных"]
+            if drive_items else ["  " + tr("нет данных")]
         )
 
         next_actions_ru = mind.get("next_actions_ru") or []
-        next_actions_line = ", ".join(next_actions_ru[:3]) if next_actions_ru else "нет"
+        next_actions_line = ", ".join(tr(item) for item in next_actions_ru[:3]) if next_actions_ru else tr("нет")
 
         candidate_chains_ru = mind.get("candidate_chains_ru") or []
         candidate_line = ", ".join(candidate_chains_ru[:3]) if candidate_chains_ru else "нет"
@@ -882,7 +887,7 @@ class PygameEngine:
                 for item in top_chains[:3]
             )
         else:
-            top_mem_line = "нет"
+            top_mem_line = tr("нет")
 
         # circadian rhythm not implemented in NOWA; remove related lines
 
@@ -895,21 +900,21 @@ class PygameEngine:
             cur = float(affect.get('curiosity', 0.0) or 0.0)
             trust = float(affect.get('trust', 0.0) or 0.0)
             if v > 0.3:
-                affect_interp.append('настроение позитивное')
+                affect_interp.append(tr("настроение позитивное"))
             elif v < -0.3:
-                affect_interp.append('настроение негативное')
+                affect_interp.append(tr("настроение негативное"))
             else:
-                affect_interp.append('настроение нейтральное')
+                affect_interp.append(tr("настроение нейтральное"))
             if a > 0.6:
-                affect_interp.append('высокая активация')
+                affect_interp.append(tr("высокая активация"))
             elif a < 0.3:
-                affect_interp.append('низкая активность')
+                affect_interp.append(tr("низкая активность"))
             if s_ > 0.6:
-                affect_interp.append('стресс')
+                affect_interp.append(tr("стресс"))
             if cur > 0.6:
-                affect_interp.append('любопытство')
+                affect_interp.append(tr("любопытство"))
             if trust > 0.6:
-                affect_interp.append('доверие')
+                affect_interp.append(tr("доверие"))
         except Exception:
             affect_interp = []
         affect_interp_line = ", ".join(affect_interp) or "—"
@@ -920,48 +925,78 @@ class PygameEngine:
             label = drive_labels.get(k, k)
             val = float(v or 0.0)
             if val > 0.7:
-                drives_interp.append(f"  сильная потребность: {label}")
+                drives_interp.append("  " + tr("сильная потребность: {label}").format(label=label))
             elif val > 0.4:
-                drives_interp.append(f"  умеренная потребность: {label}")
-        drives_interp_lines = drives_interp if drives_interp else ["  нет сильных желаний"]
+                drives_interp.append("  " + tr("умеренная потребность: {label}").format(label=label))
+        drives_interp_lines = drives_interp if drives_interp else ["  " + tr("нет сильных желаний")]
 
         action_remaining = float(snap.get("action_remaining_s", 0.0))
         chain_cooldown = float(snap.get("chain_cooldown_s", 0.0))
 
+        action_label = mind.get("current_action_ru") or current_action.get("action_id") or "-"
         return [
-            f"Симуляция: {float(snap.get('time', 0.0)):.1f}с   тик: {int(snap.get('tick', 0))}",
-            f"Режим: {'пауза' if snap.get('paused') else 'активен'}",
+            tr("Симуляция: {time:.1f}с   тик: {tick}").format(
+                time=float(snap.get("time", 0.0)),
+                tick=int(snap.get("tick", 0)),
+            ),
+            tr("Режим: {mode}").format(mode=tr("пауза") if snap.get("paused") else tr("активен")),
             "",
-            "Мысли и намерения:",
-            f"  Сценарий: {mind.get('current_chain_ru') or '-'} "
-            f"({int(mind.get('chain_progress', 0))}/{int(mind.get('chain_length', 0))})",
-            f"  Следующие шаги: {next_actions_line}",
+            tr("Мысли и намерения:"),
+            "  " + tr("Сценарий: {chain} ({progress}/{length})").format(
+                chain=mind.get("current_chain_ru") or "-",
+                progress=int(mind.get("chain_progress", 0)),
+                length=int(mind.get("chain_length", 0)),
+            ),
+            "  " + tr("Следующие шаги: {steps}").format(steps=next_actions_line),
             "",
-            "Чувства:",
-            f"  Валентность={self._fmt_metric(affect.get('valence'))}  Возбуждение={self._fmt_metric(affect.get('arousal'))}",
-            f"  Стресс={self._fmt_metric(affect.get('stress'))}  Любопытство={self._fmt_metric(affect.get('curiosity'))}",
-            f"  Доверие={self._fmt_metric(affect.get('trust'))}  Стабильность={self._fmt_metric(affect.get('stability'))}",
-            f"  Привязанность={self._fmt_metric(affect.get('attachment'))}",
-            f"  Интерпретация: {affect_interp_line}",
+            tr("Чувства:"),
+            "  " + tr("Валентность={valence}  Возбуждение={arousal}").format(
+                valence=self._fmt_metric(affect.get("valence")),
+                arousal=self._fmt_metric(affect.get("arousal")),
+            ),
+            "  " + tr("Стресс={stress}  Любопытство={curiosity}").format(
+                stress=self._fmt_metric(affect.get("stress")),
+                curiosity=self._fmt_metric(affect.get("curiosity")),
+            ),
+            "  " + tr("Доверие={trust}  Стабильность={stability}").format(
+                trust=self._fmt_metric(affect.get("trust")),
+                stability=self._fmt_metric(affect.get("stability")),
+            ),
+            "  " + tr("Привязанность={attachment}").format(attachment=self._fmt_metric(affect.get("attachment"))),
+            "  " + tr("Интерпретация: {text}").format(text=affect_interp_line),
             "",
-            "Желания и потребности:",
-            "  Драйвы:",
+            tr("Желания и потребности:"),
+            "  " + tr("Драйвы:"),
             *drive_lines,
-            f"  Бодрость={wakefulness:.2f}   Надёжность когниций={cognitive_rel:.2f}",
-            "  Желания:",
+            "  " + tr("Бодрость={wake:.2f}   Надёжность когниций={cog:.2f}").format(
+                wake=wakefulness,
+                cog=cognitive_rel,
+            ),
+            "  " + tr("Желания:"),
             *drives_interp_lines,
             "",
-            "Поведение сейчас:",
-            f"  Действие: {mind.get('current_action_ru') or current_action.get('action_id') or '-'}",
-            f"  Анимация: {current_action.get('anim') or '-'}   Позиция: {current_action.get('position') or '-'}",
-            f"  До конца действия: {action_remaining:.1f}с   кулдаун цепочки: {chain_cooldown:.1f}с",
-            f"  Выполнено действий: {int(stats.get('actions_executed', 0))}   цепочек: {int(stats.get('chains_completed', 0))}",
+            tr("Поведение сейчас:"),
+            "  " + tr("Действие: {action}").format(action=tr(str(action_label))),
+            "  " + tr("Анимация: {anim}   Позиция: {position}").format(
+                anim=current_action.get("anim") or "-",
+                position=current_action.get("position") or "-",
+            ),
+            "  " + tr("До конца действия: {remain:.1f}с   кулдаун цепочки: {cool:.1f}с").format(
+                remain=action_remaining,
+                cool=chain_cooldown,
+            ),
+            "  " + tr("Выполнено действий: {actions}   цепочек: {chains}").format(
+                actions=int(stats.get("actions_executed", 0)),
+                chains=int(stats.get("chains_completed", 0)),
+            ),
             "",
-            "Память и обучение:",
-            f"  Записей памяти: {int(memory_summary.get('total_entries', 0))}   "
-            f"успехов: {float(memory_summary.get('success_rate', 0.0)) * 100:.0f}%   "
-            f"ср. награда: {float(memory_summary.get('average_reward', 0.0)):+.2f}",
-            f"  Предпочитаемые цепочки: {top_mem_line}",
+            tr("Память и обучение:"),
+            "  " + tr("Записей памяти: {entries}   успехов: {success:.0f}%   ср. награда: {reward:+.2f}").format(
+                entries=int(memory_summary.get("total_entries", 0)),
+                success=float(memory_summary.get("success_rate", 0.0)) * 100,
+                reward=float(memory_summary.get("average_reward", 0.0)),
+            ),
+            "  " + tr("Предпочитаемые цепочки: {chains}").format(chains=top_mem_line),
         ]
 
     def _draw_rating_buttons(self) -> None:
@@ -969,7 +1004,7 @@ class PygameEngine:
         s = self.screen
 
         # Label
-        lbl = self.font_ui.render("Оценить:", True, (80, 68, 55))
+        lbl = self.font_ui.render(tr("Оценить:"), True, (80, 68, 55))
         s.blit(lbl, self.rating_label_pos)
 
         # Color ramp: 1=красный … 5=зелёный
@@ -1014,7 +1049,7 @@ class PygameEngine:
         border = (96, 82, 68)
         pygame.draw.rect(self.screen, bg, rect, border_radius=6)
         pygame.draw.rect(self.screen, border, rect, 2, border_radius=6)
-        label = "Скрыть состояние питомца" if self.show_state_window else "Показать состояние питомца"
+        label = tr("Скрыть состояние питомца") if self.show_state_window else tr("Показать состояние питомца")
         surf = self.font_ui.render(label, True, (245, 239, 231))
         self.screen.blit(surf, surf.get_rect(center=rect.center))
 
@@ -1024,7 +1059,7 @@ class PygameEngine:
         border = (82, 68, 58)
         pygame.draw.rect(self.screen, bg, rect, border_radius=6)
         pygame.draw.rect(self.screen, border, rect, 2, border_radius=6)
-        label = "Выключить звук" if self.audio_enabled else "Включить звук"
+        label = tr("Выключить звук") if self.audio_enabled else tr("Включить звук")
         surf = self.font_ui.render(label, True, (248, 244, 238))
         self.screen.blit(surf, surf.get_rect(center=rect.center))
 
@@ -1037,7 +1072,7 @@ class PygameEngine:
         pygame.draw.rect(self.screen, (241, 234, 223), panel, border_radius=10)
         pygame.draw.rect(self.screen, (114, 100, 84), panel, 2, border_radius=10)
 
-        title = self.font_ui_title.render("Текущее состояние персонажа", True, (48, 38, 28))
+        title = self.font_ui_title.render(tr("Текущее состояние персонажа"), True, (48, 38, 28))
         self.screen.blit(title, (panel.left + 16, panel.top + 12))
 
         close_rect = self._get_state_close_rect()
@@ -1077,7 +1112,21 @@ class PygameEngine:
             hint = self.font_dbg.render("scroll", True, (130, 115, 95))
             self.screen.blit(hint, (panel.right - 58, panel.bottom - 20))
 
+    def _draw_lang_button(self) -> None:
+        rect = self.lang_button_rect
+        pygame.draw.rect(self.screen, (226, 214, 196), rect, border_radius=4)
+        pygame.draw.rect(self.screen, (120, 104, 84), rect, 1, border_radius=4)
+        mark = self.font_ui.render(get_language().upper(), True, (35, 28, 20))
+        self.screen.blit(mark, mark.get_rect(center=rect.center))
+
     def handle_mouse_click(self, pos: Tuple[int, int]) -> Optional[str]:
+        if self.lang_button_rect.collidepoint(pos):
+            toggle_language()
+            try:
+                pygame.display.set_caption(tr("Тамагочи — шиншилла"))
+            except Exception:
+                pass
+            return "toggle_language"
         if self.show_state_window and self._get_state_close_rect().collidepoint(pos):
             self.show_state_window = False
             self._state_scroll = 0
@@ -1143,6 +1192,8 @@ class PygameEngine:
                     return False
                 if event.key == pygame.K_d:
                     self.toggle_debug()
+                if event.key == pygame.K_g:
+                    toggle_language()
                 # Scroll state window with arrow keys
                 if self.show_state_window:
                     if event.key == pygame.K_UP:

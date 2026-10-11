@@ -19,6 +19,15 @@ from death_registry import DeathRegistry, LineageNode
 from simulation_runner import SimulationRunner
 
 
+@pytest.fixture(autouse=True)
+def _russian_ui():
+    from colony_gui.i18n import reset_language, set_language
+
+    set_language("ru")
+    yield
+    reset_language()
+
+
 def test_tc_death_registry_01_register_birth_and_death() -> None:
     registry = DeathRegistry()
     agent = ChinchillaAgent(sex="F", generation=0)

@@ -10,9 +10,11 @@ English version: [README.en.md](README.en.md)
 python src/nowa_sandbox/run_sandbox.py --config configs/default_world.yaml --stage 1a --quarters 30
 ```
 
-Лаборатория песочницы: `python -m nowa_sandbox.gui_app` (либо `run_gui.bat`).  
-Лаборатория тела: `python -m nowa_body.gui_app` (либо `run_body_gui.bat`).  
-Конфигуратор ролей: `python -m nowa_body.gui_configurator` (либо `run_role_configurator.bat`).
+Лаборатория песочницы: `python -m nowa_sandbox.gui_app --lang ru` (либо `run_gui.bat`).  
+Лаборатория тела: `python -m nowa_body.gui_app --lang ru` (либо `run_body_gui.bat`).  
+Конфигуратор ролей: `python -m nowa_body.gui_configurator --lang ru` (либо `run_role_configurator.bat`).
+
+Лаборатории уже переключают язык кнопками в окне и запоминают выбор. `--lang en|ru` перекрывает сохранённое предпочтение на один запуск; иначе действует `NOWA_LANG`, а если её нет — сохранённый выбор. По умолчанию английский.
 
 Проверки: `python -m pytest -m "not slow"`.
 

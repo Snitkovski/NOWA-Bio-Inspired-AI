@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -1484,18 +1485,30 @@ def assert_string_parity() -> None:
 class I18n:
     """Key → string translator with optional preference file."""
 
-    def __init__(self, lang: str = DEFAULT_LANG, pref_path: Optional[Path] = None) -> None:
+    def __init__(
+        self,
+        lang: str = DEFAULT_LANG,
+        pref_path: Optional[Path] = None,
+        *,
+        force: bool = False,
+    ) -> None:
+        """Resolve language: ``force`` (``--lang``) > ``NOWA_LANG`` > saved pref > argument."""
+
         self.pref_path = pref_path
         if lang not in SUPPORTED:
             lang = DEFAULT_LANG
-        if pref_path and pref_path.exists():
-            try:
-                data = json.loads(pref_path.read_text(encoding="utf-8"))
-                saved = data.get("lang")
-                if saved in SUPPORTED:
-                    lang = saved
-            except (OSError, json.JSONDecodeError, TypeError):
-                pass
+        if not force:
+            env = os.environ.get("NOWA_LANG", "").strip().lower()
+            if env in SUPPORTED:
+                lang = env
+            elif pref_path and pref_path.exists():
+                try:
+                    data = json.loads(pref_path.read_text(encoding="utf-8"))
+                    saved = data.get("lang")
+                    if saved in SUPPORTED:
+                        lang = saved
+                except (OSError, json.JSONDecodeError, TypeError):
+                    pass
         self._lang = lang
 
     @property

@@ -10,9 +10,11 @@ Short sandbox launch from the platform directory:
 python src/nowa_sandbox/run_sandbox.py --config configs/default_world.yaml --stage 1a --quarters 30
 ```
 
-Sandbox laboratory: `python -m nowa_sandbox.gui_app` (or `run_gui.bat`).  
-Body laboratory: `python -m nowa_body.gui_app` (or `run_body_gui.bat`).  
-Role configurator: `python -m nowa_body.gui_configurator` (or `run_role_configurator.bat`).
+Sandbox laboratory: `python -m nowa_sandbox.gui_app --lang en` (or `run_gui.bat`).  
+Body laboratory: `python -m nowa_body.gui_app --lang en` (or `run_body_gui.bat`).  
+Role configurator: `python -m nowa_body.gui_configurator --lang en` (or `run_role_configurator.bat`).
+
+The labs already switch language in the window and remember the choice. `--lang en|ru` overrides that saved preference for one launch; otherwise `NOWA_LANG` does, and a saved preference is used when neither is set. Default is English.
 
 Checks: `python -m pytest -m "not slow"`.
 

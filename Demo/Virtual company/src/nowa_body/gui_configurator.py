@@ -83,11 +83,16 @@ class RoleConfiguratorApp(tk.Tk if tk is not None else object):
         self,
         controller: Optional[RoleConfiguratorController] = None,
         employee_host: Optional[EmployeeHostController] = None,
+        lang: str | None = None,
     ) -> None:
         super().__init__()
         self.geometry("1280x800")
         self.minsize(960, 640)
-        self.i18n = I18n(pref_path=DEMO_ROOT / "results" / ".role_configurator_lang.json")
+        self.i18n = I18n(
+            lang=lang or "en",
+            pref_path=DEMO_ROOT / "results" / ".role_configurator_lang.json",
+            force=lang in ("en", "ru"),
+        )
         self.controller = controller or RoleConfiguratorController()
         self.employee_host = employee_host or EmployeeHostController(
             roles_root=self.controller.roles_root,
@@ -3250,8 +3255,13 @@ class RoleConfiguratorApp(tk.Tk if tk is not None else object):
             pass
 
 
-def main() -> int:
-    app = RoleConfiguratorApp()
+def main(argv: Optional[list[str]] = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="NOWA role configurator")
+    parser.add_argument("--lang", choices=("en", "ru"), default=None, help="UI language. Overrides NOWA_LANG and the saved preference.")
+    args = parser.parse_args(argv)
+    app = RoleConfiguratorApp(lang=args.lang)
     app.mainloop()
     return 0
 

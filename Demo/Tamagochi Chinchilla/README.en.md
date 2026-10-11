@@ -7,9 +7,11 @@ The platform presents a single individual whose cognitive modules are imported f
 Launch from the platform directory:
 
 ```bash
-python src/main.py
+python src/main.py --lang en
 ```
 
-Interface: `python src/gui.py`. Checks: `python -m pytest -q tests` from `Demo/Tamagochi Chinchilla`.
+The window defaults to English. `--lang ru` or `NOWA_LANG=ru` switches it; press `G` or the EN/RU button in the window. Checks: `python -m pytest -q tests` from `Demo/Tamagochi Chinchilla`.
+
+![Tamagotchi](../../docs/media/en/tamagotchi.gif)
 
 The documents `Docs/PHASE2_MEMORY_SYSTEM.md`, `Docs/PHASE3_SCHEDULING_SYSTEM.md`, `Docs/NOWA_INTEGRATION_SPEC.md`, and `Docs/IMPLEMENTATION_SPEC.md` are normative and historical protocols. The current state of the build is the joint presence of core modules and the local ethological layer, including `scheduling_system.py` and `DriveSystem`.

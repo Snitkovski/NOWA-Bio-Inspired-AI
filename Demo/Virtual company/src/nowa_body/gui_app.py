@@ -41,11 +41,15 @@ DEMO_ROOT = Path(__file__).resolve().parents[2]
 class BodyLabApp(tk.Tk if tk is not None else object):
     """Interactive MockMCP lab: tick, approve, inspect memory and sleep."""
 
-    def __init__(self) -> None:
+    def __init__(self, lang: str | None = None) -> None:
         super().__init__()
         self.geometry("1280x820")
         self.minsize(1040, 700)
-        self.i18n = I18n(pref_path=DEMO_ROOT / "results" / ".body_lab_lang.json")
+        self.i18n = I18n(
+            lang=lang or "en",
+            pref_path=DEMO_ROOT / "results" / ".body_lab_lang.json",
+            force=lang in ("en", "ru"),
+        )
         self.session = BodyLabSession()
         self._auto_job: Optional[str] = None
         self._build()
@@ -629,8 +633,13 @@ class BodyLabApp(tk.Tk if tk is not None else object):
         self.destroy()
 
 
-def main() -> int:
-    app = BodyLabApp()
+def main(argv: Optional[list[str]] = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="NOWA body layer lab")
+    parser.add_argument("--lang", choices=("en", "ru"), default=None, help="UI language. Overrides NOWA_LANG and the saved preference.")
+    args = parser.parse_args(argv)
+    app = BodyLabApp(lang=args.lang)
     app.mainloop()
     return 0
 

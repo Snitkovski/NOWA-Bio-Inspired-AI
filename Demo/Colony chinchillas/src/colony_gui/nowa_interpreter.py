@@ -6,6 +6,8 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from .i18n import character_id, profile_id, tone_id, tr
+
 
 SECTION_LINE_COLOR = (195, 182, 165)
 SECTION_TITLE_COLOR = (110, 98, 82)
@@ -233,7 +235,13 @@ AFFECT_SUMMARIES: dict[str, str] = {
 
 
 def get_axis_label(axis: str, value: float) -> str:
-    """Return a short Russian label for an affective or wakefulness axis."""
+    """Return a short label for an affective or wakefulness axis."""
+
+    return tr(_axis_label_ru(axis, value))
+
+
+def _axis_label_ru(axis: str, value: float) -> str:
+    """Canonical Russian axis word. Translated at the edge by get_axis_label."""
 
     v = _safe_float(value, 0.0)
     if axis == "stress":
@@ -358,19 +366,25 @@ def interpret_affect(axes: Mapping[str, Any] | None) -> AffectInterpretation:
         try:
             if condition(normalized):
                 return AffectInterpretation(
-                    tone_label=label,
+                    tone_label=tr(label),
                     tone_color=TONE_BADGE_COLORS.get(label, color),
-                    summary=AFFECT_SUMMARIES.get(label, AFFECT_SUMMARIES["РАВНОВЕСИЕ"]),
+                    summary=tr(_flat(AFFECT_SUMMARIES.get(label, AFFECT_SUMMARIES["РАВНОВЕСИЕ"]))),
                     axis_labels={key: get_axis_label(key, normalized[key]) for key in AXIS_KEYS},
                 )
         except Exception:
             continue
     return AffectInterpretation(
-        tone_label="РАВНОВЕСИЕ",
+        tone_label=tr("РАВНОВЕСИЕ"),
         tone_color=TONE_BADGE_COLORS["РАВНОВЕСИЕ"],
-        summary=AFFECT_SUMMARIES["РАВНОВЕСИЕ"],
+        summary=tr(_flat(AFFECT_SUMMARIES["РАВНОВЕСИЕ"])),
         axis_labels={key: get_axis_label(key, normalized[key]) for key in AXIS_KEYS},
     )
+
+
+def _flat(text: str) -> str:
+    """Join wrapped source paragraphs into the phrase-catalog key."""
+
+    return " ".join(part.strip() for part in str(text).split())
 
 
 NEURO_KEYS = ["dopamine", "serotonin", "norepinephrine", "cortisol", "acetylcholine"]
@@ -478,12 +492,12 @@ NEURO_SUMMARIES: dict[str, str] = {
 def _get_nm_label(key: str, value: float) -> str:
     labels = NM_LABELS.get(key, {})
     if value > 0.65:
-        return labels.get("high", "высокий")
+        return tr(labels.get("high", "высокий"))
     if value > 0.35:
-        return labels.get("moderate", "умеренный")
+        return tr(labels.get("moderate", "умеренный"))
     if value > 0.10:
-        return labels.get("low", "низкий")
-    return labels.get("minimal", "минимальный")
+        return tr(labels.get("low", "низкий"))
+    return tr(labels.get("minimal", "минимальный"))
 
 
 def interpret_neuro(neuromodulators: Mapping[str, Any] | None) -> NeuroProfile:
@@ -507,10 +521,10 @@ def interpret_neuro(neuromodulators: Mapping[str, Any] | None) -> NeuroProfile:
         except Exception:
             continue
     return NeuroProfile(
-        profile_label=profile_label,
-        summary=NEURO_SUMMARIES.get(profile_label, NEURO_SUMMARIES["СТАНДАРТНЫЙ"]),
+        profile_label=tr(profile_label),
+        summary=tr(_flat(NEURO_SUMMARIES.get(profile_label, NEURO_SUMMARIES["СТАНДАРТНЫЙ"]))),
         modulator_labels={key: _get_nm_label(key, normalized[key]) for key in NEURO_KEYS},
-        interactions=interactions,
+        interactions=[tr(text) for text in interactions],
     )
 
 
@@ -758,20 +772,22 @@ def build_personality_readout(
         dominant_actions = [habit.action for habit in list(habits)[:3] if habit.action]
         for actions, label in HABIT_PERSONALITY_MAP:
             if any(action in dominant_actions for action in actions):
-                return PersonalityReadout(label, PERSONALITY_SUMMARIES[label])
-        if affect.tone_label in {"ПАНИКА", "ОСТРЫЙ СТРЕСС", "ХРОНИЧЕСКАЯ ТРЕВОГА"}:
+                return PersonalityReadout(tr(label), tr(_flat(PERSONALITY_SUMMARIES[label])))
+        affect_id = tone_id(affect.tone_label)
+        neuro_id = profile_id(neuro.profile_label)
+        if affect_id in {"panic", "acute_stress", "chronic_anxiety"}:
             label = "ТРЕВОЖНЫЙ ОДИНОЧКА"
-        elif affect.tone_label == "ЛЮБОПЫТСТВО" or neuro.profile_label == "ДОФАМИНОВЫЙ ПИК":
+        elif affect_id == "curiosity" or neuro_id == "da_peak":
             label = "ИССЛЕДОВАТЕЛЬ"
-        elif affect.tone_label == "ПРИВЯЗАННОСТЬ":
+        elif affect_id == "attachment":
             label = "СОЦИАЛЬНЫЙ АГЕНТ"
-        elif affect.tone_label == "УСТАЛОСТЬ":
+        elif affect_id == "fatigue":
             label = "ПАССИВНЫЙ"
         else:
             label = "НЕОПРЕДЕЛЁННЫЙ"
-        return PersonalityReadout(label, PERSONALITY_SUMMARIES[label])
+        return PersonalityReadout(tr(label), tr(_flat(PERSONALITY_SUMMARIES[label])))
     except Exception:
-        return PersonalityReadout("НЕОПРЕДЕЛЁННЫЙ", PERSONALITY_SUMMARIES["НЕОПРЕДЕЛЁННЫЙ"])
+        return PersonalityReadout(tr("НЕОПРЕДЕЛЁННЫЙ"), tr(_flat(PERSONALITY_SUMMARIES["НЕОПРЕДЕЛЁННЫЙ"])))
 
 
 def reward_label(reward: float) -> tuple[str, tuple[int, int, int]]:

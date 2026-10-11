@@ -17,6 +17,7 @@ from simulation_runner import SimulationRunner
 from .cage_view import get_zone_render_pos
 from .colony_gui import ColonyGUI
 from .config import ACTION_ANIMATIONS, ACTION_SFX, CAGE_RECT, ZONE_RENDER_COORDS
+from .i18n import get_language, label, set_language, toggle_language, tr
 from .utils import format_sim_time
 
 try:
@@ -26,6 +27,8 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     pygame = None  # type: ignore
     PYGAME_AVAILABLE = False
+
+_LANG_BUTTON: Any = None
 
 
 def _confirm_quit() -> bool:
@@ -48,8 +51,8 @@ def _confirm_quit() -> bool:
         except Exception:
             pass
         answer = messagebox.askyesno(
-            "Закрыть симуляцию",
-            "Вы действительно хотите закрыть окно симуляции? Несохранённые данные будут потеряны.",
+            tr("Закрыть симуляцию"),
+            tr("Вы действительно хотите закрыть окно симуляции? Несохранённые данные будут потеряны."),
         )
         return bool(answer)
     except Exception:
@@ -196,12 +199,16 @@ _ACTION_LABELS_RU = {
 
 def _ru_age_category(value: Any) -> str:
     key = str(value or "").strip().lower()
-    return _AGE_CATEGORY_RU.get(key, str(value or ""))
+    if key in ("juvenile", "adult"):
+        return label("age", key, str(value or ""))
+    return str(value or "")
 
 
 def _ru_action(value: Any) -> str:
     key = str(value or "").strip().lower()
-    return _ACTION_LABELS_RU.get(key, str(value or ""))
+    if key:
+        return label("action", key, str(value or ""))
+    return str(value or "")
 
 
 def _draw_right_panel(
@@ -229,10 +236,17 @@ def _draw_right_panel(
 
     card_hit_areas: list[tuple[pygame.Rect, str]] = []
 
+    global _LANG_BUTTON
     living_count = len(living_agents_data)
-    title = f"КОЛОНИЯ ({living_count} живых)"
+    title = tr("КОЛОНИЯ ({n} живых)").format(n=living_count)
     panel.blit(font.render(title, True, (35, 28, 20)), (10, 10))
-    panel.blit(font_small.render("[L] Родословная", True, (90, 78, 62)), (10, 30))
+    panel.blit(font_small.render(tr("[L] Родословная"), True, (90, 78, 62)), (10, 30))
+    lang_btn = pygame.Rect(panel_rect.width - 48, 8, 38, 22)
+    pygame.draw.rect(panel, (226, 214, 196), lang_btn, border_radius=4)
+    pygame.draw.rect(panel, (120, 104, 84), lang_btn, 1, border_radius=4)
+    lang_mark = font_small.render(get_language().upper(), True, (35, 28, 20))
+    panel.blit(lang_mark, lang_mark.get_rect(center=lang_btn.center))
+    _LANG_BUTTON = lang_btn.move(panel_rect.x, panel_rect.y)
 
     y = 52 - int(scroll_offset)
     for item in living_agents_data:
@@ -279,7 +293,7 @@ def _draw_right_panel(
             x=metric_x,
             y=metric_y,
             width=metric_width,
-            label="стресс",
+            label=tr("стресс"),
             value=stress,
             text_color=(80, 60, 55),
             bar_color=BAR_FG_STRESS,
@@ -290,7 +304,7 @@ def _draw_right_panel(
             x=metric_x + metric_width,
             y=metric_y,
             width=metric_width,
-            label="энергия",
+            label=tr("энергия"),
             value=energy,
             text_color=(60, 80, 95),
             bar_color=BAR_FG_ENERGY,
@@ -301,7 +315,7 @@ def _draw_right_panel(
     dead_cards = list(dead_memorials)[:MAX_DEAD_CARDS]
     if dead_cards:
         y += 4
-        panel.blit(font_small.render(f"── умершие ({len(dead_cards)}) ──", True, (110, 100, 90)), (10, y))
+        panel.blit(font_small.render(tr("── умершие ({n}) ──").format(n=len(dead_cards)), True, (110, 100, 90)), (10, y))
         y += 20
         for memorial in dead_cards:
             agent_id = str(getattr(memorial, "agent_id", ""))
@@ -328,10 +342,13 @@ def _draw_right_panel(
                 name = str(getattr(memorial, "name", "") or agent_id)
             sex = str(getattr(memorial, "sex", ""))
             panel.blit(font_small.render(f"✝ {name} {sex}", True, CARD_TEXT_DEAD), (card_rect.x + 8, card_rect.y + 6))
-            cause = str(getattr(memorial, "cause_of_death", "") or "неизвестно")
+            cause = str(getattr(memorial, "cause_of_death", "") or tr("неизвестно"))
             lived = format_sim_time(float(getattr(memorial, "age_at_death", 0.0) or 0.0))
             offspring = int(getattr(memorial, "total_offspring", 0) or 0)
-            line2 = f"{cause} | прожил {lived} | потомков {offspring}"
+            line2 = (
+                f"{cause} | {tr('прожил {lived}').format(lived=lived)} | "
+                f"{tr('потомков {n}').format(n=offspring)}"
+            )
             panel.blit(font_small.render(line2, True, CARD_TEXT_DEAD), (card_rect.x + 8, card_rect.y + 24))
 
             card_hit_areas.append((card_rect.move(panel_rect.x, panel_rect.y), agent_id))
@@ -746,19 +763,36 @@ def _draw_stats_panel(
         hay_level = _clamp01(resources.get("hay", 0.0))
         water_level = _clamp01(resources.get("water", 0.0))
 
-        line1 = (
-            f"Время: {sim_time_text}   Агентов: {agent_count} (самок: {female_count}, самцов: {male_count})   "
-            f"Средний возраст: {format_sim_time(avg_age_s)}"
+        line1 = tr(
+            "Время: {time}   Агентов: {n} (самок: {f}, самцов: {m})   Средний возраст: {age}"
+        ).format(
+            time=sim_time_text,
+            n=agent_count,
+            f=female_count,
+            m=male_count,
+            age=format_sim_time(avg_age_s),
         )
-        line2 = (
-            f"Половозрелые: самки {mature_f}, самцы {mature_m}   Эструс (самки): {estrus_f}   "
-            f"Беременные: {pregnant_count}   Рождений/смертей: {total_births}/{total_deaths}   "
-            f"Связи/крепкие пары: {total_known_pairs}/{bonded_pairs}"
+        line2 = tr(
+            "Половозрелые: самки {f}, самцы {m}   Эструс (самки): {estrus}   "
+            "Беременные: {preg}   Рождений/смертей: {births}/{deaths}   "
+            "Связи/крепкие пары: {pairs}/{bonded}"
+        ).format(
+            f=mature_f,
+            m=mature_m,
+            estrus=estrus_f,
+            preg=pregnant_count,
+            births=total_births,
+            deaths=total_deaths,
+            pairs=total_known_pairs,
+            bonded=bonded_pairs,
         )
-        line3 = (
-            f"Скорость: x{speed:.1f}   Пауза: {'да' if paused else 'нет'}   "
-            f"Звук: {'вкл' if audio_enabled else 'выкл'}   "
-            "Управление: SPACE пауза, +/- скорость, M звук, L - родословная, A - анализ роя, ESC выход"
+        line3 = tr(
+            "Скорость: x{speed:.1f}   Пауза: {paused}   Звук: {sound}   "
+            "Управление: SPACE пауза, +/- скорость, M звук, L родословная, A анализ роя, G язык, ESC выход"
+        ).format(
+            speed=speed,
+            paused=tr("да") if paused else tr("нет"),
+            sound=tr("вкл") if audio_enabled else tr("выкл"),
         )
 
         panel.blit(
@@ -777,7 +811,7 @@ def _draw_stats_panel(
             text_surface_cache,
             x=8,
             y=bar_y,
-            label="Стресс",
+            label=tr("Стресс"),
             value=mean_stress,
             color=BAR_FG_STRESS,
         )
@@ -787,7 +821,7 @@ def _draw_stats_panel(
             text_surface_cache,
             x=next_x,
             y=bar_y,
-            label="Энергия",
+            label=tr("Энергия"),
             value=mean_energy,
             color=BAR_FG_ENERGY,
         )
@@ -797,7 +831,7 @@ def _draw_stats_panel(
             text_surface_cache,
             x=next_x,
             y=bar_y,
-            label="Сплоченность",
+            label=tr("Сплоченность"),
             value=social_cohesion,
             color=BAR_FG_COHESION,
         )
@@ -807,7 +841,7 @@ def _draw_stats_panel(
             text_surface_cache,
             x=next_x,
             y=bar_y,
-            label="Риск вымирания",
+            label=tr("Риск вымирания"),
             value=extinction_risk,
             color=_risk_bar_color(extinction_risk),
         )
@@ -819,7 +853,7 @@ def _draw_stats_panel(
             text_surface_cache,
             x=8,
             y=resource_bar_y,
-            label="Корм",
+            label=tr("Корм"),
             value=food_level,
             color=BAR_FG_FOOD,
         )
@@ -829,7 +863,7 @@ def _draw_stats_panel(
             text_surface_cache,
             x=resource_next_x,
             y=resource_bar_y,
-            label="Сено",
+            label=tr("Сено"),
             value=hay_level,
             color=BAR_FG_HAY,
         )
@@ -839,7 +873,7 @@ def _draw_stats_panel(
             text_surface_cache,
             x=resource_next_x,
             y=resource_bar_y,
-            label="Вода",
+            label=tr("Вода"),
             value=water_level,
             color=BAR_FG_WATER,
         )
@@ -1050,7 +1084,7 @@ def _draw_furniture(screen: "pygame.Surface", font_dbg: "pygame.font.Font") -> N
     pygame.draw.rect(s, (70, 58, 40), door_rect, 3)
     for hy in (510, 560, 610):
         pygame.draw.circle(s, (140, 120, 90), (918, hy), 3)
-    s.blit(font_dbg.render("дверь", True, (30, 20, 10)), (912, 635))
+    s.blit(font_dbg.render(tr("дверь"), True, (30, 20, 10)), (912, 635))
 
     # Left wall/corner
     pygame.draw.line(s, (150, 140, 128), (60, 60), (60, 630), 3)
@@ -1062,7 +1096,7 @@ def _draw_furniture(screen: "pygame.Surface", font_dbg: "pygame.font.Font") -> N
     pygame.draw.rect(s, (60, 45, 30), (110, 510, 42, 68))
     pygame.draw.line(s, (138, 110, 72), (66, 470), (132, 390), 2)
     pygame.draw.line(s, (138, 110, 72), (132, 390), (198, 470), 2)
-    s.blit(font_dbg.render("домик", True, (30, 20, 10)), (92, 620))
+    s.blit(font_dbg.render(tr("домик"), True, (30, 20, 10)), (92, 620))
 
     # Dustbath
     pygame.draw.rect(s, (160, 145, 125), (210, 574, 100, 44), border_radius=6)
@@ -1072,7 +1106,7 @@ def _draw_furniture(screen: "pygame.Surface", font_dbg: "pygame.font.Font") -> N
         gx = 218 + (i * 37) % 84
         gy = 582 + (i * 13) % 28
         pygame.draw.circle(s, (195, 178, 148), (gx, gy), 2)
-    s.blit(font_dbg.render("купалка", True, (30, 20, 10)), (218, 620))
+    s.blit(font_dbg.render(tr("купалка"), True, (30, 20, 10)), (218, 620))
 
     # Water bottle
     pygame.draw.rect(s, (190, 215, 235), (330, 540, 30, 55), border_radius=5)
@@ -1082,14 +1116,14 @@ def _draw_furniture(screen: "pygame.Surface", font_dbg: "pygame.font.Font") -> N
     pygame.draw.circle(s, (140, 128, 110), (345, 610), 4)
     pygame.draw.rect(s, (130, 120, 110), (326, 548, 6, 20))
     pygame.draw.rect(s, (130, 120, 110), (326, 572, 6, 16))
-    s.blit(font_dbg.render("поилка", True, (30, 20, 10)), (326, 620))
+    s.blit(font_dbg.render(tr("поилка"), True, (30, 20, 10)), (326, 620))
 
     # Pellets bowl
     pygame.draw.ellipse(s, (155, 138, 115), (390, 600, 80, 28))
     pygame.draw.ellipse(s, (130, 115, 92), (390, 600, 80, 28), 2)
     for px, py in [(404, 605), (418, 603), (432, 606), (446, 604), (412, 610), (428, 610), (442, 609)]:
         pygame.draw.ellipse(s, (180, 148, 95), (px, py, 8, 5))
-    s.blit(font_dbg.render("корм", True, (30, 20, 10)), (414, 630))
+    s.blit(font_dbg.render(tr("корм"), True, (30, 20, 10)), (414, 630))
 
     # Hay rack
     pygame.draw.rect(s, (148, 125, 80), (472, 580, 76, 44), 2)
@@ -1108,7 +1142,7 @@ def _draw_furniture(screen: "pygame.Surface", font_dbg: "pygame.font.Font") -> N
         ex = hx + int(18 * math.cos(math.radians(ang - 80)))
         ey = hy + int(18 * math.sin(math.radians(ang - 80)))
         pygame.draw.line(s, (195, 172, 65), (hx, hy), (ex, ey), 2)
-    s.blit(font_dbg.render("сено", True, (30, 20, 10)), (494, 630))
+    s.blit(font_dbg.render(tr("сено"), True, (30, 20, 10)), (494, 630))
 
     # Mineral
     pts = [(596, 596), (610, 590), (628, 592), (638, 600), (634, 614), (618, 618), (602, 612)]
@@ -1116,7 +1150,7 @@ def _draw_furniture(screen: "pygame.Surface", font_dbg: "pygame.font.Font") -> N
     pygame.draw.polygon(s, (170, 163, 150), pts, 2)
     for gx, gy in [(606, 600), (618, 596), (626, 604), (612, 610)]:
         pygame.draw.circle(s, (240, 238, 232), (gx, gy), 2)
-    s.blit(font_dbg.render("минерал", True, (30, 20, 10)), (596, 630))
+    s.blit(font_dbg.render(tr("минерал"), True, (30, 20, 10)), (596, 630))
 
     # Litter
     pygame.draw.rect(s, (155, 140, 120), (828, 568, 88, 52), border_radius=4)
@@ -1127,7 +1161,7 @@ def _draw_furniture(screen: "pygame.Surface", font_dbg: "pygame.font.Font") -> N
         ly = 576 + (i * 17) % 36
         pygame.draw.circle(s, (170, 156, 132), (lx, ly), 2)
     pygame.draw.rect(s, (128, 114, 90), (828, 568, 88, 12), border_radius=4)
-    s.blit(font_dbg.render("лоток", True, (30, 20, 10)), (846, 630))
+    s.blit(font_dbg.render(tr("лоток"), True, (30, 20, 10)), (846, 630))
 
     # Wheel
     wh_cx, wh_cy = 730, 418
@@ -1143,7 +1177,7 @@ def _draw_furniture(screen: "pygame.Surface", font_dbg: "pygame.font.Font") -> N
         y2 = int(wh_cy + 48 * math.sin(ang))
         pygame.draw.line(s, (150, 138, 122), (x1, y1), (x2, y2), 2)
     pygame.draw.circle(s, (140, 128, 110), (wh_cx, wh_cy), 8)
-    s.blit(font_dbg.render("колесо", True, (30, 20, 10)), (690, 530))
+    s.blit(font_dbg.render(tr("колесо"), True, (30, 20, 10)), (690, 530))
 
     # Toy
     toy_x, toy_y = 760, 510
@@ -1151,7 +1185,7 @@ def _draw_furniture(screen: "pygame.Surface", font_dbg: "pygame.font.Font") -> N
     for ry in (toy_y - 18, toy_y, toy_y + 18):
         pygame.draw.ellipse(s, (185, 155, 100), (toy_x - 14, ry - 8, 28, 16), 3)
     pygame.draw.circle(s, (195, 175, 110), (toy_x, toy_y + 22), 7, 2)
-    s.blit(font_dbg.render("игрушка", True, (30, 20, 10)), (toy_x - 24, toy_y + 36))
+    s.blit(font_dbg.render(tr("игрушка"), True, (30, 20, 10)), (toy_x - 24, toy_y + 36))
 
     # Object (cardboard box)
     pygame.draw.rect(s, (195, 168, 118), (768, 510, 64, 50))
@@ -1160,7 +1194,7 @@ def _draw_furniture(screen: "pygame.Surface", font_dbg: "pygame.font.Font") -> N
     pygame.draw.line(s, (165, 140, 90), (816, 492), (832, 510), 2)
     pygame.draw.line(s, (165, 140, 90), (832, 510), (816, 492), 2)
     pygame.draw.ellipse(s, (80, 65, 45), (786, 524, 28, 22))
-    s.blit(font_dbg.render("объект", True, (30, 20, 10)), (772, 565))
+    s.blit(font_dbg.render(tr("объект"), True, (30, 20, 10)), (772, 565))
 
     # Shelves
     shelf_c = (178, 152, 116)
@@ -1263,6 +1297,24 @@ def _draw_mount_display_overlays(
         painted_pairs.add(pair_key)
 
 
+def _paint_static_scene(static_scene: "pygame.Surface", font: "pygame.font.Font") -> None:
+    static_scene.fill((235, 228, 215))
+    cage_x, cage_y, cage_w, cage_h = CAGE_RECT
+    pygame.draw.rect(static_scene, (200, 190, 175), pygame.Rect(cage_x, cage_y, cage_w, cage_h))
+    pygame.draw.rect(static_scene, (100, 85, 70), pygame.Rect(cage_x, cage_y, cage_w, cage_h), 3)
+    _draw_furniture(static_scene, font)
+
+
+def _switch_language(gui: Any, static_scene: "pygame.Surface", font: "pygame.font.Font") -> None:
+    toggle_language()
+    gui.swarm_analytics.mark_dirty()
+    _paint_static_scene(static_scene, font)
+    try:
+        pygame.display.set_caption(tr("Colony GUI — симуляция шиншилл"))
+    except Exception:
+        pass
+
+
 def run_pygame_demo(
     agent_count: int = 4,
     *,
@@ -1297,17 +1349,14 @@ def run_pygame_demo(
     screen_width = max(gui.WIDTH, PANEL_RIGHT_X + PANEL_RIGHT_W + 8)
     screen_height = gui.HEIGHT + WINDOW_EXTRA_UI_HEIGHT
     screen = pygame.display.set_mode((screen_width, screen_height))
-    pygame.display.set_caption("Colony GUI - Chinchilla Simulation")
+    pygame.display.set_caption(tr("Colony GUI — симуляция шиншилл"))
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("DejaVu Sans, Liberation Sans, Arial", 16)
     font_small = pygame.font.SysFont("DejaVu Sans, Liberation Sans, Arial", 13)
     font_mono = pygame.font.SysFont("DejaVu Sans Mono, Liberation Mono, Courier New", 12)
     static_scene = pygame.Surface((screen_width, screen_height)).convert()
-    static_scene.fill((235, 228, 215))
+    _paint_static_scene(static_scene, font)
     cage_x, cage_y, cage_w, cage_h = CAGE_RECT
-    pygame.draw.rect(static_scene, (200, 190, 175), pygame.Rect(cage_x, cage_y, cage_w, cage_h))
-    pygame.draw.rect(static_scene, (100, 85, 70), pygame.Rect(cage_x, cage_y, cage_w, cage_h), 3)
-    _draw_furniture(static_scene, font)
 
     sprite_manifest = {}
     try:
@@ -1423,7 +1472,12 @@ def run_pygame_demo(
                         gui.swarm_analytics.refresh(runner, gui.observer, gui._generation_index_map)
                 elif event.key == pygame.K_m and audio_available:
                     audio_enabled = not audio_enabled
+                elif event.key == pygame.K_g:
+                    _switch_language(gui, static_scene, font)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if _LANG_BUTTON is not None and _LANG_BUTTON.collidepoint(event.pos):
+                    _switch_language(gui, static_scene, font)
+                    continue
                 clicked_id = _handle_panel_click(event.pos, card_hit_areas)
                 if clicked_id:
                     if gui.inspector.visible and gui.inspector.agent_id == clicked_id:
@@ -1715,6 +1769,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run Colony GUI")
     parser.add_argument("--agents", type=int, default=4, help="Number of starter agents")
     parser.add_argument(
+        "--lang",
+        choices=("en", "ru"),
+        default=None,
+        help="UI language. Overrides NOWA_LANG. Default is English.",
+    )
+    parser.add_argument(
         "--headless",
         action="store_true",
         help="Run without pygame window and print one summary snapshot",
@@ -1726,6 +1786,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Headless simulation duration in seconds",
     )
     args = parser.parse_args(argv)
+    if args.lang:
+        set_language(args.lang)
 
     if args.headless:
         state = run_headless_ticks(agent_count=args.agents, duration_s=args.duration)

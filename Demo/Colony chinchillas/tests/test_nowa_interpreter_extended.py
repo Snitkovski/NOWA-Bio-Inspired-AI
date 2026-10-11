@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from colony_agent import ChinchillaAgent
 from colony_gui import InspectorData, build_inspector_data_from_agent, build_inspector_data_from_memorial
 from colony_gui.nowa_interpreter import (
@@ -18,6 +20,15 @@ from colony_gui.nowa_interpreter import (
     reward_label,
 )
 from death_registry import DeathRegistry
+
+
+@pytest.fixture(autouse=True)
+def _russian_ui():
+    from colony_gui.i18n import reset_language, set_language
+
+    set_language("ru")
+    yield
+    reset_language()
 
 
 def test_tc01_affect_tone_panic() -> None:

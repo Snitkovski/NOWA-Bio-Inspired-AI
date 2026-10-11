@@ -9,7 +9,7 @@
 Source-available, not open source. Free for research and other non-commercial use under the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0). Redistribution, modification, and commercial use need a separate license from the author ([@burlakovmb](https://github.com/burlakovmb)).
 
 <p align="center">
-  <img src="docs/media/colony.gif" alt="Six NOWA agents in the chinchilla colony, each with its own memory, moving through a shared cage" width="760">
+  <img src="docs/media/en/colony.gif" alt="Six NOWA agents in the chinchilla colony, each with its own memory, moving through a shared cage" width="760">
 </p>
 
 ### Why it's interesting
@@ -55,11 +55,13 @@ PYTHONPATH="Demo/Colony chinchillas/src" python -m colony_gui --agents 6
 python "Demo/Tamagochi Chinchilla/src/main.py"
 ```
 
-The clips above were captured headlessly (`SDL_VIDEODRIVER=dummy`) from those demos. Regenerate them with `python tools/render_promo_media.py` (also needs `pillow`).
+The clips above were captured headlessly (`SDL_VIDEODRIVER=dummy`) from those demos. Regenerate both languages with `python tools/render_promo_media.py` (also needs `pillow`).
+
+Demo windows open in English. `NOWA_LANG=ru` or `--lang ru` switches a demo; `--lang` wins over the environment variable. In the colony and tamagotchi windows, press `G` or the EN/RU button. The virtual-company labs keep an in-window language control and a saved preference; `--lang` overrides that preference for the session.
 
 | Colony | Tamagotchi | Family tree |
 |---|---|---|
-| ![Colony still](docs/media/colony.png) | ![Tamagotchi](docs/media/tamagotchi.gif) | ![Lineage](docs/media/lineage.png) |
+| ![Colony still](docs/media/en/colony.png) | ![Tamagotchi](docs/media/en/tamagotchi.gif) | ![Lineage](docs/media/en/lineage.png) |
 
 The family tree is the colony lineage overlay: founders, offspring, living agents in color, dead agents in grey.
 
@@ -176,6 +178,12 @@ If you use this in research, see [CITATION.cff](CITATION.cff).
 Исходный код доступен, это не открытая лицензия. Исследовательское и иное некоммерческое использование — по [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0). Распространение, изменение и коммерческое использование требуют отдельной лицензии автора ([@burlakovmb](https://github.com/burlakovmb)).
 
 Короткий прогон без дополнительных пакетов — те же команды, что в английском блоке «Quickstart in 60 seconds» выше: `python tools/sixty_seconds.py`, затем колония в headless-режиме. Полный набор тестов: `pip install -r requirements-dev.txt` и `python -m pytest -q`. Тесты графического интерфейса пропускаются, если нет Tk или дисплея.
+
+Окна демо по умолчанию на английском. `NOWA_LANG=ru` или `--lang ru` переключают язык (`--lang` важнее переменной окружения). В колонии и тамагочи — клавиша `G` или кнопка EN/RU. В лабораториях виртуальной компании язык переключается кнопками в окне и запоминается; `--lang` перекрывает сохранённый выбор на этот запуск.
+
+| Колония | Тамагочи | Родословная |
+|---|---|---|
+| ![Колония](docs/media/ru/colony.png) | ![Тамагочи](docs/media/ru/tamagotchi.gif) | ![Родословная](docs/media/ru/lineage.png) |
 
 Когнитивная архитектура автономного агента с раздельными фазами бодрствования и сна, каноническим восьмимерным аффективным пространством, локальным обучением по ошибке предсказания награды и эволюционной настройкой параметров модулей.
 

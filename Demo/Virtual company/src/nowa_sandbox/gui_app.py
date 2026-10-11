@@ -83,12 +83,16 @@ from nowa_sandbox.world_editor import (
 class SandboxLabApp(tk.Tk if tk is not None else object):
     """Main laboratory window."""
 
-    def __init__(self) -> None:
+    def __init__(self, lang: str | None = None) -> None:
         super().__init__()
         self.geometry("1280x820")
         self.minsize(1000, 680)
 
-        self.i18n = I18n(pref_path=DEMO_ROOT / "results" / ".lab_lang.json")
+        self.i18n = I18n(
+            lang=lang or "en",
+            pref_path=DEMO_ROOT / "results" / ".lab_lang.json",
+            force=lang in ("en", "ru"),
+        )
         self.controller = RunController()
         self._ui_queue: queue.Queue = queue.Queue()
         self._records: List[Dict[str, Any]] = []
@@ -1200,10 +1204,15 @@ class SandboxLabApp(tk.Tk if tk is not None else object):
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    import argparse
+
     os.chdir(DEMO_ROOT)
     if str(DEMO_ROOT / "src") not in sys.path:
         sys.path.insert(0, str(DEMO_ROOT / "src"))
-    app = SandboxLabApp()
+    parser = argparse.ArgumentParser(description="NOWA procurement sandbox lab")
+    parser.add_argument("--lang", choices=("en", "ru"), default=None, help="UI language. Overrides NOWA_LANG and the saved preference.")
+    args = parser.parse_args(argv)
+    app = SandboxLabApp(lang=args.lang)
     app.mainloop()
     return 0
 

@@ -60,7 +60,19 @@ def _report(path: Path) -> None:
         raise RuntimeError(f"{path} exceeds 5 MB")
 
 
-def render_colony() -> None:
+def _activate(lang: str) -> None:
+    os.environ["NOWA_LANG"] = lang
+    for src in (COLONY_SRC, TAMAGOTCHI_SRC):
+        if str(src) not in sys.path:
+            sys.path.insert(0, str(src))
+    from colony_gui.i18n import set_language as set_colony_language
+    from tama_i18n import set_language as set_tama_language
+
+    set_colony_language(lang)
+    set_tama_language(lang)
+
+
+def render_colony(out: Path) -> None:
     import pygame
 
     if str(COLONY_SRC) not in sys.path:
@@ -79,15 +91,15 @@ def render_colony() -> None:
         on_frame=on_frame,
     )
     pygame.quit()
-    gif = OUT / "colony.gif"
-    png = OUT / "colony.png"
+    gif = out / "colony.gif"
+    png = out / "colony.png"
     _save_gif(frames, gif, fps=8)
     frames[len(frames) // 2].save(png, optimize=True)
     _report(gif)
     _report(png)
 
 
-def render_tamagotchi() -> None:
+def render_tamagotchi(out: Path) -> None:
     import pygame
 
     if str(TAMAGOTCHI_SRC) not in sys.path:
@@ -105,11 +117,11 @@ def render_tamagotchi() -> None:
         engine.load_animation(sprite.stem, sprite)
 
     script = (
-        ("walk_loop", "bowl_pellets", "Walking to the food bowl", 10),
-        ("eat_hay_loop", "bowl_hay", "Eating hay", 12),
-        ("run_wheel_loop", "wheel", "Running the wheel", 12),
-        ("dustbath_loop", "dustbath", "Dust bath", 10),
-        ("sleep_loop", "house", "Asleep", 10),
+        ("walk_loop", "bowl_pellets", "ест гранулы", 10),
+        ("eat_hay_loop", "bowl_hay", "ест сено", 12),
+        ("run_wheel_loop", "wheel", "на колесе", 12),
+        ("dustbath_loop", "dustbath", "купается в пыли", 10),
+        ("sleep_loop", "house", "спит в домике", 10),
     )
     frames = []
     for anim, position, subtitle, steps in script:
@@ -133,15 +145,15 @@ def render_tamagotchi() -> None:
             engine.render()
             frames.append(_image_from_surface(engine.screen, max_width=720))
     pygame.quit()
-    gif = OUT / "tamagotchi.gif"
-    png = OUT / "tamagotchi.png"
+    gif = out / "tamagotchi.gif"
+    png = out / "tamagotchi.png"
     _save_gif(frames, gif, fps=8)
     frames[len(frames) // 3].save(png, optimize=True)
     _report(gif)
     _report(png)
 
 
-def render_lineage() -> None:
+def render_lineage(out: Path) -> None:
     import pygame
 
     if str(COLONY_SRC) not in sys.path:
@@ -209,8 +221,8 @@ def render_lineage() -> None:
         pygame.display.flip()
         frames.append(_image_from_surface(screen, max_width=760))
     pygame.quit()
-    gif = OUT / "lineage.gif"
-    png = OUT / "lineage.png"
+    gif = out / "lineage.gif"
+    png = out / "lineage.png"
     _save_gif(frames, gif, fps=6)
     frames[-1].save(png, optimize=True)
     _report(gif)
@@ -218,10 +230,26 @@ def render_lineage() -> None:
 
 
 def main() -> int:
+    import shutil
+
     OUT.mkdir(parents=True, exist_ok=True)
-    render_colony()
-    render_tamagotchi()
-    render_lineage()
+    names = (
+        "colony.gif",
+        "colony.png",
+        "tamagotchi.gif",
+        "tamagotchi.png",
+        "lineage.gif",
+        "lineage.png",
+    )
+    for lang in ("en", "ru"):
+        dest = OUT / lang
+        dest.mkdir(parents=True, exist_ok=True)
+        _activate(lang)
+        render_colony(dest)
+        render_tamagotchi(dest)
+        render_lineage(dest)
+    for name in names:
+        shutil.copyfile(OUT / "en" / name, OUT / name)
     return 0
 
 

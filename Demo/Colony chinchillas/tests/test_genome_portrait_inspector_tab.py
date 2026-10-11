@@ -18,6 +18,15 @@ from death_registry import DeathRegistry
 from genome import GenomeVector
 
 
+@pytest.fixture(autouse=True)
+def _russian_ui():
+    from colony_gui.i18n import reset_language, set_language
+
+    set_language("ru")
+    yield
+    reset_language()
+
+
 def _default_genes() -> dict[str, float]:
     return dict(GenomeVector.default().genes)
 

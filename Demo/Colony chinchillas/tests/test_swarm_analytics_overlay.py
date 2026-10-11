@@ -17,6 +17,15 @@ from genome import GenomeVector
 from simulation_runner import SimulationRunner
 
 
+@pytest.fixture(autouse=True)
+def _russian_ui():
+    from colony_gui.i18n import reset_language, set_language
+
+    set_language("ru")
+    yield
+    reset_language()
+
+
 def _summary(generation: int, genes: dict[str, float]) -> GenerationSummary:
     return GenerationSummary(
         generation=generation,
