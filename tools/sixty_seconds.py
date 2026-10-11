@@ -8,6 +8,7 @@ From a clean clone, at the repository root:
 
 from __future__ import annotations
 
+import argparse
 import logging
 import random
 import sys
@@ -28,6 +29,7 @@ from genome import GENE_KEYS, GenomeVector  # noqa: E402
 from hippocampus import NOWAHippocampus  # noqa: E402
 from selector import ActionSelector  # noqa: E402
 from sleep import SleepManager  # noqa: E402
+from gui_i18n import action_label, axis_label, resolve_lang, set_language, tr  # noqa: E402
 
 
 EPISODES = (
@@ -41,7 +43,7 @@ EPISODES = (
 
 def _fmt_axes(agent: Agent) -> str:
     axes = getattr(agent.affective_space, "axes", {}) or {}
-    parts = [f"{name}={float(axes.get(name, 0.0)):+.2f}" for name in AXES]
+    parts = [f"{axis_label(name)}={float(axes.get(name, 0.0)):+.2f}" for name in AXES]
     return "  ".join(parts)
 
 
@@ -54,7 +56,23 @@ def _fmt_modulators(agent: Agent) -> str:
     )
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    raw = list(sys.argv[1:] if argv is None else argv)
+    preview = None
+    if "--lang" in raw:
+        index = raw.index("--lang")
+        if index + 1 < len(raw):
+            preview = raw[index + 1]
+    set_language(resolve_lang(preview))
+    parser = argparse.ArgumentParser(description=tr("Run a short NOWA agent episode"))
+    parser.add_argument(
+        "--lang",
+        choices=("en", "ru"),
+        default=None,
+        help=tr("UI language. Overrides NOWA_LANG."),
+    )
+    args = parser.parse_args(argv)
+    set_language(resolve_lang(args.lang))
     actions = ["approach", "eat", "rest", "explore", "hide"]
     hippocampus = NOWAHippocampus()
     cortex = CortexMemory()
@@ -62,9 +80,9 @@ def main() -> int:
     sleep_manager = SleepManager(hippocampus, cortex)
     agent = Agent(hippocampus, cortex, selector, sleep_manager=sleep_manager)
 
-    print("NOWA — one agent, awake. No backprop, no language model.")
-    print(f"affect (8): {_fmt_axes(agent)}")
-    print(f"modulators: {_fmt_modulators(agent)}")
+    print(tr("NOWA — one agent, awake. No backprop, no language model."))
+    print(tr("affect (8): {axes}", axes=_fmt_axes(agent)))
+    print(tr("modulators: {mods}", mods=_fmt_modulators(agent)))
     print()
 
     for index, (context, reward, novelty, conflict) in enumerate(EPISODES, start=1):
@@ -75,18 +93,23 @@ def main() -> int:
             conflict=conflict,
         )
         print(
-            f"wake {index}: context={context[0]}  reward={reward:+.2f}  "
-            f"action={action}"
+            tr(
+                "wake {index}: context={context}  reward={reward:+.2f}  action={action}",
+                index=index,
+                context=context[0],
+                reward=reward,
+                action=action_label(action),
+            )
         )
 
     print()
-    print("Sleep. Slow memory consolidates here; waking did not train weights.")
+    print(tr("Sleep. Slow memory consolidates here; waking did not train weights."))
     stats = agent.sleep(cycles=1)
     cycles = stats.get("cycles", stats.get("sleep_cycles", 1)) if isinstance(stats, dict) else 1
-    print(f"sleep cycles reported: {cycles}")
-    print(f"affect (8): {_fmt_axes(agent)}")
-    print(f"modulators: {_fmt_modulators(agent)}")
-    print(f"episodes stored: {len(hippocampus.experiences)}")
+    print(tr("sleep cycles reported: {cycles}", cycles=cycles))
+    print(tr("affect (8): {axes}", axes=_fmt_axes(agent)))
+    print(tr("modulators: {mods}", mods=_fmt_modulators(agent)))
+    print(tr("episodes stored: {n}", n=len(hippocampus.experiences)))
 
     rng = random.Random(7)
     mother = GenomeVector.random(rng)
@@ -112,18 +135,24 @@ def main() -> int:
     )
     print()
     print(
-        f"genome: {len(GENE_KEYS)} genes. "
-        f"offspring generation={daughter.generation} "
-        f"(sister={son.generation}), "
-        f"one gene nm_da_ne_weight daughter={daughter.genes['nm_da_ne_weight']:+.3f} "
-        f"son={son.genes['nm_da_ne_weight']:+.3f}"
+        tr(
+            "genome: {n} genes. offspring generation={generation} (sister={sister}), one gene neuromodulator DA/NE weight ({gene}) daughter={daughter:+.3f} son={son:+.3f}",
+            n=len(GENE_KEYS),
+            generation=daughter.generation,
+            sister=son.generation,
+            gene="nm_da_ne_weight",
+            daughter=daughter.genes["nm_da_ne_weight"],
+            son=son.genes["nm_da_ne_weight"],
+        )
     )
     print(
-        f"epigenome: {len(snapshot.patterns)} consolidated pattern(s) "
-        "eligible to pass to offspring."
+        tr(
+            "epigenome: {n} consolidated pattern(s) eligible to pass to offspring.",
+            n=len(snapshot.patterns),
+        )
     )
     print()
-    print("Next: PYTHONPATH=\"Demo/Colony chinchillas/src\" python3 -m colony_gui --headless --agents 4 --duration 2")
+    print(tr("Next: PYTHONPATH=\"Demo/Colony chinchillas/src\" python3 -m colony_gui --headless --agents 4 --duration 2"))
     return 0
 
 

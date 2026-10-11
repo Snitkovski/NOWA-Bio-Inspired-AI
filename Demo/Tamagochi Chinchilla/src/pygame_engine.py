@@ -202,7 +202,7 @@ class PygameEngine:
 
         pygame.init()
         self.screen = pygame.display.set_mode((width, height))
-        pygame.display.set_caption("Chinchilla Agent — Cognitive Tamagotchi")
+        pygame.display.set_caption(tr("Тамагочи — шиншилла"))
         self.clock = pygame.time.Clock()
 
         # Animation clips keyed by animation_id

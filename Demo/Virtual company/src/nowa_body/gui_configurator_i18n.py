@@ -15,6 +15,8 @@ FLAG_RU = "\U0001F1F7\U0001F1FA"
 STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "app.title": "NOWA Role Configurator",
+        "cli.description": "NOWA role configurator",
+        "cli.lang_help": "UI language. Overrides NOWA_LANG and the saved preference.",
         "lang.en": "EN",
         "lang.ru": "RU",
         "list.heading": "Company roles",
@@ -403,6 +405,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "statusbar.warn": "⚠ {n} warnings — save is allowed",
         "statusbar.err": "✗ {n} errors — save is blocked",
         "error.title": "Error",
+        "error.params_object": "Parameters must be a JSON object",
         "prompt.tag": "Tag",
         "prompt.event": "Event name",
         "prompt.consequence": "Outcome name",
@@ -729,6 +732,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
     },
     "ru": {
         "app.title": "NOWA Role Configurator",
+        "cli.description": "Конфигуратор ролей NOWA",
+        "cli.lang_help": "Язык интерфейса. Важнее NOWA_LANG и сохранённого выбора.",
         "lang.en": "EN",
         "lang.ru": "RU",
         "list.heading": "Роли компании",
@@ -1120,6 +1125,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "statusbar.warn": "⚠ {n} предупреждений — сохранение разрешено",
         "statusbar.err": "✗ {n} ошибок — сохранение заблокировано",
         "error.title": "Ошибка",
+        "error.params_object": "Параметры должны быть JSON-объектом",
         "prompt.tag": "Тег",
         "prompt.event": "Имя события",
         "prompt.consequence": "Имя результата",

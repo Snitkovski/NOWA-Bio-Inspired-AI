@@ -27,6 +27,8 @@ CRITERION_KEYS = (
 STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "app.title": "NOWA Procurement Sandbox Lab  v{version}",
+        "cli.description": "NOWA procurement sandbox lab",
+        "cli.lang_help": "UI language. Overrides NOWA_LANG and the saved preference.",
         "tab.run": "Run",
         "tab.world": "World",
         "tab.sweep": "Multi-seed",
@@ -262,6 +264,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
     },
     "ru": {
         "app.title": "Лаборатория NOWA Procurement Sandbox  v{version}",
+        "cli.description": "Лаборатория песочницы закупок NOWA",
+        "cli.lang_help": "Язык интерфейса. Важнее NOWA_LANG и сохранённого выбора.",
         "tab.run": "Запуск",
         "tab.world": "Мир",
         "tab.sweep": "Перебор",

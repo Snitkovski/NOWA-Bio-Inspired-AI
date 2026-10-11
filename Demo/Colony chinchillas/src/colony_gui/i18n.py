@@ -916,6 +916,11 @@ _add("восстановление - текущий приоритет", "recove
 
 # HUD, inspector, lineage, swarm chrome.
 for _ru, _en in {
+    "Запустить интерфейс колонии": "Run Colony GUI",
+    "Число стартовых агентов": "Number of starter agents",
+    "Язык интерфейса. Имеет приоритет над NOWA_LANG. По умолчанию английский.": "UI language. Overrides NOWA_LANG. Default is English.",
+    "Запуск без окна pygame, с одним итоговым снимком": "Run without pygame window and print one summary snapshot",
+    "Длительность headless-симуляции в секундах": "Headless simulation duration in seconds",
     "Закрыть симуляцию": "Close the simulation",
     "Вы действительно хотите закрыть окно симуляции? Несохранённые данные будут потеряны.": "Close the simulation window? Unsaved data will be lost.",
     "КОЛОНИЯ ({n} живых)": "COLONY ({n} living)",

@@ -15,6 +15,8 @@ FLAG_RU = "\U0001F1F7\U0001F1FA"
 STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "app.title": "NOWA Body Layer Lab  —  Phase 1",
+        "cli.description": "NOWA body layer lab",
+        "cli.lang_help": "UI language. Overrides NOWA_LANG and the saved preference.",
         "tab.pipeline": "Pipeline",
         "tab.pending": "Approvals",
         "tab.memory": "Memory",
@@ -111,6 +113,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
     },
     "ru": {
         "app.title": "Лаборатория слоя «тело» NOWA  —  Фаза 1",
+        "cli.description": "Лаборатория слоя «тело» NOWA",
+        "cli.lang_help": "Язык интерфейса. Важнее NOWA_LANG и сохранённого выбора.",
         "tab.pipeline": "Конвейер",
         "tab.pending": "Согласования",
         "tab.memory": "Память",

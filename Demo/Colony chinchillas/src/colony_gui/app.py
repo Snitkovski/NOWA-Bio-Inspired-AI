@@ -1796,24 +1796,34 @@ def run_pygame_demo(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run Colony GUI")
-    parser.add_argument("--agents", type=int, default=4, help="Number of starter agents")
+    import sys
+
+    raw = list(sys.argv[1:] if argv is None else argv)
+    preview = None
+    if "--lang" in raw:
+        index = raw.index("--lang")
+        if index + 1 < len(raw):
+            preview = raw[index + 1]
+    if preview in ("en", "ru"):
+        set_language(preview)
+    parser = argparse.ArgumentParser(description=tr("Запустить интерфейс колонии"))
+    parser.add_argument("--agents", type=int, default=4, help=tr("Число стартовых агентов"))
     parser.add_argument(
         "--lang",
         choices=("en", "ru"),
         default=None,
-        help="UI language. Overrides NOWA_LANG. Default is English.",
+        help=tr("Язык интерфейса. Имеет приоритет над NOWA_LANG. По умолчанию английский."),
     )
     parser.add_argument(
         "--headless",
         action="store_true",
-        help="Run without pygame window and print one summary snapshot",
+        help=tr("Запуск без окна pygame, с одним итоговым снимком"),
     )
     parser.add_argument(
         "--duration",
         type=float,
         default=2.0,
-        help="Headless simulation duration in seconds",
+        help=tr("Длительность headless-симуляции в секундах"),
     )
     args = parser.parse_args(argv)
     if args.lang:

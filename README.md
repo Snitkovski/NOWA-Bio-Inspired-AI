@@ -57,7 +57,7 @@ python "Demo/Tamagochi Chinchilla/src/main.py"
 
 The clips above were captured headlessly (`SDL_VIDEODRIVER=dummy`) from those demos. Regenerate both languages with `python tools/render_promo_media.py` (also needs `pillow`).
 
-Demo windows open in English. `NOWA_LANG=ru` or `--lang ru` switches a demo; `--lang` wins over the environment variable. In the colony and tamagotchi windows, press `G` or the separate EN and RU buttons. The active language is highlighted. The virtual-company labs and the Warriner dashboard use the same EN and RU buttons; the labs also remember the choice, and `--lang` overrides that preference for the session.
+Demo windows and the core observation window open in English. `NOWA_LANG=ru` or `--lang ru` switches the language; `--lang` wins over the environment variable. In the colony and tamagotchi windows, press `G` or the separate EN and RU buttons. The active language is highlighted. The core window (`python src/gui.py`), the virtual-company labs, and the Warriner dashboard use the same EN and RU buttons. The labs also remember the choice, and `--lang` overrides that preference for the session. The core window does not store a language preference.
 
 | Colony | Tamagotchi | Family tree |
 |---|---|---|
@@ -152,6 +152,14 @@ Core observation interface:
 python src/gui.py
 ```
 
+`--lang en|ru` and `NOWA_LANG` select the language. EN and RU in the title bar switch it, and the active button is highlighted.
+
+![NOWA cognitive interface in English](docs/media/en/core-gui.png)
+
+The inspector opens from Actions:
+
+![Agent state inspector in English](docs/media/en/core-inspector.png)
+
 Subsystem verification protocols are given in [Docs/TESTING.en.md](Docs/TESTING.en.md). Platform commands are given in the English scientific accounts linked from [Docs/INDEX.en.md](Docs/INDEX.en.md).
 
 ### Reading
@@ -179,7 +187,7 @@ If you use this in research, see [CITATION.cff](CITATION.cff).
 
 Короткий прогон без дополнительных пакетов — те же команды, что в английском блоке «Quickstart in 60 seconds» выше: `python tools/sixty_seconds.py`, затем колония в headless-режиме. Полный набор тестов: `pip install -r requirements-dev.txt` и `python -m pytest -q`. Тесты графического интерфейса пропускаются, если нет Tk или дисплея.
 
-Окна демо по умолчанию на английском. `NOWA_LANG=ru` или `--lang ru` переключают язык (`--lang` важнее переменной окружения). В колонии и тамагочи — клавиша `G` или отдельные кнопки EN и RU. Активный язык подсвечен. В лабораториях виртуальной компании и на панели Warriner те же кнопки EN и RU. Лаборатории запоминают выбор, а `--lang` перекрывает его на этот запуск.
+Окна демо и окно наблюдения ядра по умолчанию на английском. `NOWA_LANG=ru` или `--lang ru` переключают язык (`--lang` важнее переменной окружения). В колонии и тамагочи — клавиша `G` или отдельные кнопки EN и RU. Активный язык подсвечен. В окне ядра (`python src/gui.py`), в лабораториях виртуальной компании и на панели Warriner те же кнопки EN и RU. Лаборатории запоминают выбор, а `--lang` перекрывает его на этот запуск. Окно ядра язык не запоминает.
 
 | Колония | Тамагочи | Родословная |
 |---|---|---|
@@ -265,6 +273,14 @@ python -m pytest -q
 ```bash
 python src/gui.py
 ```
+
+`--lang en|ru` и `NOWA_LANG` задают язык. Кнопки EN и RU в заголовке переключают его, активная подсвечена.
+
+![Когнитивный интерфейс NOWA по-русски](docs/media/ru/core-gui.png)
+
+Инспектор открывается из блока «Действия»:
+
+![Инспектор состояния агента по-русски](docs/media/ru/core-inspector.png)
 
 Протоколы проверки подсистем приведены в [Docs/TESTING.ru.md](Docs/TESTING.ru.md). Команды установок — в русских научных описаниях, на которые ведёт [Docs/INDEX.ru.md](Docs/INDEX.ru.md).
 

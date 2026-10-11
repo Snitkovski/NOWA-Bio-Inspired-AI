@@ -24,6 +24,21 @@ from action_realizer import ActionRealizer, ActionRealizerWithSelector
 from intent_memory import IntentMemory
 from affect import AffectiveState
 from self_model import SelfModel
+from gui_i18n import (
+    PHRASES,
+    action_label,
+    axis_label,
+    drive_label,
+    emotion_label,
+    failure_label,
+    format_auto_thought,
+    get_language,
+    mode_label,
+    resolve_lang,
+    set_language,
+    tr,
+    translate_block,
+)
 try:
     from autonomous_organism import (
         AutonomousOrganismAgent,
@@ -92,9 +107,11 @@ class GUIEnvironmentInterface:
 
 
 class NOWAGUI:
-    def __init__(self, root):
+    def __init__(self, root, lang=None):
+        set_language(resolve_lang(lang))
         self.root = root
-        self.root.title("NOWA - Cognitive Agent Interface")
+        self._lang_buttons = {}
+        self._set_title(self.root, "NOWA - Cognitive Agent Interface")
         self.root.geometry("1200x750")
         
         # Initialize agent
@@ -152,6 +169,8 @@ class NOWAGUI:
             print(f"[GUI] Autonomous init disabled: {e}")
         
         self.setup_ui()
+        self._localize_widget(self.root)
+        self._style_lang_buttons()
         self.last_action = None
         self.last_context = None
         self.external_ui_busy = False
@@ -283,24 +302,32 @@ class NOWAGUI:
                     last_tick = runtime.organism_step(dt)
         except Exception as e:
             if emit_chat:
-                self.add_to_chat(f"[AUTO] error: {str(e)}", "error")
+                self.add_to_chat(tr("[AUTO] error: {error}", error=str(e)), "error")
             print(f"[GUI] Autonomous tick error: {e}")
             return None
 
         if emit_chat and last_tick is not None:
-            mode = str(last_tick.get("physiology_mode") or "idle")
+            mode = mode_label(last_tick.get("physiology_mode") or "idle")
             load = float(last_tick.get("cognitive_load", 0.0))
-            active_drive = last_tick.get("active_drive") or "none"
+            active_drive = drive_label(last_tick.get("active_drive") or "none")
             energy_level = float(last_tick.get("energy_level", 0.0))
             cycle_flag = bool(last_tick.get("internal_cycle_triggered", False))
             self.add_to_chat(
-                f"[AUTO] tick x{ticks} | mode={mode} | load={load:.2f} | drive={active_drive} | energy={energy_level:.2f} | cycle={cycle_flag}",
+                tr(
+                    "[AUTO] tick x{ticks} | mode={mode} | load={load:.2f} | drive={drive} | energy={energy:.2f} | cycle={cycle}",
+                    ticks=ticks,
+                    mode=mode,
+                    load=load,
+                    drive=active_drive,
+                    energy=energy_level,
+                    cycle=cycle_flag,
+                ),
                 "system",
             )
             if bool(last_tick.get("speech_event", False)):
                 speech_text = str(last_tick.get("speech_output", "")).strip()
                 if speech_text:
-                    self.add_to_chat(f"[AUTO speech] {speech_text}", "system")
+                    self.add_to_chat(tr("[AUTO speech] {speech}", speech=speech_text), "system")
 
         return last_tick
 
@@ -336,7 +363,7 @@ class NOWAGUI:
             if tick is not None and bool(tick.get("speech_event", False)):
                 speech_text = str(tick.get("speech_output", "")).strip()
                 if speech_text:
-                    self.add_to_chat(f"[AUTO] {speech_text}", "system")
+                    self.add_to_chat(tr("[AUTO] {speech}", speech=speech_text), "system")
 
             # Keep legacy affect widgets in sync with canonical affective core.
             try:
@@ -391,15 +418,7 @@ class NOWAGUI:
         self.autonomous_last_thought_signature = signature
         self.autonomous_last_thought_time = now
 
-        if best_action == "NO_ACTION":
-            text = f"[AUTO] think: drive={active_drive} | action=NO_ACTION (BG gate inhibited)"
-        elif best_action:
-            text = f"[AUTO] think: drive={active_drive} | action={best_action}"
-        else:
-            text = f"[AUTO] think: drive={active_drive} | action=undetermined"
-        if confidence_v is not None:
-            text += f" | confidence={confidence_v:.2f}"
-        return text
+        return format_auto_thought(active_drive, best_action, confidence_v)
 
     def _on_close(self):
         self.autonomous_lifecycle_running = False
@@ -441,16 +460,16 @@ class NOWAGUI:
 
     def _format_autonomous_failures_text(self, real_errors, warnings):
         lines = []
-        lines.append(f"Критичные ошибки: {len(real_errors)}")
-        lines.append(f"Предупреждения: {len(warnings)}")
+        lines.append(f"{tr('Критичные ошибки:')} {len(real_errors)}")
+        lines.append(f"{tr('Предупреждения:')} {len(warnings)}")
         lines.append("")
         if not real_errors:
-            lines.append("Критичных ошибок не зафиксировано.")
+            lines.append(tr("Критичных ошибок не зафиксировано."))
             return "\n".join(lines)
 
-        lines.append("Список критичных ошибок:")
+        lines.append(tr("Список критичных ошибок:"))
         for idx, item in enumerate(real_errors, start=1):
-            mode = str(item.get("failure_mode", "unknown"))
+            mode = failure_label(item.get("failure_mode", "unknown"))
             ts = item.get("timestamp", None)
             details = item.get("details", {}) or {}
             try:
@@ -482,6 +501,12 @@ class NOWAGUI:
             except Exception:
                 failures = []
         real_errors, warnings = self._split_autonomous_failures(failures)
+        header = getattr(self, "autonomous_errors_header", None)
+        if header is not None:
+            try:
+                header.config(text=f"{tr('Критичные ошибки:')} {len(real_errors)}")
+            except Exception:
+                pass
         content = self._format_autonomous_failures_text(real_errors, warnings)
         try:
             text_widget.config(state=tk.NORMAL)
@@ -512,13 +537,13 @@ class NOWAGUI:
             pass
 
         window = tk.Toplevel(self.root)
-        window.title("Критичные ошибки автономного организма")
+        self._set_title(window, "Критичные ошибки автономного организма")
         window.geometry("760x420")
         window.configure(bg="#f8fbf9")
         self.autonomous_errors_window = window
 
         header_color = "#c0392b" if real_errors else "#2e7d32"
-        header_text = f"Критичные ошибки: {len(real_errors)}"
+        header_text = f"{tr('Критичные ошибки:')} {len(real_errors)}"
         header = tk.Label(
             window,
             text=header_text,
@@ -529,6 +554,7 @@ class NOWAGUI:
             justify=tk.LEFT,
         )
         header.pack(fill=tk.X, padx=10, pady=(10, 6))
+        self.autonomous_errors_header = header
 
         text_widget = scrolledtext.ScrolledText(
             window,
@@ -564,12 +590,12 @@ class NOWAGUI:
 
         if runtime is None:
             try:
-                self.autonomous_status_label.config(text="Автономный режим: отключен")
-                self.autonomous_drive_label.config(text="Ведущий драйв: н/д")
-                self.autonomous_limits_label.config(text="тики:0")
+                self.autonomous_status_label.config(text=tr("Автономный режим: отключен"))
+                self.autonomous_drive_label.config(text=tr("Ведущий драйв: н/д"))
+                self.autonomous_limits_label.config(text=tr("тики:0"))
                 if hasattr(self, "autonomous_errors_link_label"):
                     self.autonomous_errors_link_label.config(
-                        text="ошибки:0",
+                        text=tr("ошибки:0"),
                         fg="#7f8c8d",
                         cursor="arrow",
                     )
@@ -589,23 +615,18 @@ class NOWAGUI:
 
         last_tick = runtime.tick_history[-1] if runtime.tick_history else {}
         mode_key = str(last_tick.get("physiology_mode") or "idle")
-        mode_ru = {
-            "idle": "покой",
-            "passive": "пассивный",
-            "internal_processing": "внутренний_цикл",
-            "speaking": "речь",
-            "low_energy": "низкая_энергия",
-        }.get(mode_key, mode_key)
+        mode_text = mode_label(mode_key)
         cognitive_load = float(last_tick.get("cognitive_load", 0.0))
-        active_drive = str(last_tick.get("active_drive") or "none")
+        active_drive = drive_label(last_tick.get("active_drive") or "none")
         cycle_flag = bool(last_tick.get("internal_cycle_triggered", False))
         speech_flag = bool(last_tick.get("speech_event", False))
 
         drives = dict(snapshot.get("drives", {}) or {})
-        top_drive = "none"
+        top_drive = drive_label("none")
         top_value = 0.0
         if drives:
-            top_drive, top_value = max(drives.items(), key=lambda item: float(item[1]))
+            top_name, top_value = max(drives.items(), key=lambda item: float(item[1]))
+            top_drive = drive_label(top_name)
 
         energy = dict(snapshot.get("energy", {}) or {})
         energy_level = float(energy.get("energy", 0.0))
@@ -614,18 +635,24 @@ class NOWAGUI:
 
         try:
             self.autonomous_status_label.config(
-                text=f"режим:{mode_ru} нагрузка:{cognitive_load:.2f} цикл:{int(cycle_flag)} речь:{int(speech_flag)}"
+                text=(
+                    f"{tr('режим:')}{mode_text} {tr('нагрузка:')}{cognitive_load:.2f} "
+                    f"{tr('цикл:')}{int(cycle_flag)} {tr('речь:')}{int(speech_flag)}"
+                )
             )
             self.autonomous_drive_label.config(
-                text=f"ведущий:{active_drive} топ:{top_drive}={top_value:.2f} подавление:{int(suppressed)}"
+                text=(
+                    f"{tr('ведущий:')}{active_drive} {tr('топ:')}{top_drive}={top_value:.2f} "
+                    f"{tr('подавление:')}{int(suppressed)}"
+                )
             )
             self.autonomous_limits_label.config(
-                text=f"тики:{tick_count}"
+                text=f"{tr('тики:')}{tick_count}"
             )
             if hasattr(self, "autonomous_errors_link_label"):
                 err_count = len(real_errors)
                 self.autonomous_errors_link_label.config(
-                    text=f"ошибки:{err_count}",
+                    text=f"{tr('ошибки:')}{err_count}",
                     fg="#c0392b" if err_count > 0 else "#1f6feb",
                     cursor="hand2",
                 )
@@ -637,10 +664,135 @@ class NOWAGUI:
             pass
         self._refresh_autonomous_errors_window()
         
+    def _set_title(self, window, key):
+        window._i18n_title = key
+        window.title(tr(key))
+
+    def _refresh_titles(self):
+        for window in (
+            self.root,
+            getattr(self, "inspector_window", None),
+            getattr(self, "autonomous_errors_window", None),
+            getattr(self, "load_window", None),
+            getattr(self, "dataset_window", None),
+            getattr(self, "sleep_window", None),
+        ):
+            key = getattr(window, "_i18n_title", None) if window is not None else None
+            if not key:
+                continue
+            try:
+                if window.winfo_exists():
+                    window.title(tr(key))
+            except Exception:
+                pass
+
+    def _style_lang_buttons(self):
+        active = get_language()
+        for code, button in getattr(self, "_lang_buttons", {}).items():
+            try:
+                if code == active:
+                    button.configure(bg="#dbeafe", fg="#1e3a5f", relief=tk.SOLID, bd=2, highlightbackground="#2563eb")
+                else:
+                    button.configure(bg="#34495e", fg="#ecf0f1", relief=tk.FLAT, bd=1, highlightbackground="#2c3e50")
+            except Exception:
+                pass
+
+    def _localize_widget(self, widget):
+        """Retarget labels, buttons, frames, and notebook tabs that use catalog keys."""
+
+        try:
+            children = widget.winfo_children()
+        except Exception:
+            children = ()
+        for child in children:
+            self._localize_widget(child)
+        try:
+            import tkinter.ttk as ttk_mod
+
+            if isinstance(widget, ttk_mod.Notebook):
+                mapping = getattr(widget, "_i18n_tabs", None)
+                if mapping is None:
+                    mapping = {}
+                    for tab_id in widget.tabs():
+                        current = widget.tab(tab_id, "text")
+                        if current in PHRASES:
+                            mapping[tab_id] = current
+                    widget._i18n_tabs = mapping
+                for tab_id, key in list(getattr(widget, "_i18n_tabs", {}).items()):
+                    try:
+                        widget.tab(tab_id, text=tr(key))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        try:
+            key = getattr(widget, "_i18n_key", None)
+            if key is None:
+                current = widget.cget("text")
+                if isinstance(current, str) and current in PHRASES:
+                    widget._i18n_key = current
+                    key = current
+            if key:
+                widget.configure(text=tr(key))
+        except Exception:
+            pass
+
+    def _set_ui_language(self, lang):
+        set_language(lang)
+        self._style_lang_buttons()
+        self._refresh_titles()
+        self._localize_widget(self.root)
+        for window in (
+            getattr(self, "autonomous_errors_window", None),
+            getattr(self, "load_window", None),
+            getattr(self, "dataset_window", None),
+            getattr(self, "sleep_window", None),
+        ):
+            if window is None:
+                continue
+            try:
+                if window.winfo_exists():
+                    self._localize_widget(window)
+            except Exception:
+                pass
+        try:
+            self._refresh_autonomous_errors_window()
+        except Exception:
+            pass
+        try:
+            self.update_affect_display()
+            self.update_temporal_display()
+            self.update_memory_display()
+            self.update_stats(self.last_action or "нет")
+            self.update_external_interaction_display()
+        except Exception:
+            pass
+        try:
+            if self.inspector_window and self.inspector_window.winfo_exists():
+                self.open_inspector()
+        except Exception:
+            pass
+
     def setup_ui(self):
         # Title
         title_frame = tk.Frame(self.root, bg="#2c3e50")
         title_frame.pack(fill=tk.X, padx=0, pady=0)
+
+        lang_box = tk.Frame(title_frame, bg="#2c3e50")
+        lang_box.pack(side=tk.RIGHT, padx=10, pady=8)
+        for code in ("en", "ru"):
+            button = tk.Button(
+                lang_box,
+                text=code.upper(),
+                command=lambda selected=code: self._set_ui_language(selected),
+                font=("Helvetica", 9, "bold"),
+                width=3,
+                padx=4,
+                pady=1,
+            )
+            button.pack(side=tk.LEFT, padx=2)
+            self._lang_buttons[code] = button
+        self._style_lang_buttons()
         
         title_label = tk.Label(
             title_frame, 
@@ -989,25 +1141,25 @@ class NOWAGUI:
         bg_frame = tk.Frame(affect_frame, bg="#f6fbff", relief=tk.FLAT, bd=0)
         bg_frame.pack(fill=tk.X, padx=5, pady=(0, 5))
 
-        tk.Label(bg_frame, text="Тревога (bg_anxiety):", font=("Helvetica", 8, "bold"), bg="#f6fbff").pack(anchor=tk.W, padx=5, pady=(4, 2))
+        tk.Label(bg_frame, text="Тревога:", font=("Helvetica", 8, "bold"), bg="#f6fbff").pack(anchor=tk.W, padx=5, pady=(4, 2))
         self.bg_anxiety_bar = tk.Canvas(bg_frame, height=16, bg="#f5f5f5", highlightthickness=0)
         self.bg_anxiety_bar.pack(fill=tk.X, padx=5, pady=1)
         self.bg_anxiety_label = tk.Label(bg_frame, text="0.00", font=("Courier", 8), bg="#f6fbff", fg="#666")
         self.bg_anxiety_label.pack(anchor=tk.W, padx=5, pady=0)
 
-        tk.Label(bg_frame, text="Напряжение (bg_tension):", font=("Helvetica", 8, "bold"), bg="#f6fbff").pack(anchor=tk.W, padx=5, pady=(4, 2))
+        tk.Label(bg_frame, text="Напряжение:", font=("Helvetica", 8, "bold"), bg="#f6fbff").pack(anchor=tk.W, padx=5, pady=(4, 2))
         self.bg_tension_bar = tk.Canvas(bg_frame, height=16, bg="#f5f5f5", highlightthickness=0)
         self.bg_tension_bar.pack(fill=tk.X, padx=5, pady=1)
         self.bg_tension_label = tk.Label(bg_frame, text="0.00", font=("Courier", 8), bg="#f6fbff", fg="#666")
         self.bg_tension_label.pack(anchor=tk.W, padx=5, pady=0)
 
-        tk.Label(bg_frame, text="Удовлетворение (bg_satisfaction):", font=("Helvetica", 8, "bold"), bg="#f6fbff").pack(anchor=tk.W, padx=5, pady=(4, 2))
+        tk.Label(bg_frame, text="Удовлетворение:", font=("Helvetica", 8, "bold"), bg="#f6fbff").pack(anchor=tk.W, padx=5, pady=(4, 2))
         self.bg_satisfaction_bar = tk.Canvas(bg_frame, height=16, bg="#f5f5f5", highlightthickness=0)
         self.bg_satisfaction_bar.pack(fill=tk.X, padx=5, pady=1)
         self.bg_satisfaction_label = tk.Label(bg_frame, text="0.00", font=("Courier", 8), bg="#f6fbff", fg="#666")
         self.bg_satisfaction_label.pack(anchor=tk.W, padx=5, pady=0)
 
-        tk.Label(bg_frame, text="Интерес (bg_interest):", font=("Helvetica", 8, "bold"), bg="#f6fbff").pack(anchor=tk.W, padx=5, pady=(4, 2))
+        tk.Label(bg_frame, text="Интерес:", font=("Helvetica", 8, "bold"), bg="#f6fbff").pack(anchor=tk.W, padx=5, pady=(4, 2))
         self.bg_interest_bar = tk.Canvas(bg_frame, height=16, bg="#f5f5f5", highlightthickness=0)
         self.bg_interest_bar.pack(fill=tk.X, padx=5, pady=1)
         self.bg_interest_label = tk.Label(bg_frame, text="0.00", font=("Courier", 8), bg="#f6fbff", fg="#666")
@@ -1045,7 +1197,7 @@ class NOWAGUI:
         ]
 
         for axis, label in space_axes:
-            tk.Label(space_frame, text=f"{label} ({axis}):", font=("Helvetica", 8, "bold"), bg="#fdfaf1").pack(anchor=tk.W, padx=5, pady=(4, 2))
+            tk.Label(space_frame, text=f"{label}:", font=("Helvetica", 8, "bold"), bg="#fdfaf1").pack(anchor=tk.W, padx=5, pady=(4, 2))
             bar = tk.Canvas(space_frame, height=14, bg="#f5f5f5", highlightthickness=0)
             bar.pack(fill=tk.X, padx=5, pady=1)
             value_label = tk.Label(space_frame, text="0.00", font=("Courier", 8), bg="#fdfaf1", fg="#666")
@@ -1055,7 +1207,7 @@ class NOWAGUI:
 
         tk.Label(space_frame, text="Legacy overlay:", font=("Helvetica", 8, "italic"), bg="#fdfaf1", fg="#7f8c8d").pack(anchor=tk.W, padx=5, pady=(6, 2))
         for axis, label in (("pleasure", "Удовольствие"), ("pain", "Боль"), ("relaxation", "Расслабление"), ("focus", "Фокус")):
-            tk.Label(space_frame, text=f"{label} ({axis}):", font=("Helvetica", 7), bg="#fdfaf1", fg="#7f8c8d").pack(anchor=tk.W, padx=5, pady=(2, 0))
+            tk.Label(space_frame, text=f"{label}:", font=("Helvetica", 7), bg="#fdfaf1", fg="#7f8c8d").pack(anchor=tk.W, padx=5, pady=(2, 0))
             bar = tk.Canvas(space_frame, height=10, bg="#f5f5f5", highlightthickness=0)
             bar.pack(fill=tk.X, padx=5, pady=1)
             value_label = tk.Label(space_frame, text="0.00", font=("Courier", 7), bg="#fdfaf1", fg="#999")
@@ -1676,11 +1828,11 @@ class NOWAGUI:
                 except Exception:
                     pass
 
-            menu.add_command(label="Копировать", command=_copy)
-            menu.add_command(label="Вырезать", command=_cut)
-            menu.add_command(label="Вставить", command=_paste)
+            menu.add_command(label=tr("Копировать"), command=_copy)
+            menu.add_command(label=tr("Вырезать"), command=_cut)
+            menu.add_command(label=tr("Вставить"), command=_paste)
             menu.add_separator()
-            menu.add_command(label="Выделить всё", command=_select_all)
+            menu.add_command(label=tr("Выделить всё"), command=_select_all)
 
             menu.tk_popup(event.x_root, event.y_root)
         except Exception:
@@ -1758,21 +1910,21 @@ class NOWAGUI:
 
         try:
             bias = space.decision_bias() if space is not None else {}
-            bits = " ".join(f"{k}={float(v):+.2f}" for k, v in dict(bias or {}).items())
-            self.decision_bias_label.config(text=f"bias: {bits}" if bits else "bias: —")
+            bits = " ".join(f"{axis_label(k)}={float(v):+.2f}" for k, v in dict(bias or {}).items())
+            self.decision_bias_label.config(text=f"{tr('bias:')} {bits}" if bits else tr("bias: —"))
         except Exception:
             pass
 
         if space is not None:
             try:
                 self.affective_space_speed_label.config(text=f"V: {space.speed():.2f}")
-                self.affective_space_conflict_label.config(text=f"Conflict: {space.axis_conflict():.2f}")
+                self.affective_space_conflict_label.config(text=f"{tr('Conflict:')} {space.axis_conflict():.2f}")
             except Exception:
                 pass
         else:
             try:
                 self.affective_space_speed_label.config(text="V: 0.00")
-                self.affective_space_conflict_label.config(text="Conflict: 0.00")
+                self.affective_space_conflict_label.config(text=tr("Conflict: 0.00"))
             except Exception:
                 pass
 
@@ -1783,25 +1935,25 @@ class NOWAGUI:
         except Exception:
             active = []
 
-        summary_text = "(none)"
+        summary_text = tr("(none)")
         try:
             if sem_layer is not None and hasattr(sem_layer, "describe_brief"):
-                summary_text = sem_layer.describe_brief(space=space, background=snapshot)
+                summary_text = translate_block(sem_layer.describe_brief(space=space, background=snapshot))
         except Exception:
-            summary_text = "(none)"
+            summary_text = tr("(none)")
 
         lines = []
         if active:
             active_sorted = sorted(active, key=lambda item: float(item.get("activation", 0.0)), reverse=True)
             for item in active_sorted:
-                name = item.get("emotion", "unknown")
+                name = emotion_label(item.get("emotion", "unknown"))
                 activation = float(item.get("activation", 0.0))
                 stability = float(item.get("stability", 0.0))
                 obsessive = bool(item.get("obsessive", False))
                 obs_tag = " obs" if obsessive else ""
                 lines.append(f"{name}: {activation:.2f} st:{stability:.2f}{obs_tag}")
 
-        sem_text = "\n".join(lines) if lines else "(none)"
+        sem_text = "\n".join(lines) if lines else tr("(none)")
         try:
             if hasattr(self, "semantic_emotions_summary_label") and self.semantic_emotions_summary_label is not None:
                 self.semantic_emotions_summary_label.config(text=summary_text)
@@ -1818,12 +1970,12 @@ class NOWAGUI:
             mem_layer = None
             mem_snapshot = {}
 
-        mem_summary = "(none)"
+        mem_summary = tr("(none)")
         try:
             if mem_layer is not None and hasattr(mem_layer, "describe_brief"):
-                mem_summary = mem_layer.describe_brief(max_fragments=2)
+                mem_summary = translate_block(mem_layer.describe_brief(max_fragments=2))
         except Exception:
-            mem_summary = "(none)"
+            mem_summary = tr("(none)")
 
         mem_lines = []
         try:
@@ -1860,12 +2012,12 @@ class NOWAGUI:
             exp_layer = None
             exp_snapshot = {}
 
-        exp_summary = "(none)"
+        exp_summary = tr("(none)")
         try:
             if exp_layer is not None and hasattr(exp_layer, "describe_brief"):
-                exp_summary = exp_layer.describe_brief(max_lines=2)
+                exp_summary = translate_block(exp_layer.describe_brief(max_lines=2))
         except Exception:
-            exp_summary = "(none)"
+            exp_summary = tr("(none)")
 
         exp_lines = []
         try:
@@ -1904,12 +2056,12 @@ class NOWAGUI:
             reg_layer = None
             reg_snapshot = {}
 
-        reg_summary = "(none)"
+        reg_summary = tr("(none)")
         try:
             if reg_layer is not None and hasattr(reg_layer, "describe_brief"):
-                reg_summary = reg_layer.describe_brief(max_lines=2)
+                reg_summary = translate_block(reg_layer.describe_brief(max_lines=2))
         except Exception:
-            reg_summary = "(none)"
+            reg_summary = tr("(none)")
 
         reg_lines = []
         try:
@@ -1975,12 +2127,12 @@ class NOWAGUI:
             stability_layer = None
             stability_snapshot = {}
 
-        stability_summary = "(none)"
+        stability_summary = tr("(none)")
         try:
             if stability_layer is not None and hasattr(stability_layer, "describe_brief"):
-                stability_summary = stability_layer.describe_brief(max_lines=2)
+                stability_summary = translate_block(stability_layer.describe_brief(max_lines=2))
         except Exception:
-            stability_summary = "(none)"
+            stability_summary = tr("(none)")
 
         stability_lines = []
         try:
@@ -2068,7 +2220,7 @@ class NOWAGUI:
         except Exception:
             value_lines = []
 
-        value_text = "\n".join(value_lines) if value_lines else ""
+        value_text = translate_block("\n".join(value_lines)) if value_lines else ""
         try:
             if hasattr(self, "value_layer_summary_label") and self.value_layer_summary_label is not None:
                 self.value_layer_summary_label.config(text=value_summary)
@@ -2081,13 +2233,13 @@ class NOWAGUI:
         readiness = affect.adaptation_readiness()
         readiness_pct = int(readiness * 100)
         if readiness > 0.7:
-            status = f"✅ Высокая ({readiness_pct}%)"
+            status = f"{tr('✅ Высокая')} ({readiness_pct}%)"
             color = "#27ae60"
         elif readiness > 0.4:
-            status = f"⚠️ Средняя ({readiness_pct}%)"
+            status = f"{tr('⚠️ Средняя')} ({readiness_pct}%)"
             color = "#f39c12"
         else:
-            status = f"❌ Низкая ({readiness_pct}%)"
+            status = f"{tr('❌ Низкая')} ({readiness_pct}%)"
             color = "#e74c3c"
         self.readiness_label.config(text=status, fg=color)
         
@@ -2217,10 +2369,12 @@ class NOWAGUI:
             t1_list = self.agent.temporal.t1
             window_size = len(t1_list) if t1_list else 0
             window_capacity = int(getattr(self.agent.temporal, "window_size", 10))
-            self.window_display.config(text=f"{window_size}/{window_capacity} (скользящее)")
+            self.window_display.config(
+                text=tr("{count}/{capacity} (скользящее)", count=window_size, capacity=window_capacity)
+            )
             total_steps = int(getattr(self.agent, "lived_steps", 0))
             if hasattr(self, "window_hint_display") and self.window_hint_display is not None:
-                self.window_hint_display.config(text=f"Всего шагов: {total_steps}")
+                self.window_hint_display.config(text=tr("Всего шагов: {n}", n=total_steps))
         except Exception as e:
             # Silent fail for temporal display issues
             pass
@@ -2235,15 +2389,29 @@ class NOWAGUI:
             
             # Update wakefulness level bar
             level = wakefulness.wakefulness
+            fatigue_words = [
+                tr("Полностью выспавшийся"),
+                tr("Слегка усталый"),
+                tr("Усталый"),
+                tr("Очень усталый"),
+                tr("Истощенный"),
+            ]
             self.wakefulness_label.config(
-                text=f"{level:.2f} ({['Полностью выспавшийся', 'Слегка усталый', 'Усталый', 'Очень усталый', 'Истощенный'][min(4, int(level * 5))]}))"
+                text=f"{level:.2f} ({fatigue_words[min(4, int(level * 5))]})"
             )
             self._update_bar(self.wakefulness_bar, level, 0, 1, "#95a5a6", "#e74c3c")
             
             # Update cognitive reliability bar
             reliability = wakefulness.get_cognitive_reliability()
+            reliability_words = [
+                tr("Недежен"),
+                tr("Ненадежен"),
+                tr("Средне"),
+                tr("Надежен"),
+                tr("Полностью надежен"),
+            ]
             self.reliability_label.config(
-                text=f"{reliability:.2f} ({['Недежен', 'Ненадежен', 'Средне', 'Надежен', 'Полностью надежен'][min(4, int(reliability * 5))]}))"
+                text=f"{reliability:.2f} ({reliability_words[min(4, int(reliability * 5))]})"
             )
             color = "#27ae60" if reliability > 0.7 else ("#f39c12" if reliability > 0.4 else "#e74c3c")
             self.reliability_label.config(fg=color)
@@ -2254,7 +2422,11 @@ class NOWAGUI:
             awake_hours = stats['accumulated_waking_hours']
             sleep_hours = stats['total_sleep_hours']
             self.wakefulness_stats.config(
-                text=f"Бодрствова: {awake_hours:.1f}ч | Спал: {sleep_hours:.1f}ч"
+                text=tr(
+                    "Бодрствова: {awake:.1f}ч | Спал: {sleep:.1f}ч",
+                    awake=awake_hours,
+                    sleep=sleep_hours,
+                )
             )
         except Exception as e:
             # Silent fail
@@ -2267,14 +2439,21 @@ class NOWAGUI:
             
             # Show dialog
             response = messagebox.showinfo(
-                "Сон",
-                f"Агент спит {hours:.1f} часа(ов) ({int(seconds/60)} минут)..."
+                tr("Сон"),
+                tr(
+                    "Агент спит {hours:.1f} часа(ов) ({minutes} минут)...",
+                    hours=hours,
+                    minutes=int(seconds / 60),
+                ),
             )
             
             # Execute sleep in background thread
             def sleep_thread():
                 self.agent.sleep(cycles=int(hours * 2))  # ~2 cycles per hour
-                self.add_to_chat(f"[SYSTEM] Агент проснулся после {hours:.1f}ч сна.", "system")
+                self.add_to_chat(
+                    tr("[SYSTEM] Агент проснулся после {hours:.1f}ч сна.", hours=hours),
+                    "system",
+                )
                 self.update_stats("sleep")
                 self.update_affect_display()
                 self.update_temporal_display()
@@ -2282,7 +2461,7 @@ class NOWAGUI:
             
             threading.Thread(target=sleep_thread, daemon=True).start()
         except Exception as e:
-            messagebox.showerror("Ошибка сна", f"Ошибка: {str(e)}")
+            messagebox.showerror(tr("Ошибка сна"), tr("Ошибка: {error}", error=str(e)))
     
     def send_message(self):
         user_input = self.input_field.get().strip()
@@ -2290,7 +2469,7 @@ class NOWAGUI:
             return
         
         self.input_field.delete(0, tk.END)
-        self.add_to_chat(f"Вы: {user_input}", "user")
+        self.add_to_chat(tr("Вы: {user_input}", user_input=user_input), "user")
         
         # Process in separate thread
         threading.Thread(target=self.process_input, args=(user_input,), daemon=True).start()
@@ -2388,9 +2567,9 @@ class NOWAGUI:
         try:
             parsed = json.loads(text)
         except Exception as e:
-            raise ValueError(f"{field_name}: invalid JSON ({e})")
+            raise ValueError(tr("{field}: invalid JSON ({error})", field=field_name, error=e))
         if not isinstance(parsed, dict):
-            raise ValueError(f"{field_name}: JSON object expected")
+            raise ValueError(tr("{field}: JSON object expected", field=field_name))
         return dict(parsed)
 
     def _parse_predicted_reward_input(self, raw_text):
@@ -2398,11 +2577,11 @@ class NOWAGUI:
         if not text:
             return {}
         if text.startswith("{"):
-            return self._parse_json_mapping_field(text, "прогноз награды")
+            return self._parse_json_mapping_field(text, tr("прогноз награды"))
         try:
             return {"*": float(text)}
         except Exception as e:
-            raise ValueError(f"прогноз награды: ожидается число или JSON ({e})")
+            raise ValueError(tr("прогноз награды: ожидается число или JSON ({error})", error=e))
 
     def _set_external_ui_busy(self, busy):
         self.external_ui_busy = bool(busy)
@@ -2410,11 +2589,11 @@ class NOWAGUI:
             return
         try:
             if busy:
-                self.external_last_feedback_label.config(text="обратная связь: обработка...")
+                self.external_last_feedback_label.config(text=tr("обратная связь: обработка..."))
             else:
                 text = str(self.external_last_feedback_label.cget("text") or "")
-                if text == "обратная связь: обработка...":
-                    self.external_last_feedback_label.config(text="обратная связь: н/д")
+                if text == tr("обратная связь: обработка..."):
+                    self.external_last_feedback_label.config(text=tr("обратная связь: н/д"))
         except Exception:
             pass
 
@@ -2425,14 +2604,14 @@ class NOWAGUI:
             state = self.agent.get_external_interaction_state()
             self.external_status_label.config(
                 text=(
-                    f"набл:{int(state.get('observation_history', 0))} | "
-                    f"ожидание:{int(state.get('pending_feedback', 0))} | "
-                    f"шаг:{int(state.get('current_step', 0))} | "
-                    f"стратегии:{int(state.get('strategy_count', 0))}"
+                    f"{tr('набл:')}{int(state.get('observation_history', 0))} | "
+                    f"{tr('ожидание:')}{int(state.get('pending_feedback', 0))} | "
+                    f"{tr('шаг:')}{int(state.get('current_step', 0))} | "
+                    f"{tr('стратегии:')}{int(state.get('strategy_count', 0))}"
                 )
             )
         except Exception as e:
-            self.external_status_label.config(text=f"ошибка статуса внешнего слоя: {str(e)}")
+            self.external_status_label.config(text=tr("ошибка статуса внешнего слоя: {error}", error=str(e)))
 
     def add_external_observation_from_ui(self):
         try:
@@ -2451,7 +2630,7 @@ class NOWAGUI:
             )
             self.update_external_interaction_display()
         except Exception as e:
-            messagebox.showerror("Внешнее наблюдение", str(e))
+            messagebox.showerror(tr("Внешнее наблюдение"), str(e))
 
     def poll_external_observation_from_ui(self):
         if self.external_ui_busy:
@@ -2516,7 +2695,7 @@ class NOWAGUI:
                 "prior": prior,
             }
         except Exception as e:
-            messagebox.showerror("Внешнее действие", str(e))
+            messagebox.showerror(tr("Внешнее действие"), str(e))
             return
 
         self._set_external_ui_busy(True)
@@ -2589,7 +2768,7 @@ class NOWAGUI:
              
     def submit_feedback(self):
         if self.last_action is None or self.last_context is None:
-            messagebox.showwarning("Предупреждение", "Сначала отправьте сообщение агенту")
+            messagebox.showwarning(tr("Предупреждение"), tr("Сначала отправьте сообщение агенту"))
             return
             
         intensity = (self.feedback_var.get() + 3) / 5.0  # Convert [-2, 2] to [0.2, 1.0]
@@ -2621,14 +2800,14 @@ class NOWAGUI:
             }
         
         feedback_text = {
-            -2: "очень плохо (0.2)",
-            -1: "плохо (0.4)",
-            0: "нейтрально (0.6)",
-            1: "хорошо (0.8)",
-            2: "отлично (1.0)"
+            -2: tr("очень плохо (0.2)"),
+            -1: tr("плохо (0.4)"),
+            0: tr("нейтрально (0.6)"),
+            1: tr("хорошо (0.8)"),
+            2: tr("отлично (1.0)"),
         }
         
-        self.add_to_chat(f"Ваша оценка: {feedback_text[feedback_rating]}", "system")
+        self.add_to_chat(tr("Ваша оценка: {rating}", rating=feedback_text[feedback_rating]), "system")
         if feedback_result.get("updated"):
             td_error = float(feedback_result.get("td_error", 0.0))
             salience = float(feedback_result.get("salience", 0.0))
@@ -2688,7 +2867,7 @@ class NOWAGUI:
 """
         self.stats_display.config(state=tk.NORMAL)
         self.stats_display.delete(1.0, tk.END)
-        self.stats_display.insert(1.0, stats_text)
+        self.stats_display.insert(1.0, translate_block(stats_text))
         self.stats_display.config(state=tk.DISABLED)
         try:
             self.update_external_interaction_display()
@@ -2730,7 +2909,7 @@ class NOWAGUI:
         
         self.memory_display.config(state=tk.NORMAL)
         self.memory_display.delete(1.0, tk.END)
-        self.memory_display.insert(1.0, memory_text)
+        self.memory_display.insert(1.0, translate_block(memory_text))
         self.memory_display.config(state=tk.DISABLED)
     
     def open_inspector(self):
@@ -2741,7 +2920,7 @@ class NOWAGUI:
         
         inspector = tk.Toplevel(self.root)
         self.inspector_window = inspector
-        inspector.title("Инспектор состояния агента (NOWA Cognitive)")
+        self._set_title(inspector, "Инспектор состояния агента (NOWA Cognitive)")
         inspector.geometry("900x650")
         
         # Create notebook for tabs
@@ -2770,7 +2949,7 @@ class NOWAGUI:
         else:
             exp_content += "Опытов нет. Отправьте сообщения агенту.\n"
         
-        exp_text.insert(1.0, exp_content)
+        exp_text.insert(1.0, translate_block(exp_content))
         exp_text.config(state=tk.DISABLED)
         try:
             self._bind_clipboard_shortcuts(exp_text)
@@ -2799,7 +2978,7 @@ class NOWAGUI:
         else:
             pat_content += "Паттернов нет. Запустите 🌙 Сон для консолидации.\n"
         
-        pat_text.insert(1.0, pat_content)
+        pat_text.insert(1.0, translate_block(pat_content))
         pat_text.config(state=tk.DISABLED)
         try:
             self._bind_clipboard_shortcuts(pat_text)
@@ -2822,13 +3001,13 @@ class NOWAGUI:
         
         selector_content += f"Доступные действия ({len(self.selector.actions)}):\n"
         for action in sorted(self.selector.actions):
-            selector_content += f"  • {action}\n"
+            selector_content += f"  • {action_label(action)}\n"
         
         selector_content += f"\nПараметры:\n"
         selector_content += f"  Порог уверенности: {self.selector.confidence_threshold:.2f}\n"
         selector_content += f"  Режим работы: Давление + смещение (без весов)\n"
         
-        selector_text.insert(1.0, selector_content)
+        selector_text.insert(1.0, translate_block(selector_content))
         selector_text.config(state=tk.DISABLED)
         try:
             self._bind_clipboard_shortcuts(selector_text)
@@ -2887,7 +3066,7 @@ class NOWAGUI:
         except Exception as e:
             sleep_content += f"  Ошибка при получении информации о цепочках: {str(e)}\n"
         
-        sleep_text.insert(1.0, sleep_content)
+        sleep_text.insert(1.0, translate_block(sleep_content))
         sleep_text.config(state=tk.DISABLED)
         
         # Tab 5: Intent Memory (Habits)
@@ -2939,7 +3118,7 @@ class NOWAGUI:
             habits_content += "  2. Выборе действия\n"
             habits_content += "  3. Использовании во время сна\n"
         
-        habits_text.insert(1.0, habits_content)
+        habits_text.insert(1.0, translate_block(habits_content))
         habits_text.config(state=tk.DISABLED)
         try:
             self._bind_clipboard_shortcuts(habits_text)
@@ -3022,7 +3201,7 @@ class NOWAGUI:
         summary_content += "  • Нажмите 🌙 Сон для формирования паттернов и цепочек\n"
         summary_content += "  • Повторите процесс для лучшей консолидации\n"
         
-        summary_text.insert(1.0, summary_content)
+        summary_text.insert(1.0, translate_block(summary_content))
         summary_text.config(state=tk.DISABLED)
         try:
             self._bind_clipboard_shortcuts(summary_text)
@@ -3046,10 +3225,10 @@ class NOWAGUI:
         
         affect = self.agent.affect_state
         affect_content += "ТЕКУЩИЕ ПАРАМЕТРЫ:\n"
-        affect_content += f"  Валентность (valence):      {affect.valence:6.3f}  [-1.0 до +1.0]\n"
-        affect_content += f"  Активация (arousal):        {affect.arousal:6.3f}  [0.0 до 2.0]\n"
-        affect_content += f"  Угроза (threat):            {affect.threat:6.3f}  [0.0 до 1.0]\n"
-        affect_content += f"  Любопытство (curiosity):    {affect.curiosity:6.3f}  [0.0 до 1.0]\n\n"
+        affect_content += f"  {tr('Валентность')}:      {affect.valence:6.3f}  [-1.0 … +1.0]\n"
+        affect_content += f"  {tr('Активация')}:        {affect.arousal:6.3f}  [0.0 … 2.0]\n"
+        affect_content += f"  {tr('Угроза')}:            {affect.threat:6.3f}  [0.0 … 1.0]\n"
+        affect_content += f"  {tr('Любопытство')}:    {affect.curiosity:6.3f}  [0.0 … 1.0]\n\n"
         
         affect_content += "ПРОИЗВОДНЫЕ ПОКАЗАТЕЛИ:\n"
         affect_content += f"  Серьезность конфликта:      {affect.conflict_severity():6.3f}  [0.0 до 1.0]\n"
@@ -3060,14 +3239,19 @@ class NOWAGUI:
         if space is not None:
             affect_content += "АФФЕКТИВНОЕ ПРОСТРАНСТВО (Phase 4 pre):\n"
             axes = getattr(space, "axes", {})
-            affect_content += f"  pleasure:       {float(axes.get('pleasure', 0.0)):6.3f}  [0.0..1.0]\n"
-            affect_content += f"  pain:           {float(axes.get('pain', 0.0)):6.3f}  [0.0..1.0]\n"
-            affect_content += f"  arousal:        {float(axes.get('arousal', 0.0)):6.3f}  [0.0..1.0]\n"
-            affect_content += f"  relaxation:     {float(axes.get('relaxation', 0.0)):6.3f}  [0.0..1.0]\n"
-            affect_content += f"  attachment:     {float(axes.get('attachment', 0.0)):6.3f}  [0.0..1.0]\n"
-            affect_content += f"  rejection:      {float(axes.get('rejection', 0.0)):6.3f}  [0.0..1.0]\n"
-            affect_content += f"  focus:          {float(axes.get('focus', 0.0)):6.3f}  [0.0..1.0]\n"
-            affect_content += f"  vulnerability:  {float(axes.get('vulnerability', 0.0)):6.3f}  [0.0..1.0]\n"
+            for axis_name in (
+                "pleasure",
+                "pain",
+                "arousal",
+                "relaxation",
+                "attachment",
+                "rejection",
+                "focus",
+                "vulnerability",
+            ):
+                affect_content += (
+                    f"  {axis_label(axis_name)}: {float(axes.get(axis_name, 0.0)):6.3f}  [0.0..1.0]\n"
+                )
             try:
                 affect_content += f"  Скорость V:     {space.speed():6.3f}\n"
                 affect_content += f"  Конфликт осей:  {space.axis_conflict():6.3f}\n"
@@ -3083,7 +3267,7 @@ class NOWAGUI:
                 bg = getattr(self.agent, "affective_background", None)
                 if bg is not None:
                     bg_snapshot = bg.snapshot()
-                summary = sem_layer.describe_brief(space=space, background=bg_snapshot)
+                summary = translate_block(sem_layer.describe_brief(space=space, background=bg_snapshot))
                 affect_content += f"  Summary: {summary}\n"
             except Exception:
                 pass
@@ -3095,7 +3279,7 @@ class NOWAGUI:
             if sem_items:
                 sem_items = sorted(sem_items, key=lambda item: float(item.get("activation", 0.0)), reverse=True)
                 for item in sem_items:
-                    name = str(item.get("emotion", "unknown"))
+                    name = emotion_label(item.get("emotion", "unknown"))
                     activation = float(item.get("activation", 0.0))
                     stability = float(item.get("stability", 0.0))
                     obsessive = bool(item.get("obsessive", False))
@@ -3169,13 +3353,7 @@ class NOWAGUI:
                 auto_real_errors, auto_warnings = self._split_autonomous_failures(auto_failures)
                 last_tick = runtime.tick_history[-1] if runtime.tick_history else {}
                 mode_key = str(last_tick.get("physiology_mode") or "idle")
-                mode_ru = {
-                    "idle": "покой",
-                    "passive": "пассивный",
-                    "internal_processing": "внутренняя_обработка",
-                    "speaking": "речь",
-                    "low_energy": "низкая_энергия",
-                }.get(mode_key, mode_key)
+                mode_text = mode_label(mode_key)
                 affect_content += f"  тики: {int(auto_snapshot.get('tick_count', 0))}\n"
                 affect_content += (
                     f"  ошибки(критичные): {len(auto_real_errors)}, "
@@ -3192,15 +3370,15 @@ class NOWAGUI:
                         key=lambda item: float(item[1]),
                         reverse=True,
                     )
-                    top = ", ".join([f"{k}:{float(v):.2f}" for k, v in sorted_drives[:3]])
+                    top = ", ".join([f"{drive_label(k)}:{float(v):.2f}" for k, v in sorted_drives[:3]])
                     affect_content += f"  ведущие драйвы: {top}\n"
                 affect_content += (
-                    f"  последний активный драйв: {str(last_tick.get('active_drive', 'none'))}, "
+                    f"  последний активный драйв: {drive_label(last_tick.get('active_drive', 'none'))}, "
                     f"внутренний_цикл: {bool(last_tick.get('internal_cycle_triggered', False))}, "
                     f"речь: {bool(last_tick.get('speech_event', False))}\n"
                 )
                 affect_content += (
-                    f"  физиология: режим={mode_ru}, "
+                    f"  физиология: режим={mode_text}, "
                     f"когнитивная_нагрузка={float(last_tick.get('cognitive_load', 0.0)):.3f}\n"
                 )
             except Exception:
@@ -3239,7 +3417,7 @@ class NOWAGUI:
         affect_content += "ОПИСАНИЕ ОПЕРАЦИОНАЛЬНОГО СОСТОЯНИЯ:\n"
         affect_content += self.self_model.describe_operational_state() + "\n"
         
-        affect_text.insert(1.0, affect_content)
+        affect_text.insert(1.0, translate_block(affect_content))
         affect_text.config(state=tk.DISABLED)
 
         # Ensure standard clipboard shortcuts work across the inspector dialog
@@ -3247,6 +3425,7 @@ class NOWAGUI:
             self._bind_clipboard_shortcuts_recursive(inspector)
         except Exception:
             pass
+        self._localize_widget(inspector)
         
     def clear_chat(self):
         self.chat_display.config(state=tk.NORMAL)
@@ -3277,20 +3456,21 @@ class NOWAGUI:
                 agent=self.agent
             )
             self.add_to_chat(f"Состояние сохранено: {filepath.split('/')[-1]}", "system")
-            messagebox.showinfo("Успех", f"Состояние агента сохранено!")
+            messagebox.showinfo(tr("Успех"), tr("Состояние агента сохранено!"))
         except Exception as e:
-            messagebox.showerror("Ошибка", f"Ошибка при сохранении: {str(e)}")
+            messagebox.showerror(tr("Ошибка"), tr("Ошибка при сохранении: {error}", error=str(e)))
     
     def load_state(self):
         """Загрузить состояние агента"""
         saves = self.storage.get_save_files()
         if not saves:
-            messagebox.showwarning("Нет сохранений", "Не найдены сохраненные файлы")
+            messagebox.showwarning(tr("Нет сохранений"), tr("Не найдены сохраненные файлы"))
             return
         
         # Создать окно выбора
         load_window = tk.Toplevel(self.root)
-        load_window.title("Загрузить состояние")
+        self.load_window = load_window
+        self._set_title(load_window, "Загрузить состояние")
         load_window.geometry("400x300")
         
         tk.Label(load_window, text="Выберите сохранение:", font=("Helvetica", 11, "bold")).pack(pady=10)
@@ -3304,7 +3484,7 @@ class NOWAGUI:
         def load_selected():
             selection = listbox.curselection()
             if not selection:
-                messagebox.showwarning("Ошибка", "Выберите сохранение")
+                messagebox.showwarning(tr("Ошибка"), tr("Выберите сохранение"))
                 return
             
             try:
@@ -3357,10 +3537,10 @@ class NOWAGUI:
                 self.update_affect_display()
                 self.update_stats(self.last_action or "no action")
                 self.update_temporal_display()
-                messagebox.showinfo("Успех", "Состояние агента загружено!")
+                messagebox.showinfo(tr("Успех"), tr("Состояние агента загружено!"))
                 load_window.destroy()
             except Exception as e:
-                messagebox.showerror("Ошибка", f"Ошибка при загрузке: {str(e)}")
+                messagebox.showerror(tr("Ошибка"), tr("Ошибка при загрузке: {error}", error=str(e)))
         
         load_btn = tk.Button(
             load_window,
@@ -3377,6 +3557,7 @@ class NOWAGUI:
             self._bind_clipboard_shortcuts_recursive(load_window)
         except Exception:
             pass
+        self._localize_widget(load_window)
     
     def save_chat(self):
         """Сохранить историю диалога"""
@@ -3386,19 +3567,20 @@ class NOWAGUI:
             messages = [line.strip() for line in chat_text.split('\n') if line.strip()]
             
             if not messages:
-                messagebox.showwarning("Предупреждение", "Диалог пуст")
+                messagebox.showwarning(tr("Предупреждение"), tr("Диалог пуст"))
                 return
             
             filepath = self.storage.save_chat_history(messages)
             self.add_to_chat(f"Диалог сохранен: {filepath.split('/')[-1]}", "system")
-            messagebox.showinfo("Успех", "История диалога сохранена!")
+            messagebox.showinfo(tr("Успех"), tr("История диалога сохранена!"))
         except Exception as e:
-            messagebox.showerror("Ошибка", f"Ошибка при сохранении: {str(e)}")
+            messagebox.showerror(tr("Ошибка"), tr("Ошибка при сохранении: {error}", error=str(e)))
     
     def load_dataset_dialog(self):
         """Открыть окно загрузки датасета"""
         load_window = tk.Toplevel(self.root)
-        load_window.title("Загрузить датасет")
+        self.dataset_window = load_window
+        self._set_title(load_window, "Загрузить датасет")
         load_window.geometry("500x400")
         
         # Заголовок
@@ -3431,10 +3613,10 @@ class NOWAGUI:
                 experiences = load_experiences_from_datasets_folder()
                 self._add_experiences_to_agent(experiences)
                 self.add_to_chat(f"✅ Загружено {len(experiences)} опытов из папки datasets", "system")
-                messagebox.showinfo("Успех", f"Загружено {len(experiences)} опытов из датасетов!")
+                messagebox.showinfo(tr("Успех"), tr("Загружено {n} опытов из датасетов!", n=len(experiences)))
                 load_window.destroy()
             except Exception as e:
-                messagebox.showerror("Ошибка", f"Ошибка при загрузке: {str(e)}")
+                messagebox.showerror(tr("Ошибка"), tr("Ошибка при загрузке: {error}", error=str(e)))
         
         btn1 = tk.Button(
             opt1_frame,
@@ -3461,8 +3643,8 @@ class NOWAGUI:
         
         def load_from_file():
             filepath = filedialog.askopenfilename(
-                title="Выберите JSON файл датасета",
-                filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+                title=tr("Выберите JSON файл датасета"),
+                filetypes=[(tr("JSON files"), "*.json"), (tr("All files"), "*.*")]
             )
             
             if filepath:
@@ -3471,10 +3653,10 @@ class NOWAGUI:
                     self._add_experiences_to_agent(experiences)
                     filename = filepath.split('\\')[-1]
                     self.add_to_chat(f"✅ Загружено {len(experiences)} опытов из {filename}", "system")
-                    messagebox.showinfo("Успех", f"Загружено {len(experiences)} опытов из файла!")
+                    messagebox.showinfo(tr("Успех"), tr("Загружено {n} опытов из файла!", n=len(experiences)))
                     load_window.destroy()
                 except Exception as e:
-                    messagebox.showerror("Ошибка", f"Ошибка при загрузке: {str(e)}")
+                    messagebox.showerror(tr("Ошибка"), tr("Ошибка при загрузке: {error}", error=str(e)))
         
         btn2 = tk.Button(
             opt2_frame,
@@ -3500,17 +3682,17 @@ class NOWAGUI:
         opt3_label.pack(anchor=tk.W, pady=5)
         
         def load_from_directory():
-            directory = filedialog.askdirectory(title="Выберите папку с датасетами")
+            directory = filedialog.askdirectory(title=tr("Выберите папку с датасетами"))
             
             if directory:
                 try:
                     experiences = load_experiences_from_directory(directory)
                     self._add_experiences_to_agent(experiences)
                     self.add_to_chat(f"✅ Загружено {len(experiences)} опытов из директории", "system")
-                    messagebox.showinfo("Успех", f"Загружено {len(experiences)} опытов из директории!")
+                    messagebox.showinfo(tr("Успех"), tr("Загружено {n} опытов из директории!", n=len(experiences)))
                     load_window.destroy()
                 except Exception as e:
-                    messagebox.showerror("Ошибка", f"Ошибка при загрузке: {str(e)}")
+                    messagebox.showerror(tr("Ошибка"), tr("Ошибка при загрузке: {error}", error=str(e)))
         
         btn3 = tk.Button(
             opt3_frame,
@@ -3528,6 +3710,7 @@ class NOWAGUI:
             self._bind_clipboard_shortcuts_recursive(load_window)
         except Exception:
             pass
+        self._localize_widget(load_window)
     
     def _add_experiences_to_agent(self, experiences):
         """Добавить загруженные опыты в память агента"""
@@ -3562,7 +3745,8 @@ class NOWAGUI:
     def open_sleep_dialog(self, default_cycles=3):
         """Открыть окно управления сном и консолидацией"""
         sleep_window = tk.Toplevel(self.root)
-        sleep_window.title("🌙 Консолидация памяти (Сон)")
+        self.sleep_window = sleep_window
+        self._set_title(sleep_window, "🌙 Консолидация памяти (Сон)")
         sleep_window.geometry("700x700")
         sleep_window.resizable(True, True)
         
@@ -3620,7 +3804,7 @@ class NOWAGUI:
 Циклов сна: {current_state['sleep_cycles']}
 Средняя интенсивность опыта: {current_state['hippocampus'].get('avg_intensity', 'N/A')}"""
             
-            before_text.insert(1.0, content)
+            before_text.insert(1.0, translate_block(content))
             before_text.config(state=tk.DISABLED)
         
         update_state_display()
@@ -3671,7 +3855,7 @@ class NOWAGUI:
             
             results_text.config(state=tk.NORMAL)
             results_text.delete(1.0, tk.END)
-            results_text.insert(tk.END, f"💤 Запуск {cycles} цикла(ов) консолидации...\n\n")
+            results_text.insert(tk.END, tr("💤 Запуск {cycles} цикла(ов) консолидации...", cycles=cycles) + "\n\n")
             results_text.config(state=tk.DISABLED)
             sleep_window.update()
             
@@ -3721,7 +3905,7 @@ class NOWAGUI:
                 output += f"  • Выполнено replay: {int(replay_state.get('replays', 0))}\n"
                 output += f"  • Value variance: {float(replay_state.get('value_variance', 0.0)):.4f}\n"
                 
-                results_text.insert(tk.END, output)
+                results_text.insert(tk.END, translate_block(output))
                 results_text.config(state=tk.DISABLED)
                 
                 # Обновляем главное окно
@@ -3729,14 +3913,21 @@ class NOWAGUI:
                 self.update_stats(self.last_action or "нет")
                 self.update_affect_display()
                 self.update_temporal_display()
-                self.add_to_chat(f"✅ Консолидация завершена: {cycles} цикл(ов), {new_state['cortex']['total_patterns']} паттернов", "system")
+                self.add_to_chat(
+                    tr(
+                        "✅ Консолидация завершена: {cycles} цикл(ов), {patterns} паттернов",
+                        cycles=cycles,
+                        patterns=new_state["cortex"]["total_patterns"],
+                    ),
+                    "system",
+                )
                 
             except Exception as e:
                 results_text.config(state=tk.NORMAL)
                 results_text.delete(1.0, tk.END)
-                results_text.insert(tk.END, f"❌ Ошибка при консолидации:\n{str(e)}")
+                results_text.insert(tk.END, tr("❌ Ошибка при консолидации:") + f"\n{str(e)}")
                 results_text.config(state=tk.DISABLED)
-                messagebox.showerror("Ошибка", f"Ошибка при консолидации: {str(e)}")
+                messagebox.showerror(tr("Ошибка"), tr("Ошибка при консолидации: {error}", error=str(e)))
             finally:
                 sleep_btn.config(state=tk.NORMAL)
                 cycles_spinbox.config(state=tk.NORMAL)
@@ -3768,22 +3959,52 @@ class NOWAGUI:
             self._bind_clipboard_shortcuts_recursive(sleep_window)
         except Exception:
             pass
+        self._localize_widget(sleep_window)
     
     def open_auto_training_dialog(self):
         """❌ Deprecated - использует невалидный механизм обучения"""
         messagebox.showwarning(
-            "⚠️ Функция устарела",
-            "Автоматическая тренировка селектора больше не поддерживается.\n\n"
-            "В NOWA обучение происходит ТОЛЬКО во время сна через консолидацию.\n\n"
-            "Используйте вместо этого:\n"
-            "1. 🌙 Сон - консолидирует опыты в паттерны\n"
-            "2. Инспектор - смотрите состояние памяти\n\n"
-            "Селектор действий НЕ имеет весов - он выбирает на основе давления активации!"
+            tr("⚠️ Функция устарела"),
+            "\n\n".join(
+                [
+                    tr("Автоматическая тренировка селектора больше не поддерживается."),
+                    tr("В NOWA обучение происходит ТОЛЬКО во время сна через консолидацию."),
+                    tr("Используйте вместо этого:"),
+                    tr("1. 🌙 Сон - консолидирует опыты в паттерны"),
+                    tr("2. Инспектор - смотрите состояние памяти"),
+                    tr("Селектор действий НЕ имеет весов - он выбирает на основе давления активации!"),
+                ]
+            ),
         )
 
 
-if __name__ == "__main__":
+def main(argv=None):
+    import argparse
+    import sys
+
+    raw = list(sys.argv[1:] if argv is None else argv)
+    preview = None
+    if "--lang" in raw:
+        index = raw.index("--lang")
+        if index + 1 < len(raw):
+            preview = raw[index + 1]
+    set_language(resolve_lang(preview))
+    parser = argparse.ArgumentParser(description=tr("Run the NOWA cognitive interface"))
+    parser.add_argument(
+        "--lang",
+        choices=("en", "ru"),
+        default=None,
+        help=tr("UI language. Overrides NOWA_LANG."),
+    )
+    args = parser.parse_args(argv)
+    # Help text above was resolved before --lang was known. Pin the chosen language now.
+    set_language(resolve_lang(args.lang))
     root = tk.Tk()
-    gui = NOWAGUI(root)
+    gui = NOWAGUI(root, lang=args.lang)
     root.mainloop()
+    return gui
+
+
+if __name__ == "__main__":
+    main()
 

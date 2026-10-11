@@ -2944,7 +2944,7 @@ class RoleConfiguratorApp(tk.Tk if tk is not None else object):
             messagebox.showerror(self.t("error.title"), str(exc), parent=self)
             return
         if not isinstance(parsed, dict):
-            messagebox.showerror(self.t("error.title"), "params must be a JSON object", parent=self)
+            messagebox.showerror(self.t("error.title"), self.t("error.params_object"), parent=self)
             return
         self._emp_decide(action_id, ApprovalStatus.APPROVED, modified_params=parsed)
 
@@ -3269,8 +3269,20 @@ class RoleConfiguratorApp(tk.Tk if tk is not None else object):
 def main(argv: Optional[list[str]] = None) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(description="NOWA role configurator")
-    parser.add_argument("--lang", choices=("en", "ru"), default=None, help="UI language. Overrides NOWA_LANG and the saved preference.")
+    raw = list(sys.argv[1:] if argv is None else argv)
+    preview = None
+    if "--lang" in raw:
+        index = raw.index("--lang")
+        if index + 1 < len(raw):
+            preview = raw[index + 1]
+    help_i18n = I18n(lang=preview or "en", force=preview in ("en", "ru"))
+    parser = argparse.ArgumentParser(description=help_i18n.t("cli.description"))
+    parser.add_argument(
+        "--lang",
+        choices=("en", "ru"),
+        default=None,
+        help=help_i18n.t("cli.lang_help"),
+    )
     args = parser.parse_args(argv)
     app = RoleConfiguratorApp(lang=args.lang)
     app.mainloop()
