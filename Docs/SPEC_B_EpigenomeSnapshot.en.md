@@ -25,6 +25,8 @@ partial, yet real.
 **Key principle:** injection of the epigenome occurs **before the first sleep** of the new agent.  
 Sleep consolidates inherited patterns on a par with the agent's own experience.
 
+The colony birth path copies the genome by crossover and mutation. The inspector genome tab of a seeded run shows that portrait and the shifts from the parental midpoint: [Evolution in action](../README.md#evolution-in-action).
+
 ---
 
 ## 2. Data sources

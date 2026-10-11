@@ -30,6 +30,16 @@ Three new components are added to each agent and to the environment:
 
 Nobody decides who will survive. That manifests of itself.
 
+### Colony run
+
+Swarm analytics from a four-generation colony (generator seed 11): per-generation bars, gene tracks, and the forecast. Gallery: [Evolution in action](../README.md#evolution-in-action).
+
+| Generations | Gene tracks |
+|---|---|
+| ![Generation bars](../docs/media/en/evolution-generations.png) | ![Gene tracks](../docs/media/en/evolution-genomes.png) |
+
+![Forecast](../docs/media/en/evolution-forecast.png)
+
 ---
 
 ## 2. Component 1 — ReproductiveSystem

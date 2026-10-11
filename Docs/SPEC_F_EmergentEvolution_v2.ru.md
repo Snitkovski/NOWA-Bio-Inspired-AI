@@ -29,6 +29,16 @@ English version: [SPEC_F_EmergentEvolution_v2.en.md](SPEC_F_EmergentEvolution_v2
 
 Никто не решает кто выживет. Это проявляется само.
 
+### Прогон колонии
+
+Аналитика роя колонии из четырёх поколений (зерно генератора 11): столбцы по поколениям, треки генов и прогноз. Галерея: [Эволюция в действии](../README.md#evolyutsiya-v-deystvii).
+
+| Поколения | Треки генов |
+|---|---|
+| ![Столбцы поколений](../docs/media/ru/evolution-generations.png) | ![Треки генов](../docs/media/ru/evolution-genomes.png) |
+
+![Прогноз](../docs/media/ru/evolution-forecast.png)
+
 ---
 
 ## 2. Компонент 1 — ReproductiveSystem
