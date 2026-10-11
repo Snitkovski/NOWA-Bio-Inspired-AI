@@ -6,6 +6,16 @@ Russian version: [COLONY_SPEC.ru.md](COLONY_SPEC.ru.md)
 
 The platform models a population in which each individual is an autonomous NOWA agent. The environment is a cage with zones and normalised resources. The question addressed by a run is the emergence of demographic and social dynamics in the absence of a central policy dispatcher: ties, generational turnover, resource allocation, and extinction risk.
 
+<a id="evolution-in-action"></a>
+
+### Evolution in action
+
+A seeded colony (generator seed 11) bred through this runner, drawn with the existing overlays. Names are colony ids. The full English and Russian galleries are in the README section [Evolution in action](../../../README.md#evolution-in-action).
+
+![Four-generation lineage](../../../docs/media/en/evolution-lineage.png)
+
+![Generation bars](../../../docs/media/en/evolution-generations.png)
+
 The theoretical account of the core and the colony analysis in the preprint: [arxiv_NOWA_en.md](../../../Docs/arxiv_NOWA_en.md). The implemented state of the modules: [IMPLEMENTATION_DESCRIPTION.en.md](IMPLEMENTATION_DESCRIPTION.en.md). Subsystem contracts remain in the `SPEC_*.md` files of this directory.
 
 ### 2. Composition

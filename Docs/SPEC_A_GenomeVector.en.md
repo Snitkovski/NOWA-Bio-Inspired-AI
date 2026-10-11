@@ -23,6 +23,16 @@ The genome is used for:
 - crossover and mutation at reproduction (package E)
 - niching under selection (package F)
 
+### Colony portraits
+
+Inspector genome tab from a four-generation colony (generator seed 11). The descendant frame lists the recombined line. The gene-change frame is the same agent scrolled to shifts from the parental midpoint. Gallery: [Evolution in action](../README.md#evolution-in-action).
+
+| Founder `G0A4SM` | Descendant `G3A1SF` |
+|---|---|
+| ![Founder genome](../docs/media/en/evolution-founder.png) | ![Descendant genome](../docs/media/en/evolution-descendant.png) |
+
+![Gene changes from the parental midpoint](../docs/media/en/evolution-mutations.png)
+
 ---
 
 ## 2. Data structure

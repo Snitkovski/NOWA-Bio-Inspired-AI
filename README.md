@@ -55,7 +55,7 @@ PYTHONPATH="Demo/Colony chinchillas/src" python -m colony_gui --agents 6
 python "Demo/Tamagochi Chinchilla/src/main.py"
 ```
 
-The clips above were captured headlessly (`SDL_VIDEODRIVER=dummy`) from those demos. Regenerate both languages with `python tools/render_promo_media.py` (also needs `pillow`).
+The clips above were captured headlessly (`SDL_VIDEODRIVER=dummy`) from those demos. Regenerate both languages with `python tools/render_promo_media.py` (also needs `pillow`). The evolution frames below are `python tools/render_evolution_media.py`.
 
 Demo windows and the core observation window open in English. `NOWA_LANG=ru` or `--lang ru` switches the language; `--lang` wins over the environment variable. In the colony and tamagotchi windows, press `G` or the separate EN and RU buttons. The active language is highlighted. The core window (`python src/gui.py`), the virtual-company labs, and the Warriner dashboard use the same EN and RU buttons. The labs also remember the choice, and `--lang` overrides that preference for the session. The core window does not store a language preference.
 
@@ -64,6 +64,39 @@ Demo windows and the core observation window open in English. `NOWA_LANG=ru` or 
 | ![Colony still](docs/media/en/colony.png) | ![Tamagotchi](docs/media/en/tamagotchi.gif) | ![Lineage](docs/media/en/lineage.png) |
 
 The family tree is the colony lineage overlay: founders, offspring, living agents in color, dead agents in grey.
+
+<a id="evolution-in-action"></a>
+
+### Evolution in action
+
+One colony, generator seed 11, three birth waves through the colony runner. Display names are the colony ids (`G0A1SF` and the rest). The status strip is five checkpoints of that run: 8 founders, then 15, 20, and 25 living, then 22 after three founder deaths (17 births, 3 deaths).
+
+![Colony status over the run](docs/media/en/evolution-colony.gif)
+
+Final frame of that strip: 22 living, 17 births, 3 deaths.
+
+![Final colony status](docs/media/en/evolution-colony.png)
+
+The same pedigree in the lineage overlay. Living nodes are colored, dead founders are grey, and the clip moves the tooltip across the tree.
+
+| Tree | Tooltip moving across the tree |
+|---|---|
+| ![Four-generation lineage](docs/media/en/evolution-lineage.png) | ![Lineage clip](docs/media/en/evolution-lineage.gif) |
+
+Swarm analytics on the final colony: the current slice, per-generation bars, gene tracks, and the forecast.
+
+| State | Generations |
+|---|---|
+| ![Swarm state](docs/media/en/evolution-swarm.png) | ![Generation bars](docs/media/en/evolution-generations.png) |
+| ![Gene tracks](docs/media/en/evolution-genomes.png) | ![Forecast](docs/media/en/evolution-forecast.png) |
+
+Genome tab for a living founder and for `G3A1SF`, a generation-3 descendant. The descendant lists parents back to the founders. The third frame is that same descendant scrolled to gene changes: each figure is the child's value minus the parental midpoint, the shift introduced by crossover and mutation. Those shifts are the genome the birth path copied into the offspring. A bounded set of traces already consolidated can pass as well; that contract is [Docs/SPEC_B_EpigenomeSnapshot.en.md](Docs/SPEC_B_EpigenomeSnapshot.en.md).
+
+| Founder `G0A4SM` | Descendant `G3A1SF` |
+|---|---|
+| ![Founder genome](docs/media/en/evolution-founder.png) | ![Descendant genome](docs/media/en/evolution-descendant.png) |
+
+![Gene changes from the parental midpoint](docs/media/en/evolution-mutations.png)
 
 [English](#en) · [Русский](#ru)
 
@@ -192,6 +225,41 @@ If you use this in research, see [CITATION.cff](CITATION.cff).
 | Колония | Тамагочи | Родословная |
 |---|---|---|
 | ![Колония](docs/media/ru/colony.png) | ![Тамагочи](docs/media/ru/tamagotchi.gif) | ![Родословная](docs/media/ru/lineage.png) |
+
+Родословная — оверлей колонии: основатели, потомки, живые в цвете, умершие серым.
+
+<a id="evolyutsiya-v-deystvii"></a>
+
+### Эволюция в действии
+
+Одна колония, зерно генератора 11, три волны рождений через бегунок колонии. Имена на экране — идентификаторы колонии (`G0A1SF` и далее). Полоса состояния — пять срезов этого прогона: 8 основателей, затем 15, 20 и 25 живых, затем 22 после смерти трёх основателей (17 рождений, 3 смерти).
+
+![Состояние колонии по ходу прогона](docs/media/ru/evolution-colony.gif)
+
+Последний кадр этой полосы: 22 живых, 17 рождений, 3 смерти.
+
+![Финальное состояние колонии](docs/media/ru/evolution-colony.png)
+
+Та же родословная. Живые узлы цветные, умершие основатели серые, ролик ведёт подсказку по дереву.
+
+| Дерево | Подсказка по дереву |
+|---|---|
+| ![Родословная четырёх поколений](docs/media/ru/evolution-lineage.png) | ![Ролик родословной](docs/media/ru/evolution-lineage.gif) |
+
+Аналитика роя на финальной колонии: текущий срез, столбцы по поколениям, треки генов и прогноз.
+
+| Состояние | Поколения |
+|---|---|
+| ![Состояние роя](docs/media/ru/evolution-swarm.png) | ![Столбцы поколений](docs/media/ru/evolution-generations.png) |
+| ![Треки генов](docs/media/ru/evolution-genomes.png) | ![Прогноз](docs/media/ru/evolution-forecast.png) |
+
+Вкладка «Геном» у живого основателя и у `G3A1SF`, потомка третьего поколения. Потомок перечисляет родителей до основателей. Третий кадр — тот же потомок, прокрученный к изменениям генов: каждая величина есть значение ребёнка минус середина родителей, сдвиг от кроссовера и мутации. Эти сдвиги — геном, который путь рождения скопировал потомку. Ограниченный набор уже консолидированных следов тоже может перейти; этот контракт описан в [Docs/SPEC_B_EpigenomeSnapshot.ru.md](Docs/SPEC_B_EpigenomeSnapshot.ru.md).
+
+| Основатель `G0A4SM` | Потомок `G3A1SF` |
+|---|---|
+| ![Геном основателя](docs/media/ru/evolution-founder.png) | ![Геном потомка](docs/media/ru/evolution-descendant.png) |
+
+![Изменения генов относительно середины родителей](docs/media/ru/evolution-mutations.png)
 
 Когнитивная архитектура автономного агента с раздельными фазами бодрствования и сна, каноническим восьмимерным аффективным пространством, локальным обучением по ошибке предсказания награды и эволюционной настройкой параметров модулей.
 

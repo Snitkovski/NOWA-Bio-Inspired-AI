@@ -10,6 +10,16 @@ The central record, `AgentMemorial`, captures at death the identity and place in
 
 In the multi-agent NOWA installation, the specification establishes a longitudinal archive of individuals who leave the current slice. Without a snapshot at death, comparison of genomes, causes of mortality, and social structure would be confined to the living population. Version 1.1 separates persistence of memorials from the display layer and thereby makes the registry available for observation outside a graphical session.
 
+### Recorded pedigree
+
+Lineage overlay and inspector genome tab from a seeded colony (generator seed 11). Living nodes are colored, dead founders are grey. The full gallery is [Evolution in action](../../../README.md#evolution-in-action).
+
+![Four-generation lineage](../../../docs/media/en/evolution-lineage.png)
+
+| Founder `G0A4SM` | Descendant `G3A1SF` |
+|---|---|
+| ![Founder genome](../../../docs/media/en/evolution-founder.png) | ![Descendant genome](../../../docs/media/en/evolution-descendant.png) |
+
 # Specification: DeathRegistry + AgentInspector + LineageOverlay
 
 **Variant B:** the dead are stored in a JSON file beside the colony save  
