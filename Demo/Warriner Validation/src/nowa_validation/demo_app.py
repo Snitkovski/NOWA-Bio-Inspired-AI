@@ -55,7 +55,18 @@ def main() -> None:
     st.title(tr("title"))
 
     with st.sidebar:
-        st.selectbox(tr("language"), ["en", "ru"], key="ui_lang")
+        st.caption(tr("language"))
+        en_col, ru_col = st.columns(2)
+        en_type = "primary" if lang == "en" else "secondary"
+        ru_type = "primary" if lang == "ru" else "secondary"
+        if en_col.button("EN", type=en_type, use_container_width=True):
+            if lang != "en":
+                st.session_state.ui_lang = "en"
+                st.rerun()
+        if ru_col.button("RU", type=ru_type, use_container_width=True):
+            if lang != "ru":
+                st.session_state.ui_lang = "ru"
+                st.rerun()
         lang = st.session_state.ui_lang
         st.header(tr("sidebar_config"))
         default_csv = Path(__file__).resolve().parents[2] / "data" / "Ratings_Warriner_et_al.csv"

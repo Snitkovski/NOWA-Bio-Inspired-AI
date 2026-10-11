@@ -44,8 +44,6 @@ from nowa_sandbox.gui_controller import (
     load_results_json,
 )
 from nowa_sandbox.gui_i18n import (
-    FLAG_EN,
-    FLAG_RU,
     I18n,
     criterion_column,
     criterion_labels,
@@ -124,7 +122,7 @@ class SandboxLabApp(tk.Tk if tk is not None else object):
         lang_bar.pack(side="right")
         self.btn_lang_en = tk.Button(
             lang_bar,
-            text=f"{FLAG_EN} EN",
+            text="EN",
             command=lambda: self._set_language("en"),
             relief="raised",
             padx=8,
@@ -134,7 +132,7 @@ class SandboxLabApp(tk.Tk if tk is not None else object):
         )
         self.btn_lang_ru = tk.Button(
             lang_bar,
-            text=f"{FLAG_RU} RU",
+            text="RU",
             command=lambda: self._set_language("ru"),
             relief="raised",
             padx=8,

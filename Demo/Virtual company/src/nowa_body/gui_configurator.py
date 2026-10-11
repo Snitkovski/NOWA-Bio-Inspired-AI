@@ -38,7 +38,7 @@ from nowa_body.gui_configurator_controller import (
     format_relative_mtime,
     list_roles,
 )
-from nowa_body.gui_configurator_i18n import FLAG_EN, FLAG_RU, I18n, STRINGS
+from nowa_body.gui_configurator_i18n import I18n, STRINGS
 from nowa_body.gui_employee_controller import EmployeeHostController, suggest_agent_id
 from nowa_body.mcp_capability import CapabilityRisk
 from nowa_body.approval_gate import ApprovalStatus
@@ -138,12 +138,12 @@ class RoleConfiguratorApp(tk.Tk if tk is not None else object):
         lang_bar = ttk.Frame(header)
         lang_bar.pack(side="right")
         self.btn_lang_en = tk.Button(
-            lang_bar, text=f"{FLAG_EN} EN", command=lambda: self._set_language("en"),
-            relief="raised", padx=8, pady=2, font=("Segoe UI Emoji", 10), cursor="hand2",
+            lang_bar, text="EN", command=lambda: self._set_language("en"),
+            relief="raised", padx=8, pady=2, font=("Segoe UI", 10), cursor="hand2",
         )
         self.btn_lang_ru = tk.Button(
-            lang_bar, text=f"{FLAG_RU} RU", command=lambda: self._set_language("ru"),
-            relief="raised", padx=8, pady=2, font=("Segoe UI Emoji", 10), cursor="hand2",
+            lang_bar, text="RU", command=lambda: self._set_language("ru"),
+            relief="raised", padx=8, pady=2, font=("Segoe UI", 10), cursor="hand2",
         )
         self.btn_lang_en.pack(side="left", padx=(0, 4))
         self.btn_lang_ru.pack(side="left")
@@ -631,9 +631,20 @@ class RoleConfiguratorApp(tk.Tk if tk is not None else object):
         else:
             self._refresh_list()
 
+    def _highlight_lang_buttons(self) -> None:
+        active = {"relief": "sunken", "bg": "#dbeafe"}
+        idle = {"relief": "raised", "bg": "SystemButtonFace"}
+        if self.i18n.lang == "en":
+            self.btn_lang_en.configure(**active)
+            self.btn_lang_ru.configure(**idle)
+        else:
+            self.btn_lang_ru.configure(**active)
+            self.btn_lang_en.configure(**idle)
+
     def _apply_language(self) -> None:
         self.title(self.t("app.title"))
         self.lbl_title.configure(text=self.t("app.title"))
+        self._highlight_lang_buttons()
         for btn in self._help_buttons.values():
             btn.configure(text=self.t("help.button"))
         self.lbl_list_heading.configure(text=self.t("list.heading"))

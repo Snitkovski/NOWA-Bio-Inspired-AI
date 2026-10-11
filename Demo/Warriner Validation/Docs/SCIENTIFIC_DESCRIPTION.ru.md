@@ -8,7 +8,7 @@ English version: [SCIENTIFIC_DESCRIPTION.en.md](SCIENTIFIC_DESCRIPTION.en.md)
 
 Научное описание комплекса: [SCIENTIFIC_DESCRIPTION.ru.md](../../../Docs/SCIENTIFIC_DESCRIPTION.ru.md). Контракт реализации — `NOWA_Warriner_Validation_Spec_2.1.md` и предшествующая спецификация того же каталога.
 
-Панель Streamlit и `run_quick.py` по умолчанию на английском. `--lang ru` или `NOWA_LANG=ru` переключают подписи; в панели есть меню языка. `--lang` важнее `NOWA_LANG`.
+Панель Streamlit и `run_quick.py` по умолчанию на английском. `--lang ru` или `NOWA_LANG=ru` переключают подписи; в боковой панели две кнопки, EN и RU, и активная подсвечена. `--lang` важнее `NOWA_LANG`.
 
 ### 2. Метод
 

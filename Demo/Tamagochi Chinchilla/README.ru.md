@@ -10,7 +10,7 @@ English version: [README.en.md](README.en.md)
 python src/main.py --lang ru
 ```
 
-Окно по умолчанию английское. `--lang ru` или `NOWA_LANG=ru` включает русский; в окне — клавиша `G` или кнопка EN/RU. Проверки: `python -m pytest -q tests` из каталога `Demo/Tamagochi Chinchilla`.
+Окно по умолчанию английское. `--lang ru` или `NOWA_LANG=ru` включает русский; в окне — клавиша `G` или отдельные кнопки EN и RU. Активный язык подсвечен. Проверки: `python -m pytest -q tests` из каталога `Demo/Tamagochi Chinchilla`.
 
 ![Тамагочи](../../docs/media/ru/tamagotchi.gif)
 

@@ -25,7 +25,7 @@ except ImportError:  # pragma: no cover - minimal Python builds omit Tk
 if __package__ in (None, ""):  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from nowa_body.gui_i18n import FLAG_EN, FLAG_RU, I18n
+from nowa_body.gui_i18n import I18n
 from nowa_body.lab_session import (
     FORCE_ACTIONS,
     FORCE_AUTO,
@@ -73,12 +73,12 @@ class BodyLabApp(tk.Tk if tk is not None else object):
         lang_bar = ttk.Frame(header)
         lang_bar.pack(side="right")
         self.btn_lang_en = tk.Button(
-            lang_bar, text=f"{FLAG_EN} EN", command=lambda: self._set_language("en"),
-            relief="raised", padx=8, pady=2, font=("Segoe UI Emoji", 10), cursor="hand2",
+            lang_bar, text="EN", command=lambda: self._set_language("en"),
+            relief="raised", padx=8, pady=2, font=("Segoe UI", 10), cursor="hand2",
         )
         self.btn_lang_ru = tk.Button(
-            lang_bar, text=f"{FLAG_RU} RU", command=lambda: self._set_language("ru"),
-            relief="raised", padx=8, pady=2, font=("Segoe UI Emoji", 10), cursor="hand2",
+            lang_bar, text="RU", command=lambda: self._set_language("ru"),
+            relief="raised", padx=8, pady=2, font=("Segoe UI", 10), cursor="hand2",
         )
         self.btn_lang_en.pack(side="left", padx=(0, 4))
         self.btn_lang_ru.pack(side="left")
@@ -293,9 +293,20 @@ class BodyLabApp(tk.Tk if tk is not None else object):
         self._apply_language()
         self._refresh_view()
 
+    def _highlight_lang_buttons(self) -> None:
+        active = {"relief": "sunken", "bg": "#dbeafe"}
+        idle = {"relief": "raised", "bg": "SystemButtonFace"}
+        if self.i18n.lang == "en":
+            self.btn_lang_en.configure(**active)
+            self.btn_lang_ru.configure(**idle)
+        else:
+            self.btn_lang_ru.configure(**active)
+            self.btn_lang_en.configure(**idle)
+
     def _apply_language(self) -> None:
         self.title(self.t("app.title"))
         self.lbl_title.configure(text=self.t("app.title"))
+        self._highlight_lang_buttons()
         tabs = (
             (0, "tab.pipeline"),
             (1, "tab.pending"),

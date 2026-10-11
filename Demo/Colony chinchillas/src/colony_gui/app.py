@@ -28,7 +28,7 @@ except Exception:  # pragma: no cover - optional dependency
     pygame = None  # type: ignore
     PYGAME_AVAILABLE = False
 
-_LANG_BUTTON: Any = None
+_LANG_BUTTONS: dict[str, Any] = {}
 
 
 def _confirm_quit() -> bool:
@@ -236,17 +236,27 @@ def _draw_right_panel(
 
     card_hit_areas: list[tuple[pygame.Rect, str]] = []
 
-    global _LANG_BUTTON
+    global _LANG_BUTTONS
     living_count = len(living_agents_data)
     title = tr("КОЛОНИЯ ({n} живых)").format(n=living_count)
     panel.blit(font.render(title, True, (35, 28, 20)), (10, 10))
     panel.blit(font_small.render(tr("[L] Родословная"), True, (90, 78, 62)), (10, 30))
-    lang_btn = pygame.Rect(panel_rect.width - 48, 8, 38, 22)
-    pygame.draw.rect(panel, (226, 214, 196), lang_btn, border_radius=4)
-    pygame.draw.rect(panel, (120, 104, 84), lang_btn, 1, border_radius=4)
-    lang_mark = font_small.render(get_language().upper(), True, (35, 28, 20))
-    panel.blit(lang_mark, lang_mark.get_rect(center=lang_btn.center))
-    _LANG_BUTTON = lang_btn.move(panel_rect.x, panel_rect.y)
+    active_lang = get_language()
+    placed: dict[str, Any] = {}
+    button_x = panel_rect.width - 92
+    for code in ("en", "ru"):
+        lang_btn = pygame.Rect(button_x, 8, 40, 22)
+        button_x += 44
+        if code == active_lang:
+            pygame.draw.rect(panel, (219, 234, 254), lang_btn, border_radius=4)
+            pygame.draw.rect(panel, (37, 99, 168), lang_btn, 2, border_radius=4)
+        else:
+            pygame.draw.rect(panel, (226, 214, 196), lang_btn, border_radius=4)
+            pygame.draw.rect(panel, (120, 104, 84), lang_btn, 1, border_radius=4)
+        lang_mark = font_small.render(code.upper(), True, (35, 28, 20))
+        panel.blit(lang_mark, lang_mark.get_rect(center=lang_btn.center))
+        placed[code] = lang_btn.move(panel_rect.x, panel_rect.y)
+    _LANG_BUTTONS = placed
 
     y = 52 - int(scroll_offset)
     for item in living_agents_data:
@@ -1305,14 +1315,30 @@ def _paint_static_scene(static_scene: "pygame.Surface", font: "pygame.font.Font"
     _draw_furniture(static_scene, font)
 
 
-def _switch_language(gui: Any, static_scene: "pygame.Surface", font: "pygame.font.Font") -> None:
-    toggle_language()
+def _apply_language_chrome(gui: Any, static_scene: "pygame.Surface", font: "pygame.font.Font") -> None:
     gui.swarm_analytics.mark_dirty()
     _paint_static_scene(static_scene, font)
     try:
         pygame.display.set_caption(tr("Colony GUI — симуляция шиншилл"))
     except Exception:
         pass
+
+
+def _set_demo_language(
+    lang: str,
+    gui: Any,
+    static_scene: "pygame.Surface",
+    font: "pygame.font.Font",
+) -> None:
+    if get_language() == lang:
+        return
+    set_language(lang)
+    _apply_language_chrome(gui, static_scene, font)
+
+
+def _switch_language(gui: Any, static_scene: "pygame.Surface", font: "pygame.font.Font") -> None:
+    toggle_language()
+    _apply_language_chrome(gui, static_scene, font)
 
 
 def run_pygame_demo(
@@ -1475,8 +1501,12 @@ def run_pygame_demo(
                 elif event.key == pygame.K_g:
                     _switch_language(gui, static_scene, font)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if _LANG_BUTTON is not None and _LANG_BUTTON.collidepoint(event.pos):
-                    _switch_language(gui, static_scene, font)
+                clicked_lang = next(
+                    (code for code, rect in _LANG_BUTTONS.items() if rect.collidepoint(event.pos)),
+                    None,
+                )
+                if clicked_lang is not None:
+                    _set_demo_language(clicked_lang, gui, static_scene, font)
                     continue
                 clicked_id = _handle_panel_click(event.pos, card_hit_areas)
                 if clicked_id:

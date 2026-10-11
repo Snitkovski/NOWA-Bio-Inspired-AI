@@ -57,7 +57,7 @@ python "Demo/Tamagochi Chinchilla/src/main.py"
 
 The clips above were captured headlessly (`SDL_VIDEODRIVER=dummy`) from those demos. Regenerate both languages with `python tools/render_promo_media.py` (also needs `pillow`).
 
-Demo windows open in English. `NOWA_LANG=ru` or `--lang ru` switches a demo; `--lang` wins over the environment variable. In the colony and tamagotchi windows, press `G` or the EN/RU button. The virtual-company labs keep an in-window language control and a saved preference; `--lang` overrides that preference for the session.
+Demo windows open in English. `NOWA_LANG=ru` or `--lang ru` switches a demo; `--lang` wins over the environment variable. In the colony and tamagotchi windows, press `G` or the separate EN and RU buttons. The active language is highlighted. The virtual-company labs and the Warriner dashboard use the same EN and RU buttons; the labs also remember the choice, and `--lang` overrides that preference for the session.
 
 | Colony | Tamagotchi | Family tree |
 |---|---|---|
@@ -179,7 +179,7 @@ If you use this in research, see [CITATION.cff](CITATION.cff).
 
 Короткий прогон без дополнительных пакетов — те же команды, что в английском блоке «Quickstart in 60 seconds» выше: `python tools/sixty_seconds.py`, затем колония в headless-режиме. Полный набор тестов: `pip install -r requirements-dev.txt` и `python -m pytest -q`. Тесты графического интерфейса пропускаются, если нет Tk или дисплея.
 
-Окна демо по умолчанию на английском. `NOWA_LANG=ru` или `--lang ru` переключают язык (`--lang` важнее переменной окружения). В колонии и тамагочи — клавиша `G` или кнопка EN/RU. В лабораториях виртуальной компании язык переключается кнопками в окне и запоминается; `--lang` перекрывает сохранённый выбор на этот запуск.
+Окна демо по умолчанию на английском. `NOWA_LANG=ru` или `--lang ru` переключают язык (`--lang` важнее переменной окружения). В колонии и тамагочи — клавиша `G` или отдельные кнопки EN и RU. Активный язык подсвечен. В лабораториях виртуальной компании и на панели Warriner те же кнопки EN и RU. Лаборатории запоминают выбор, а `--lang` перекрывает его на этот запуск.
 
 | Колония | Тамагочи | Родословная |
 |---|---|---|

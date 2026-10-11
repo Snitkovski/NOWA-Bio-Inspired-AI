@@ -10,7 +10,7 @@ Launch from the platform directory:
 python src/main.py --lang en
 ```
 
-The window defaults to English. `--lang ru` or `NOWA_LANG=ru` switches it; press `G` or the EN/RU button in the window. Checks: `python -m pytest -q tests` from `Demo/Tamagochi Chinchilla`.
+The window defaults to English. `--lang ru` or `NOWA_LANG=ru` switches it; press `G` or the separate EN and RU buttons in the window. The active language is highlighted. Checks: `python -m pytest -q tests` from `Demo/Tamagochi Chinchilla`.
 
 ![Tamagotchi](../../docs/media/en/tamagotchi.gif)
 

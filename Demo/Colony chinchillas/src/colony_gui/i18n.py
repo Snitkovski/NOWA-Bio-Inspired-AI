@@ -1,7 +1,7 @@
 """English / Russian strings for the colony demo.
 
 Default language is English. ``--lang`` and ``NOWA_LANG`` override it, and the
-in-window EN/RU control calls :func:`set_language`.
+in-window EN and RU buttons call :func:`set_language`.
 """
 
 from __future__ import annotations

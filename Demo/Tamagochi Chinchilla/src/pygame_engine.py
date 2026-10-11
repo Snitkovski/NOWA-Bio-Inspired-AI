@@ -25,7 +25,7 @@ try:
 except ImportError:
     PYGAME_AVAILABLE = False
 
-from tama_i18n import get_language, toggle_language, tr
+from tama_i18n import get_language, set_language, toggle_language, tr
 
 # ============================================================================
 # POSITION MAPPING
@@ -235,7 +235,10 @@ class PygameEngine:
         self.font_dbg  = pygame.font.SysFont(_ui_font, 14)
         self.font_ui   = pygame.font.SysFont(_ui_font, 16)
         self.font_ui_title = pygame.font.SysFont(_ui_font, 20, bold=True)
-        self.lang_button_rect = pygame.Rect(self.width - 58, 8, 46, 22)
+        self.lang_button_rects = {
+            "en": pygame.Rect(self.width - 104, 8, 46, 22),
+            "ru": pygame.Rect(self.width - 54, 8, 46, 22),
+        }
 
         # Bottom UI row is below cage border (cage bottom is y = height - 40)
         self.state_button_rect = pygame.Rect((self.width - 360) // 2, self.height - 34, 360, 24)
@@ -1113,20 +1116,31 @@ class PygameEngine:
             self.screen.blit(hint, (panel.right - 58, panel.bottom - 20))
 
     def _draw_lang_button(self) -> None:
-        rect = self.lang_button_rect
-        pygame.draw.rect(self.screen, (226, 214, 196), rect, border_radius=4)
-        pygame.draw.rect(self.screen, (120, 104, 84), rect, 1, border_radius=4)
-        mark = self.font_ui.render(get_language().upper(), True, (35, 28, 20))
-        self.screen.blit(mark, mark.get_rect(center=rect.center))
+        active = get_language()
+        for code, rect in self.lang_button_rects.items():
+            if code == active:
+                pygame.draw.rect(self.screen, (219, 234, 254), rect, border_radius=4)
+                pygame.draw.rect(self.screen, (37, 99, 168), rect, 2, border_radius=4)
+            else:
+                pygame.draw.rect(self.screen, (226, 214, 196), rect, border_radius=4)
+                pygame.draw.rect(self.screen, (120, 104, 84), rect, 1, border_radius=4)
+            mark = self.font_ui.render(code.upper(), True, (35, 28, 20))
+            self.screen.blit(mark, mark.get_rect(center=rect.center))
+
+    def _set_demo_language(self, lang: str) -> None:
+        if get_language() == lang:
+            return
+        set_language(lang)
+        try:
+            pygame.display.set_caption(tr("Тамагочи — шиншилла"))
+        except Exception:
+            pass
 
     def handle_mouse_click(self, pos: Tuple[int, int]) -> Optional[str]:
-        if self.lang_button_rect.collidepoint(pos):
-            toggle_language()
-            try:
-                pygame.display.set_caption(tr("Тамагочи — шиншилла"))
-            except Exception:
-                pass
-            return "toggle_language"
+        for code, rect in self.lang_button_rects.items():
+            if rect.collidepoint(pos):
+                self._set_demo_language(code)
+                return f"language:{code}"
         if self.show_state_window and self._get_state_close_rect().collidepoint(pos):
             self.show_state_window = False
             self._state_scroll = 0

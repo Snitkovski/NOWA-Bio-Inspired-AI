@@ -14,7 +14,7 @@ python src/nowa_sandbox/run_sandbox.py --config configs/default_world.yaml --sta
 Лаборатория тела: `python -m nowa_body.gui_app --lang ru` (либо `run_body_gui.bat`).  
 Конфигуратор ролей: `python -m nowa_body.gui_configurator --lang ru` (либо `run_role_configurator.bat`).
 
-Лаборатории уже переключают язык кнопками в окне и запоминают выбор. `--lang en|ru` перекрывает сохранённое предпочтение на один запуск; иначе действует `NOWA_LANG`, а если её нет — сохранённый выбор. По умолчанию английский.
+В каждой лаборатории две кнопки, EN и RU, и активная подсвечена. Выбор запоминается. `--lang en|ru` перекрывает сохранённое предпочтение на один запуск; иначе действует `NOWA_LANG`, а если её нет — сохранённый выбор. По умолчанию английский.
 
 Проверки: `python -m pytest -m "not slow"`.
 

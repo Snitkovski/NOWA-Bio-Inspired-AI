@@ -8,7 +8,7 @@ The platform compares the affective response of a colony of sovereign NOWA agent
 
 Scientific description of the complex: [SCIENTIFIC_DESCRIPTION.en.md](../../../Docs/SCIENTIFIC_DESCRIPTION.en.md). The implementation contract is `NOWA_Warriner_Validation_Spec_2.1.md` and the preceding specification in the same directory.
 
-The Streamlit dashboard and `run_quick.py` open in English. `--lang ru` or `NOWA_LANG=ru` switches the labels; the dashboard also has a language menu. `--lang` wins over `NOWA_LANG`.
+The Streamlit dashboard and `run_quick.py` open in English. `--lang ru` or `NOWA_LANG=ru` switches the labels; the dashboard sidebar has separate EN and RU buttons, and the active one is highlighted. `--lang` wins over `NOWA_LANG`.
 
 ### 2. Method
 
