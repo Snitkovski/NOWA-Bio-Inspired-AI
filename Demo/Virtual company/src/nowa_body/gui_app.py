@@ -38,6 +38,18 @@ from nowa_body.lab_session import (
 DEMO_ROOT = Path(__file__).resolve().parents[2]
 
 
+def _idle_button_bg(widget) -> str:
+    """Windows system button color when this Tk knows it."""
+
+    if tk is None:
+        return "#f0f0f0"
+    try:
+        widget.tk.call("winfo", "rgb", widget, "SystemButtonFace")
+    except tk.TclError:
+        return "#f0f0f0"
+    return "SystemButtonFace"
+
+
 class BodyLabApp(tk.Tk if tk is not None else object):
     """Interactive MockMCP lab: tick, approve, inspect memory and sleep."""
 
@@ -295,7 +307,7 @@ class BodyLabApp(tk.Tk if tk is not None else object):
 
     def _highlight_lang_buttons(self) -> None:
         active = {"relief": "sunken", "bg": "#dbeafe"}
-        idle = {"relief": "raised", "bg": "SystemButtonFace"}
+        idle = {"relief": "raised", "bg": _idle_button_bg(self.btn_lang_en)}
         if self.i18n.lang == "en":
             self.btn_lang_en.configure(**active)
             self.btn_lang_ru.configure(**idle)

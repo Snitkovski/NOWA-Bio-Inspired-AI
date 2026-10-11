@@ -35,6 +35,18 @@ if __package__ in (None, ""):  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from nowa_sandbox import __version__
+
+
+def _idle_button_bg(widget) -> str:
+    """Windows system button color when this Tk knows it."""
+
+    if tk is None:
+        return "#f0f0f0"
+    try:
+        widget.tk.call("winfo", "rgb", widget, "SystemButtonFace")
+    except tk.TclError:
+        return "#f0f0f0"
+    return "SystemButtonFace"
 from nowa_sandbox.gui_charts import FitnessChart
 from nowa_sandbox.gui_controller import (
     DEMO_ROOT,
@@ -447,7 +459,7 @@ class SandboxLabApp(tk.Tk if tk is not None else object):
 
     def _highlight_lang_buttons(self) -> None:
         active = {"relief": "sunken", "bg": "#dbeafe"}
-        idle = {"relief": "raised", "bg": "SystemButtonFace"}
+        idle = {"relief": "raised", "bg": _idle_button_bg(self.btn_lang_en)}
         if self.i18n.lang == "en":
             self.btn_lang_en.configure(**active)
             self.btn_lang_ru.configure(**idle)

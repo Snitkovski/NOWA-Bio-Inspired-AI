@@ -39,6 +39,18 @@ from nowa_body.gui_configurator_controller import (
     list_roles,
 )
 from nowa_body.gui_configurator_i18n import I18n, STRINGS
+
+
+def _idle_button_bg(widget) -> str:
+    """Windows system button color when this Tk knows it."""
+
+    if tk is None:
+        return "#f0f0f0"
+    try:
+        widget.tk.call("winfo", "rgb", widget, "SystemButtonFace")
+    except tk.TclError:
+        return "#f0f0f0"
+    return "SystemButtonFace"
 from nowa_body.gui_employee_controller import EmployeeHostController, suggest_agent_id
 from nowa_body.mcp_capability import CapabilityRisk
 from nowa_body.approval_gate import ApprovalStatus
@@ -633,7 +645,7 @@ class RoleConfiguratorApp(tk.Tk if tk is not None else object):
 
     def _highlight_lang_buttons(self) -> None:
         active = {"relief": "sunken", "bg": "#dbeafe"}
-        idle = {"relief": "raised", "bg": "SystemButtonFace"}
+        idle = {"relief": "raised", "bg": _idle_button_bg(self.btn_lang_en)}
         if self.i18n.lang == "en":
             self.btn_lang_en.configure(**active)
             self.btn_lang_ru.configure(**idle)
