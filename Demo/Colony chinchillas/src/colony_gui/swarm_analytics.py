@@ -733,11 +733,11 @@ def _build_forecast(
     risk_rules = [
         (context["mean_cortisol"] > 0.80, tr("Хронический кортизол блокирует репродукцию")),
         (_trend_direction(context["lt_trend"]) == "down", tr("Потенциальная продолжительность жизни сокращается")),
-        (context["diversity"] < 0.15, tr("Низкое генетическое разнообразие - founder effect")),
+        (context["diversity"] < 0.15, tr("Низкое генетическое разнообразие — эффект основателя")),
         (context["female_fraction"] < 0.35 or context["female_fraction"] > 0.65, tr("Половой дисбаланс угрожает размножению")),
         (context["mean_energy_at_death"] < 0.15, tr("Агенты умирают с истощёнными энергетическими резервами")),
         (context["cohesion"] < 0.10, tr("Слабая социальная сплочённость - изоляция особей")),
-        (context["extinction_risk"] > 0.50, tr("Высокий риск вымирания по оценке ColonyPopulationObserver")),
+        (context["extinction_risk"] > 0.50, tr("Высокий риск вымирания по оценке наблюдателя популяции")),
     ]
     opportunity_rules = [
         (_trend_direction(context["lt_trend"]) == "up", tr("Ген долголетия под положительным отбором")),
@@ -771,7 +771,11 @@ def _build_forecast(
     ).format(
         verdict=health.verdict.lower(),
         pressure=pressure,
-        adapting=", ".join(adapting[:3]) if adapting else tr("выраженных генов под отбором нет"),
+        adapting=(
+            ", ".join(label("lineage_gene", key, key) for key in adapting[:3])
+            if adapting
+            else tr("выраженных генов под отбором нет")
+        ),
         risk=risks[0] if risks else tr("критических рисков не выявлено"),
     )
     return EvolutionaryForecast(

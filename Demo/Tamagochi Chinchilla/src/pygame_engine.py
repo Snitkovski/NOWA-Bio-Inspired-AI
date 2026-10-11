@@ -25,7 +25,7 @@ try:
 except ImportError:
     PYGAME_AVAILABLE = False
 
-from tama_i18n import get_language, set_language, toggle_language, tr
+from tama_i18n import chain_label, get_language, set_language, toggle_language, tr
 
 # ============================================================================
 # POSITION MAPPING
@@ -881,12 +881,12 @@ class PygameEngine:
         next_actions_line = ", ".join(tr(item) for item in next_actions_ru[:3]) if next_actions_ru else tr("нет")
 
         candidate_chains_ru = mind.get("candidate_chains_ru") or []
-        candidate_line = ", ".join(candidate_chains_ru[:3]) if candidate_chains_ru else "нет"
+        candidate_line = ", ".join(tr(item) for item in candidate_chains_ru[:3]) if candidate_chains_ru else tr("нет")
 
         top_chains = memory_summary.get("top_chains") or []
         if top_chains:
             top_mem_line = ", ".join(
-                f"{item.get('chain','-').replace('_', ' ')} ({float(item.get('weight', 0.0)):.2f})"
+                f"{chain_label(str(item.get('chain') or '-'))} ({float(item.get('weight', 0.0)):.2f})"
                 for item in top_chains[:3]
             )
         else:
@@ -1112,7 +1112,7 @@ class PygameEngine:
             thumb_rect = pygame.Rect(panel.right - 16, thumb_y, 10, thumb_h)
             pygame.draw.rect(self.screen, (210, 200, 188), track_rect, border_radius=5)
             pygame.draw.rect(self.screen, (100, 86, 70), thumb_rect, border_radius=5)
-            hint = self.font_dbg.render("scroll", True, (130, 115, 95))
+            hint = self.font_dbg.render(tr("прокрутка"), True, (130, 115, 95))
             self.screen.blit(hint, (panel.right - 58, panel.bottom - 20))
 
     def _draw_lang_button(self) -> None:

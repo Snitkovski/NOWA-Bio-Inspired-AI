@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from colony_gui.i18n import (
     assert_catalog_parity,
+    cause_label,
     get_language,
     label,
     reset_language,
     set_language,
+    sex_label,
     tr,
 )
 from colony_gui.nowa_interpreter import get_axis_label, interpret_affect
@@ -46,6 +48,21 @@ def test_english_affect_tone() -> None:
         assert result.axis_labels["stress"] == "critical"
     finally:
         reset_language()
+
+
+def test_death_cause_and_sex_are_display_labels(monkeypatch) -> None:
+    monkeypatch.delenv("NOWA_LANG", raising=False)
+    reset_language()
+    set_language("en")
+    assert cause_label("old_age") == "old age"
+    assert cause_label("sleep_deprivation") == "sleep deprivation"
+    assert sex_label("F") == "female"
+    set_language("ru")
+    assert cause_label("old_age") == "старость"
+    assert cause_label("exhaustion") == "истощение"
+    assert sex_label("M") == "самец"
+    assert cause_label("") == ""
+    reset_language()
 
 
 def test_cli_override_beats_environment(monkeypatch) -> None:

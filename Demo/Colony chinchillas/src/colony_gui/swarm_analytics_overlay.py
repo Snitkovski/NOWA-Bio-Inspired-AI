@@ -346,7 +346,7 @@ class SwarmAnalyticsOverlay:
         first = track.values_by_gen[first_gen]
         last = track.values_by_gen[last_gen]
         marker = "●" if track.is_under_selection else "~"
-        headline = f"{marker} {track.gene_key:<28} {track.trend_label:<12} Δ{track.trend_magnitude:.2f} ({first:.2f} → {last:.2f})"
+        headline = f"{marker} {label('lineage_gene', track.gene_key, track.gene_key)}  {track.trend_label}  Δ{track.trend_magnitude:.2f} ({first:.2f} → {last:.2f})"
         surface.blit(font_small.render(self._fit_text(headline, font_small, surface.get_width() - 4), True, TEXT_COLOR), (0, y))
         y += 18
         for line in self._wrap_text(f'"{track.interpretation}"', font_small, surface.get_width() - 12)[:2]:
@@ -386,7 +386,7 @@ class SwarmAnalyticsOverlay:
             y = self._draw_gene_track(surface, font_small, y, track) + 8
         y = self._section(surface, font_small, y, tr("Стабильные гены"))
         for track in stable[:10]:
-            text = f"~ {track.gene_key:<28} {track.trend_label:<12} Δ±{track.trend_magnitude:.2f}"
+            text = f"~ {label('lineage_gene', track.gene_key, track.gene_key)}  {track.trend_label}  Δ±{track.trend_magnitude:.2f}"
             surface.blit(font_small.render(self._fit_text(text, font_small, surface.get_width() - 4), True, MUTED_TEXT), (0, y))
             y += 18
         y = self._section(surface, font_small, y + 8, tr("Генетическое разнообразие"))
@@ -465,7 +465,14 @@ class SwarmAnalyticsOverlay:
         surface.blit(font_small.render(f"{data.health_index.overall:.2f}  {data.health_index.verdict.upper()}", True, TEXT_COLOR), (198, y))
         y += 28
         for key, value in data.health_index.components.items():
-            y = self._metric_row(surface, font_small, y, key, value, color=data.health_index.color)
+            y = self._metric_row(
+                surface,
+                font_small,
+                y,
+                label("health", key, key),
+                value,
+                color=data.health_index.color,
+            )
         y += 8
         y = self._section(surface, font_small, y, tr("Риски"))
         for risk in forecast.key_risks[:8] or [tr("Критических рисков не выявлено")]:
@@ -480,9 +487,11 @@ class SwarmAnalyticsOverlay:
         y = self._section(surface, font_small, y, tr("Давление отбора"))
         surface.blit(font_small.render(tr("Главный фактор: {name}").format(name=forecast.dominant_pressure), True, TEXT_COLOR), (0, y))
         y += 18
-        surface.blit(font_small.render(self._fit_text(tr("Адаптируется: {names}").format(names=", ".join(forecast.adapting_traits) or "-"), font_small, surface.get_width() - 4), True, MUTED_TEXT), (0, y))
+        adapting_names = ", ".join(label("lineage_gene", key, key) for key in forecast.adapting_traits) or "-"
+        stagnant_names = ", ".join(label("lineage_gene", key, key) for key in forecast.stagnant_traits) or "-"
+        surface.blit(font_small.render(self._fit_text(tr("Адаптируется: {names}").format(names=adapting_names), font_small, surface.get_width() - 4), True, MUTED_TEXT), (0, y))
         y += 18
-        surface.blit(font_small.render(self._fit_text(tr("Без отбора: {names}").format(names=", ".join(forecast.stagnant_traits) or "-"), font_small, surface.get_width() - 4), True, MUTED_TEXT), (0, y))
+        surface.blit(font_small.render(self._fit_text(tr("Без отбора: {names}").format(names=stagnant_names), font_small, surface.get_width() - 4), True, MUTED_TEXT), (0, y))
         y += 26
         y = self._section(surface, font_small, y, tr("Итоговый вывод"))
         for line in self._wrap_text(f'"{forecast.summary}"', font_small, surface.get_width() - 4)[:5]:

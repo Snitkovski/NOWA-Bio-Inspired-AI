@@ -17,7 +17,7 @@ from simulation_runner import SimulationRunner
 from .cage_view import get_zone_render_pos
 from .colony_gui import ColonyGUI
 from .config import ACTION_ANIMATIONS, ACTION_SFX, CAGE_RECT, ZONE_RENDER_COORDS
-from .i18n import get_language, label, set_language, toggle_language, tr
+from .i18n import cause_label, get_language, label, set_language, sex_label, toggle_language, tr
 from .utils import format_sim_time
 
 try:
@@ -276,7 +276,7 @@ def _draw_right_panel(
         pygame.draw.rect(panel, bg, card_rect, border_radius=6)
         pygame.draw.rect(panel, border, card_rect, 2, border_radius=6)
 
-        sex = str(item.get("sex", ""))
+        sex = sex_label(item.get("sex", ""))
         age_category = _ru_age_category(item.get("age_category", "adult"))
         # Prefer authoritative birth registry name when provided.
         if name_registry is not None:
@@ -350,9 +350,9 @@ def _draw_right_panel(
                     name = str(getattr(memorial, "name", "") or agent_id)
             else:
                 name = str(getattr(memorial, "name", "") or agent_id)
-            sex = str(getattr(memorial, "sex", ""))
-            panel.blit(font_small.render(f"✝ {name} {sex}", True, CARD_TEXT_DEAD), (card_rect.x + 8, card_rect.y + 6))
-            cause = str(getattr(memorial, "cause_of_death", "") or tr("неизвестно"))
+            sex = sex_label(getattr(memorial, "sex", ""))
+            panel.blit(font_small.render(f"✝ {name} {sex}".rstrip(), True, CARD_TEXT_DEAD), (card_rect.x + 8, card_rect.y + 6))
+            cause = cause_label(getattr(memorial, "cause_of_death", "")) or tr("неизвестно")
             lived = format_sim_time(float(getattr(memorial, "age_at_death", 0.0) or 0.0))
             offspring = int(getattr(memorial, "total_offspring", 0) or 0)
             line2 = (

@@ -234,6 +234,52 @@ TABLES: dict[str, dict[str, dict[str, str]]] = {
             "wakefulness_critical": "критическая сонливость",
         },
     },
+    "cause": {
+        "en": {
+            "old_age": "old age",
+            "exhaustion": "exhaustion",
+            "sleep_deprivation": "sleep deprivation",
+            "senescence": "senescence",
+            "unknown": "unknown",
+        },
+        "ru": {
+            "old_age": "старость",
+            "exhaustion": "истощение",
+            "sleep_deprivation": "недосып",
+            "senescence": "одряхление",
+            "unknown": "неизвестно",
+        },
+    },
+    "sex": {
+        "en": {
+            "M": "male",
+            "F": "female",
+            "U": "unknown",
+        },
+        "ru": {
+            "M": "самец",
+            "F": "самка",
+            "U": "неизвестно",
+        },
+    },
+    "health": {
+        "en": {
+            "stress": "stress",
+            "cortisol": "cortisol",
+            "energy": "energy",
+            "social": "social",
+            "lifespan": "lifespan",
+            "diversity": "diversity",
+        },
+        "ru": {
+            "stress": "стресс",
+            "cortisol": "кортизол",
+            "energy": "энергия",
+            "social": "социальность",
+            "lifespan": "долголетие",
+            "diversity": "разнообразие",
+        },
+    },
     "relationship": {
         "en": {
             "stranger": "stranger",
@@ -374,20 +420,66 @@ TABLES: dict[str, dict[str, dict[str, str]]] = {
     },
     "lineage_gene": {
         "en": {
-            "lt_max_lifespan_factor": "Longevity",
             "af_decay_stress": "Stress retention",
+            "af_decay_valence": "Mood stability",
+            "af_decay_arousal": "Arousal persistence",
+            "af_decay_dominance": "Dominance stability",
+            "af_decay_curiosity": "Curiosity persistence",
+            "af_decay_trust": "Trust persistence",
+            "af_decay_attachment": "Attachment persistence",
+            "af_lambda_reg": "Affect regulation",
+            "nm_decay_half_life": "Neuromodulator persistence",
+            "nm_da_ne_weight": "Dopamine–norepinephrine link",
+            "nm_ne_da_weight": "Norepinephrine–dopamine link",
+            "nm_da_ach_weight": "Dopamine–acetylcholine link",
+            "nm_ach_da_weight": "Acetylcholine–dopamine link",
+            "nm_acc_k_ne": "Norepinephrine sensitivity",
             "nm_acc_k_cort": "Cortisol sensitivity",
-            "dr_social_drive_baseline": "Sociability",
+            "nm_acc_k_ht": "Serotonin sensitivity",
+            "wk_accumulation_factor": "Fatigue buildup",
             "wk_recovery_factor": "Recovery",
+            "wk_circadian_amplitude": "Circadian amplitude",
+            "wk_circadian_phase": "Circadian phase",
+            "dr_curiosity_baseline": "Curiosity baseline",
+            "dr_social_drive_baseline": "Sociability",
+            "dr_perception_radius_factor": "Perception range",
+            "lr_gamma": "Future discount",
             "lr_alpha": "Learning rate",
+            "lr_similarity_threshold": "Memory match threshold",
+            "lr_tonic_slow_rate": "Slow learning rate",
+            "lr_consolidation_threshold": "Consolidation threshold",
+            "lt_max_lifespan_factor": "Longevity",
         },
         "ru": {
-            "lt_max_lifespan_factor": "Долгожитие",
             "af_decay_stress": "Накопление стресса",
+            "af_decay_valence": "Стабильность настроения",
+            "af_decay_arousal": "Удержание возбуждения",
+            "af_decay_dominance": "Устойчивость доминирования",
+            "af_decay_curiosity": "Удержание любопытства",
+            "af_decay_trust": "Удержание доверия",
+            "af_decay_attachment": "Удержание привязанности",
+            "af_lambda_reg": "Аффективная регуляция",
+            "nm_decay_half_life": "Длительность нейромодуляторов",
+            "nm_da_ne_weight": "Связь дофамин–норадреналин",
+            "nm_ne_da_weight": "Связь норадреналин–дофамин",
+            "nm_da_ach_weight": "Связь дофамин–ацетилхолин",
+            "nm_ach_da_weight": "Связь ацетилхолин–дофамин",
+            "nm_acc_k_ne": "Чувствительность к норадреналину",
             "nm_acc_k_cort": "Чувствительность к кортизолу",
             "dr_social_drive_baseline": "Социальность",
+            "nm_acc_k_ht": "Чувствительность к серотонину",
+            "wk_accumulation_factor": "Накопление усталости",
             "wk_recovery_factor": "Восстановление",
+            "wk_circadian_amplitude": "Амплитуда суточного ритма",
+            "wk_circadian_phase": "Фаза суточного ритма",
+            "dr_curiosity_baseline": "Базовое любопытство",
+            "dr_perception_radius_factor": "Радиус восприятия",
+            "lr_gamma": "Дисконт будущего",
             "lr_alpha": "Темп обучения",
+            "lr_similarity_threshold": "Порог сходства памяти",
+            "lr_tonic_slow_rate": "Медленный темп обучения",
+            "lr_consolidation_threshold": "Порог консолидации",
+            "lt_max_lifespan_factor": "Долгожитие",
         },
     },
     "trend_meaning": {
@@ -479,6 +571,24 @@ def label(table: str, key: str, default: str | None = None) -> str:
 def has_label(table: str, key: str) -> bool:
     books = TABLES[table]
     return key in books["en"] or key in books["ru"]
+
+
+def cause_label(value: object) -> str:
+    """Human-readable death cause. The stored id is left unchanged."""
+
+    key = str(value or "").strip()
+    if not key:
+        return ""
+    return label("cause", key, key.replace("_", " "))
+
+
+def sex_label(value: object) -> str:
+    """Human-readable sex code. ``M``/``F``/``U`` stay stored as-is."""
+
+    key = str(value or "").strip().upper()
+    if not key:
+        return ""
+    return label("sex", key, key)
 
 
 # Free-text catalog. The Russian phrase is the lookup key for :func:`tr`.
@@ -959,11 +1069,11 @@ for _ru, _en in {
     "Позитивные тренды пока не выражены": "No clear positive trends yet",
     "Хронический кортизол блокирует репродукцию": "Chronic cortisol is blocking reproduction",
     "Потенциальная продолжительность жизни сокращается": "Potential lifespan is shrinking",
-    "Низкое генетическое разнообразие - founder effect": "Low genetic diversity — founder effect",
+    "Низкое генетическое разнообразие — эффект основателя": "Low genetic diversity — founder effect",
     "Половой дисбаланс угрожает размножению": "Sex imbalance threatens breeding",
     "Агенты умирают с истощёнными энергетическими резервами": "Agents are dying with depleted energy reserves",
     "Слабая социальная сплочённость - изоляция особей": "Weak social cohesion — individuals are isolated",
-    "Высокий риск вымирания по оценке ColonyPopulationObserver": "High extinction risk according to ColonyPopulationObserver",
+    "Высокий риск вымирания по оценке наблюдателя популяции": "High extinction risk according to the population observer",
     "Ген долголетия под положительным отбором": "The longevity gene is under positive selection",
     "Стресс снижается - репродуктивный потенциал растёт": "Stress is falling — reproductive potential is rising",
     "Кортизол снижается - адаптация к стрессу работает": "Cortisol is falling — stress adaptation is working",
@@ -1088,6 +1198,7 @@ __all__ = [
     "SUPPORTED",
     "TABLES",
     "assert_catalog_parity",
+    "cause_label",
     "character_id",
     "get_language",
     "has_label",
@@ -1096,6 +1207,7 @@ __all__ = [
     "profile_id",
     "reset_language",
     "set_language",
+    "sex_label",
     "toggle_language",
     "tone_id",
     "tr",

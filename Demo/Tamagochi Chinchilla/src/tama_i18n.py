@@ -62,12 +62,66 @@ def tr(text: str, **kwargs: object) -> str:
     return raw
 
 
+CHAINS: dict[str, dict[str, str]] = {
+    "en": {
+        "morning_awakening": "morning awakening",
+        "eating_and_grooming": "eating and grooming",
+        "activity_burst": "activity burst",
+        "exploration": "exploration",
+        "full_grooming": "full grooming",
+        "dust_bathing": "dust bathing",
+        "social_contact": "social contact",
+        "mild_fear": "mild fear",
+        "extreme_fear": "extreme fear",
+        "chronic_stress": "chronic stress",
+        "bedtime_routine": "bedtime routine",
+        "territorial_patrol": "territorial patrol",
+        "nesting": "nesting",
+        "hyperactivity": "hyperactivity",
+    },
+    "ru": {
+        "morning_awakening": "утреннее пробуждение",
+        "eating_and_grooming": "еда и груминг",
+        "activity_burst": "всплеск активности",
+        "exploration": "исследование",
+        "full_grooming": "полный груминг",
+        "dust_bathing": "пылевое купание",
+        "social_contact": "социальный контакт",
+        "mild_fear": "лёгкий страх",
+        "extreme_fear": "сильный страх",
+        "chronic_stress": "хронический стресс",
+        "bedtime_routine": "отход ко сну",
+        "territorial_patrol": "обход территории",
+        "nesting": "обустройство гнезда",
+        "hyperactivity": "гиперактивность",
+    },
+}
+
+
+def chain_label(name: str) -> str:
+    """Display name for a behavior-chain id. The id itself is not rewritten."""
+
+    key = str(name or "").strip()
+    if not key or key == "-":
+        return key
+    chosen = CHAINS.get(get_language()) or CHAINS["en"]
+    if key in chosen:
+        return chosen[key]
+    if key in CHAINS["en"]:
+        return CHAINS["en"][key]
+    return key.replace("_", " ")
+
+
 def assert_catalog_parity() -> None:
     missing = [ru for ru, entry in PHRASES.items() if not entry.get("en") or not entry.get("ru")]
     if missing:
         raise AssertionError(f"empty tamagotchi translations: {missing[:8]}")
     if len({entry["en"] for entry in PHRASES.values()}) < 10:
         raise AssertionError("tamagotchi English catalog is unexpectedly small")
+    if set(CHAINS["en"]) != set(CHAINS["ru"]):
+        raise AssertionError("tamagotchi chain labels are out of parity")
+    if any(not text.strip() for book in CHAINS.values() for text in book.values()):
+        raise AssertionError("tamagotchi chain label is empty")
 
 
 for _ru, _en in {
@@ -162,6 +216,7 @@ for _ru, _en in {
     "целенаправленность": "goal focus",
     "нет данных": "no data",
     "нет": "none",
+    "прокрутка": "scroll",
     "настроение позитивное": "positive mood",
     "настроение негативное": "negative mood",
     "настроение нейтральное": "neutral mood",

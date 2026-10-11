@@ -7,7 +7,7 @@ from typing import Any
 
 from death_registry import LineageNode
 
-from .i18n import tr
+from .i18n import cause_label, sex_label, tr
 
 GENERATION_ROW_H = 120
 NODE_SPACING_X = 95
@@ -408,10 +408,14 @@ class LineageOverlay:
         import pygame  # type: ignore
 
         lines = [
-            f"{node.display_name} {node.sex}",
+            f"{node.display_name} {sex_label(node.sex)}".strip(),
             tr("Возраст: {age:.1f}s").format(age=node.age),
             tr("Потомков: {n}").format(n=node.total_offspring),
-            (tr("Жив") if node.is_alive else tr("Умер: {cause}").format(cause=node.cause_of_death or tr("неизвестно"))),
+            (
+                tr("Жив")
+                if node.is_alive
+                else tr("Умер: {cause}").format(cause=cause_label(node.cause_of_death) or tr("неизвестно"))
+            ),
         ]
         text_surfaces = [font_small.render(line, True, TITLE_COLOR) for line in lines]
         width = max(item.get_width() for item in text_surfaces) + 14

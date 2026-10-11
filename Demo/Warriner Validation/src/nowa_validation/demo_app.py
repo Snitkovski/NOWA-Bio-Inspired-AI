@@ -77,12 +77,14 @@ def main() -> None:
             index=1,
             key="encoder_mode_v2",
             help=tr("encoder_help"),
+            format_func=lambda value: tr(f"encoder.{value}"),
         )
         protocol = st.selectbox(
             tr("protocol"),
             ["heldout", "in_vocab"],
             key="validation_protocol_v1",
             help=tr("protocol_help"),
+            format_func=lambda value: tr(f"protocol.{value}"),
         )
         n_agents = st.slider(tr("colony_size"), 50, 500, 100, 10)
         n_words = st.slider(tr("words"), 50, 1000, 300, 50)

@@ -7,7 +7,7 @@ import re
 from typing import Any
 
 from death_registry import AgentMemorial
-from .i18n import get_language, has_label, label as ui_label, tr
+from .i18n import cause_label, get_language, has_label, label as ui_label, sex_label, tr
 from .genome_portrait import (
     GENE_REGISTRY,
     LINEAGE_GENE_LABELS_RU,
@@ -1534,11 +1534,11 @@ class AgentInspectorOverlay:
         pygame.draw.rect(panel, INSPECTOR_HEADER, header_rect, border_radius=8)
         title = self._data.display_name
         if self._data.is_deceased:
-            cause = self._data.cause_of_death or tr("неизвестно")
+            cause = cause_label(self._data.cause_of_death) or tr("неизвестно")
             title = f"† {title} [{cause}]"
         panel.blit(font.render(title, True, INSPECTOR_TEXT), (14, 10))
         sub = tr("{sex} | G{generation} | возраст {age:.1f}с | шаги {steps}").format(
-            sex=self._data.sex,
+            sex=sex_label(self._data.sex),
             generation=self._data.generation,
             age=self._data.age,
             steps=self._data.lived_steps,
@@ -2184,14 +2184,16 @@ class AgentInspectorOverlay:
         surface.blit(font.render(tr("Репро"), True, INSPECTOR_TEXT), (0, y))
         y += 24
         rows = [
-            tr("пол: {sex}").format(sex=self._data.sex),
+            tr("пол: {sex}").format(sex=sex_label(self._data.sex)),
             tr("репродуктивный драйв: {value:.3f}").format(value=self._data.reproductive_drive),
             tr("шаги восстановления: {n}").format(n=self._data.cooldown_steps),
             tr("всего потомков: {n}").format(n=self._data.total_offspring_count),
             tr("витальность: {value:.3f}").format(value=self._data.vitality),
             tr("темп старения: {value:.4f}").format(value=self._data.senescence_rate),
             tr("беременна: {value}").format(value=_bool_ru(self._data.sex_specific.get("is_pregnant", False))),
-            tr("причина смерти: {cause}").format(cause=self._data.cause_of_death or "-"),
+            tr("причина смерти: {cause}").format(
+                cause=cause_label(self._data.cause_of_death) or "-"
+            ),
         ]
         for line in rows:
             surface.blit(font_small.render(line, True, INSPECTOR_TEXT), (0, y))
@@ -2308,7 +2310,8 @@ class AgentInspectorOverlay:
             color = valence_colors.get(getattr(mut, "valence", "neutral"), INSPECTOR_MUTED_TEXT)
             prefix = magnitude_prefix.get(getattr(mut, "magnitude", "minor"), ".")
             delta = _safe_float(getattr(mut, "delta", 0.0), 0.0)
-            header = f"{prefix} {getattr(mut, 'gene_key', ''):<28} {delta:+.3f}"
+            gene_name = ui_label("lineage_gene", str(getattr(mut, "gene_key", "") or ""), str(getattr(mut, "gene_key", "") or ""))
+            header = f"{prefix} {gene_name} {delta:+.3f}"
             surface.blit(font_small.render(header, True, color), (0, y))
             y += 15
             surface.blit(font_small.render(f"  -> {getattr(mut, 'consequence_short', '')}", True, INSPECTOR_TEXT), (0, y))

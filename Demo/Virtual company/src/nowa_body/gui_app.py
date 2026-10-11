@@ -570,6 +570,11 @@ class BodyLabApp(tk.Tk if tk is not None else object):
                 break
 
     # ------------------------------------------------------------------ view
+    def _risk_label(self, code: str) -> str:
+        key = f"risk.{code}"
+        text = self.t(key)
+        return str(code or "") if text == key else text
+
     def _refresh_view(self) -> None:
         snap = self.session.snapshot()
         self.var_clock.set(self.session.now.strftime("%H:%M:%S"))
@@ -599,7 +604,7 @@ class BodyLabApp(tk.Tk if tk is not None else object):
         self._fill_tree(
             self.tree_pending,
             [
-                (row["action_id"], row["action_id"][:8], row["tool_id"], row["risk"], row["summary"])
+                (row["action_id"], row["action_id"][:8], row["tool_id"], self._risk_label(row["risk"]), row["summary"])
                 for row in snap.get("pending") or []
             ],
         )

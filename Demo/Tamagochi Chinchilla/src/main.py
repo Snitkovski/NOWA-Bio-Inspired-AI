@@ -2260,7 +2260,9 @@ class ChinchillaAgent:
         return meta.subtitle_ru or action_id
 
     def _chain_preview(self, chain_name: str) -> str:
-        return chain_name.replace("_", " ")
+        from tama_i18n import chain_label
+
+        return chain_label(chain_name)
 
     def _build_candidate_chains(
         self,
