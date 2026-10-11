@@ -19,15 +19,34 @@ from __future__ import annotations
 import os
 import queue
 import sys
-import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
 from typing import Any, Dict, List, Optional, Sequence
+
+try:
+    import tkinter as tk
+    from tkinter import filedialog, messagebox, ttk
+except ImportError:  # pragma: no cover - minimal Python builds omit Tk
+    tk = None  # type: ignore[assignment]
+    filedialog = None  # type: ignore[assignment]
+    messagebox = None  # type: ignore[assignment]
+    ttk = None  # type: ignore[assignment]
 
 if __package__ in (None, ""):  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from nowa_sandbox import __version__
+
+
+def _idle_button_bg(widget) -> str:
+    """Windows system button color when this Tk knows it."""
+
+    if tk is None:
+        return "#f0f0f0"
+    try:
+        widget.tk.call("winfo", "rgb", widget, "SystemButtonFace")
+    except tk.TclError:
+        return "#f0f0f0"
+    return "SystemButtonFace"
 from nowa_sandbox.gui_charts import FitnessChart
 from nowa_sandbox.gui_controller import (
     DEMO_ROOT,
@@ -37,8 +56,6 @@ from nowa_sandbox.gui_controller import (
     load_results_json,
 )
 from nowa_sandbox.gui_i18n import (
-    FLAG_EN,
-    FLAG_RU,
     I18n,
     criterion_column,
     criterion_labels,
@@ -73,15 +90,19 @@ from nowa_sandbox.world_editor import (
 )
 
 
-class SandboxLabApp(tk.Tk):
+class SandboxLabApp(tk.Tk if tk is not None else object):
     """Main laboratory window."""
 
-    def __init__(self) -> None:
+    def __init__(self, lang: str | None = None) -> None:
         super().__init__()
         self.geometry("1280x820")
         self.minsize(1000, 680)
 
-        self.i18n = I18n(pref_path=DEMO_ROOT / "results" / ".lab_lang.json")
+        self.i18n = I18n(
+            lang=lang or "en",
+            pref_path=DEMO_ROOT / "results" / ".lab_lang.json",
+            force=lang in ("en", "ru"),
+        )
         self.controller = RunController()
         self._ui_queue: queue.Queue = queue.Queue()
         self._records: List[Dict[str, Any]] = []
@@ -113,7 +134,7 @@ class SandboxLabApp(tk.Tk):
         lang_bar.pack(side="right")
         self.btn_lang_en = tk.Button(
             lang_bar,
-            text=f"{FLAG_EN} EN",
+            text="EN",
             command=lambda: self._set_language("en"),
             relief="raised",
             padx=8,
@@ -123,7 +144,7 @@ class SandboxLabApp(tk.Tk):
         )
         self.btn_lang_ru = tk.Button(
             lang_bar,
-            text=f"{FLAG_RU} RU",
+            text="RU",
             command=lambda: self._set_language("ru"),
             relief="raised",
             padx=8,
@@ -438,7 +459,7 @@ class SandboxLabApp(tk.Tk):
 
     def _highlight_lang_buttons(self) -> None:
         active = {"relief": "sunken", "bg": "#dbeafe"}
-        idle = {"relief": "raised", "bg": "SystemButtonFace"}
+        idle = {"relief": "raised", "bg": _idle_button_bg(self.btn_lang_en)}
         if self.i18n.lang == "en":
             self.btn_lang_en.configure(**active)
             self.btn_lang_ru.configure(**idle)
@@ -1193,10 +1214,27 @@ class SandboxLabApp(tk.Tk):
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    import argparse
+
     os.chdir(DEMO_ROOT)
     if str(DEMO_ROOT / "src") not in sys.path:
         sys.path.insert(0, str(DEMO_ROOT / "src"))
-    app = SandboxLabApp()
+    raw = list(sys.argv[1:] if argv is None else argv)
+    preview = None
+    if "--lang" in raw:
+        index = raw.index("--lang")
+        if index + 1 < len(raw):
+            preview = raw[index + 1]
+    help_i18n = I18n(lang=preview or "en", force=preview in ("en", "ru"))
+    parser = argparse.ArgumentParser(description=help_i18n.t("cli.description"))
+    parser.add_argument(
+        "--lang",
+        choices=("en", "ru"),
+        default=None,
+        help=help_i18n.t("cli.lang_help"),
+    )
+    args = parser.parse_args(argv)
+    app = SandboxLabApp(lang=args.lang)
     app.mainloop()
     return 0
 

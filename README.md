@@ -1,5 +1,70 @@
 # NOWA-Cognitive
 
+**An AI agent that sleeps, feels, and inherits a genome — and learns without backprop.**
+
+[![License: PolyForm Strict 1.0.0](https://img.shields.io/badge/license-PolyForm%20Strict%201.0.0-1f6feb)](https://polyformproject.org/licenses/strict/1.0.0)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![tests](https://img.shields.io/github/actions/workflow/status/burlakovmb/NOWA-Bio-Inspired-AI/tests.yml?branch=main&label=tests)](https://github.com/burlakovmb/NOWA-Bio-Inspired-AI/actions/workflows/tests.yml)
+
+Source-available, not open source. Free for research and other non-commercial use under the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0). Redistribution, modification, and commercial use need a separate license from the author ([@burlakovmb](https://github.com/burlakovmb)).
+
+<p align="center">
+  <img src="docs/media/en/colony.gif" alt="Six NOWA agents in the chinchilla colony, each with its own memory, moving through a shared cage" width="760">
+</p>
+
+### Why it's interesting
+
+- **It sleeps.** Waking only records episodes and picks an action. Slow memory is rewritten later, in a separate sleep phase.
+- **No backprop, no global loss.** Learning is local reward-prediction error. Dopamine, serotonin, norepinephrine, acetylcholine, and cortisol scale plasticity.
+- **It has a body of feelings and a genome.** An 8-dimensional affect vector biases action. Offspring inherit module coefficients, and a bounded epigenome of traces that already consolidated.
+- **Same mind, different bodies.** A chinchilla colony, a tamagotchi, a virtual company, and a check against published word-emotion norms. Tools are organs. Risky writes wait for a person. No language model in the loop.
+
+### Quickstart in 60 seconds
+
+The cognitive core is the Python standard library. From a clean clone, no packages to install. On Windows, use `python` or `py -3` wherever this page says `python3`.
+
+```bash
+python3 tools/sixty_seconds.py
+```
+
+That wakes one agent, shows the affect vector and the five neuromodulators, sleeps once, then breeds a child genome.
+
+A colony, still with no extra packages:
+
+```bash
+PYTHONPATH="Demo/Colony chinchillas/src" python3 -m colony_gui --headless --agents 4 --duration 2
+```
+
+The full test suite (GUI tests skip when Tk or a display is missing):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate          # Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+Visual demos. `requirements-dev.txt` already includes them; otherwise `pip install -r requirements-demo.txt`. With the virtualenv still active:
+
+```bash
+# Colony window. It runs until you close it.
+# Headless Linux can still draw a frame with SDL_VIDEODRIVER=dummy; omit that on a desktop.
+PYTHONPATH="Demo/Colony chinchillas/src" python -m colony_gui --agents 6
+
+# One chinchilla, pygame. Runs until you close the window.
+python "Demo/Tamagochi Chinchilla/src/main.py"
+```
+
+The clips above were captured headlessly (`SDL_VIDEODRIVER=dummy`) from those demos. Regenerate both languages with `python tools/render_promo_media.py` (also needs `pillow`).
+
+Demo windows and the core observation window open in English. `NOWA_LANG=ru` or `--lang ru` switches the language; `--lang` wins over the environment variable. In the colony and tamagotchi windows, press `G` or the separate EN and RU buttons. The active language is highlighted. The core window (`python src/gui.py`), the virtual-company labs, and the Warriner dashboard use the same EN and RU buttons. The labs also remember the choice, and `--lang` overrides that preference for the session. The core window does not store a language preference.
+
+| Colony | Tamagotchi | Family tree |
+|---|---|---|
+| ![Colony still](docs/media/en/colony.png) | ![Tamagotchi](docs/media/en/tamagotchi.gif) | ![Lineage](docs/media/en/lineage.png) |
+
+The family tree is the colony lineage overlay: founders, offspring, living agents in color, dead agents in grey.
+
 [English](#en) · [Русский](#ru)
 
 <a id="en"></a>
@@ -67,16 +132,18 @@ During waking the agent records episodes, activates memory, and selects an actio
 ### Reproduction
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 ```
 
 Activate the environment in Windows PowerShell with `.venv\Scripts\Activate.ps1`.  
-On macOS and Linux: `source .venv/bin/activate`.
+On macOS and Linux: `source .venv/bin/activate`.  
+If the `python3` command is named `python` on your machine, use that.
 
-Core verification:
+Install test dependencies, then run the full suite. Tests that open a Tk window are skipped when Tk or a display is unavailable.
 
 ```bash
-python -m pytest -q tests
+pip install -r requirements-dev.txt
+python -m pytest -q
 ```
 
 Core observation interface:
@@ -84,6 +151,14 @@ Core observation interface:
 ```bash
 python src/gui.py
 ```
+
+`--lang en|ru` and `NOWA_LANG` select the language. EN and RU in the title bar switch it, and the active button is highlighted.
+
+![NOWA cognitive interface in English](docs/media/en/core-gui.png)
+
+The inspector opens from Actions:
+
+![Agent state inspector in English](docs/media/en/core-inspector.png)
 
 Subsystem verification protocols are given in [Docs/TESTING.en.md](Docs/TESTING.en.md). Platform commands are given in the English scientific accounts linked from [Docs/INDEX.en.md](Docs/INDEX.en.md).
 
@@ -93,16 +168,30 @@ The English links above stay in English. The Russian text of the same documents 
 
 ### License
 
-Licensed under the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0); the full text is in [LICENSE](LICENSE).
-Noncommercial use is permitted under the terms of the license.
+Source-available, not open source. Licensed under the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0); the full text is in [LICENSE](LICENSE).
+Research and other noncommercial use are permitted under the terms of the license.
+The public license does not allow redistribution or derivative works.
 Modification, redistribution and any commercial use require a separate commercial license from the author.
 Commercial licensing: GitHub [@burlakovmb](https://github.com/burlakovmb).
+If you use this in research, see [CITATION.cff](CITATION.cff).
 
 ---
 
 <a id="ru"></a>
 
 ## Русский
+
+**Агент, который спит, чувствует и наследует геном — и учится без обратного распространения ошибки.**
+
+Исходный код доступен, это не открытая лицензия. Исследовательское и иное некоммерческое использование — по [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0). Распространение, изменение и коммерческое использование требуют отдельной лицензии автора ([@burlakovmb](https://github.com/burlakovmb)).
+
+Короткий прогон без дополнительных пакетов — те же команды, что в английском блоке «Quickstart in 60 seconds» выше: `python tools/sixty_seconds.py`, затем колония в headless-режиме. Полный набор тестов: `pip install -r requirements-dev.txt` и `python -m pytest -q`. Тесты графического интерфейса пропускаются, если нет Tk или дисплея.
+
+Окна демо и окно наблюдения ядра по умолчанию на английском. `NOWA_LANG=ru` или `--lang ru` переключают язык (`--lang` важнее переменной окружения). В колонии и тамагочи — клавиша `G` или отдельные кнопки EN и RU. Активный язык подсвечен. В окне ядра (`python src/gui.py`), в лабораториях виртуальной компании и на панели Warriner те же кнопки EN и RU. Лаборатории запоминают выбор, а `--lang` перекрывает его на этот запуск. Окно ядра язык не запоминает.
+
+| Колония | Тамагочи | Родословная |
+|---|---|---|
+| ![Колония](docs/media/ru/colony.png) | ![Тамагочи](docs/media/ru/tamagotchi.gif) | ![Родословная](docs/media/ru/lineage.png) |
 
 Когнитивная архитектура автономного агента с раздельными фазами бодрствования и сна, каноническим восьмимерным аффективным пространством, локальным обучением по ошибке предсказания награды и эволюционной настройкой параметров модулей.
 
@@ -165,16 +254,18 @@ NOWA — программная модель агента, который жив
 ### Воспроизведение
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 ```
 
 Активация среды в Windows PowerShell: `.venv\Scripts\Activate.ps1`.  
-В macOS и Linux: `source .venv/bin/activate`.
+В macOS и Linux: `source .venv/bin/activate`.  
+Если команда называется `python`, а не `python3`, используйте её.
 
-Проверка ядра:
+Установите зависимости тестов и запустите полный набор. Тесты, которым нужно окно Tk, пропускаются, если Tk или дисплей недоступны.
 
 ```bash
-python -m pytest -q tests
+pip install -r requirements-dev.txt
+python -m pytest -q
 ```
 
 Интерфейс наблюдения ядра:
@@ -182,6 +273,14 @@ python -m pytest -q tests
 ```bash
 python src/gui.py
 ```
+
+`--lang en|ru` и `NOWA_LANG` задают язык. Кнопки EN и RU в заголовке переключают его, активная подсвечена.
+
+![Когнитивный интерфейс NOWA по-русски](docs/media/ru/core-gui.png)
+
+Инспектор открывается из блока «Действия»:
+
+![Инспектор состояния агента по-русски](docs/media/ru/core-inspector.png)
 
 Протоколы проверки подсистем приведены в [Docs/TESTING.ru.md](Docs/TESTING.ru.md). Команды установок — в русских научных описаниях, на которые ведёт [Docs/INDEX.ru.md](Docs/INDEX.ru.md).
 
@@ -191,7 +290,9 @@ python src/gui.py
 
 ### Лицензия
 
-Проект распространяется по лицензии [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0); полный текст — в файле [LICENSE](LICENSE).
-Некоммерческое использование разрешено на условиях лицензии.
+Исходный код доступен; это не открытая (open source) лицензия. Проект распространяется по лицензии [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0); полный текст — в файле [LICENSE](LICENSE).
+Исследовательское и иное некоммерческое использование разрешено на условиях лицензии.
+Публичная лицензия не разрешает распространение и производные произведения.
 Изменение, распространение и любое коммерческое использование требуют отдельной коммерческой лицензии от автора.
 По вопросам коммерческого лицензирования: GitHub [@burlakovmb](https://github.com/burlakovmb).
+Для научного цитирования: [CITATION.cff](CITATION.cff).

@@ -10,11 +10,18 @@ from __future__ import annotations
 
 import json
 import sys
-import tkinter as tk
 from datetime import datetime
 from pathlib import Path
-from tkinter import messagebox, simpledialog, ttk
 from typing import Any, Dict, List, Optional
+
+try:
+    import tkinter as tk
+    from tkinter import messagebox, simpledialog, ttk
+except ImportError:  # pragma: no cover - minimal Python builds omit Tk
+    tk = None  # type: ignore[assignment]
+    messagebox = None  # type: ignore[assignment]
+    simpledialog = None  # type: ignore[assignment]
+    ttk = None  # type: ignore[assignment]
 
 if __package__ in (None, ""):  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -31,7 +38,19 @@ from nowa_body.gui_configurator_controller import (
     format_relative_mtime,
     list_roles,
 )
-from nowa_body.gui_configurator_i18n import FLAG_EN, FLAG_RU, I18n, STRINGS
+from nowa_body.gui_configurator_i18n import I18n, STRINGS
+
+
+def _idle_button_bg(widget) -> str:
+    """Windows system button color when this Tk knows it."""
+
+    if tk is None:
+        return "#f0f0f0"
+    try:
+        widget.tk.call("winfo", "rgb", widget, "SystemButtonFace")
+    except tk.TclError:
+        return "#f0f0f0"
+    return "SystemButtonFace"
 from nowa_body.gui_employee_controller import EmployeeHostController, suggest_agent_id
 from nowa_body.mcp_capability import CapabilityRisk
 from nowa_body.approval_gate import ApprovalStatus
@@ -69,18 +88,23 @@ SCENARIO_I18N = {
 }
 
 
-class RoleConfiguratorApp(tk.Tk):
+class RoleConfiguratorApp(tk.Tk if tk is not None else object):
     """Role list + seven-tab editor. Business rules live in the controller."""
 
     def __init__(
         self,
         controller: Optional[RoleConfiguratorController] = None,
         employee_host: Optional[EmployeeHostController] = None,
+        lang: str | None = None,
     ) -> None:
         super().__init__()
         self.geometry("1280x800")
         self.minsize(960, 640)
-        self.i18n = I18n(pref_path=DEMO_ROOT / "results" / ".role_configurator_lang.json")
+        self.i18n = I18n(
+            lang=lang or "en",
+            pref_path=DEMO_ROOT / "results" / ".role_configurator_lang.json",
+            force=lang in ("en", "ru"),
+        )
         self.controller = controller or RoleConfiguratorController()
         self.employee_host = employee_host or EmployeeHostController(
             roles_root=self.controller.roles_root,
@@ -126,12 +150,12 @@ class RoleConfiguratorApp(tk.Tk):
         lang_bar = ttk.Frame(header)
         lang_bar.pack(side="right")
         self.btn_lang_en = tk.Button(
-            lang_bar, text=f"{FLAG_EN} EN", command=lambda: self._set_language("en"),
-            relief="raised", padx=8, pady=2, font=("Segoe UI Emoji", 10), cursor="hand2",
+            lang_bar, text="EN", command=lambda: self._set_language("en"),
+            relief="raised", padx=8, pady=2, font=("Segoe UI", 10), cursor="hand2",
         )
         self.btn_lang_ru = tk.Button(
-            lang_bar, text=f"{FLAG_RU} RU", command=lambda: self._set_language("ru"),
-            relief="raised", padx=8, pady=2, font=("Segoe UI Emoji", 10), cursor="hand2",
+            lang_bar, text="RU", command=lambda: self._set_language("ru"),
+            relief="raised", padx=8, pady=2, font=("Segoe UI", 10), cursor="hand2",
         )
         self.btn_lang_en.pack(side="left", padx=(0, 4))
         self.btn_lang_ru.pack(side="left")
@@ -619,9 +643,20 @@ class RoleConfiguratorApp(tk.Tk):
         else:
             self._refresh_list()
 
+    def _highlight_lang_buttons(self) -> None:
+        active = {"relief": "sunken", "bg": "#dbeafe"}
+        idle = {"relief": "raised", "bg": _idle_button_bg(self.btn_lang_en)}
+        if self.i18n.lang == "en":
+            self.btn_lang_en.configure(**active)
+            self.btn_lang_ru.configure(**idle)
+        else:
+            self.btn_lang_ru.configure(**active)
+            self.btn_lang_en.configure(**idle)
+
     def _apply_language(self) -> None:
         self.title(self.t("app.title"))
         self.lbl_title.configure(text=self.t("app.title"))
+        self._highlight_lang_buttons()
         for btn in self._help_buttons.values():
             btn.configure(text=self.t("help.button"))
         self.lbl_list_heading.configure(text=self.t("list.heading"))
@@ -2921,7 +2956,7 @@ class RoleConfiguratorApp(tk.Tk):
             messagebox.showerror(self.t("error.title"), str(exc), parent=self)
             return
         if not isinstance(parsed, dict):
-            messagebox.showerror(self.t("error.title"), "params must be a JSON object", parent=self)
+            messagebox.showerror(self.t("error.title"), self.t("error.params_object"), parent=self)
             return
         self._emp_decide(action_id, ApprovalStatus.APPROVED, modified_params=parsed)
 
@@ -3243,8 +3278,25 @@ class RoleConfiguratorApp(tk.Tk):
             pass
 
 
-def main() -> int:
-    app = RoleConfiguratorApp()
+def main(argv: Optional[list[str]] = None) -> int:
+    import argparse
+
+    raw = list(sys.argv[1:] if argv is None else argv)
+    preview = None
+    if "--lang" in raw:
+        index = raw.index("--lang")
+        if index + 1 < len(raw):
+            preview = raw[index + 1]
+    help_i18n = I18n(lang=preview or "en", force=preview in ("en", "ru"))
+    parser = argparse.ArgumentParser(description=help_i18n.t("cli.description"))
+    parser.add_argument(
+        "--lang",
+        choices=("en", "ru"),
+        default=None,
+        help=help_i18n.t("cli.lang_help"),
+    )
+    args = parser.parse_args(argv)
+    app = RoleConfiguratorApp(lang=args.lang)
     app.mainloop()
     return 0
 

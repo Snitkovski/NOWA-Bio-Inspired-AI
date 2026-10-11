@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
+from .i18n import label, tr
 from .swarm_analytics import (
     BehaviorPattern,
     GenerationSummary,
@@ -16,7 +17,7 @@ from .swarm_analytics import (
 
 OVERLAY_WIDTH = 900
 OVERLAY_HEIGHT = 680
-TABS = ["Состояние", "Эволюция", "Геномы", "Поведение", "Прогноз"]
+TABS = ["state", "evolution", "genomes", "behavior", "forecast"]
 
 OVERLAY_BG = (242, 236, 225, 248)
 OVERLAY_HEADER = (218, 208, 192)
@@ -216,8 +217,8 @@ class SwarmAnalyticsOverlay:
         return y + 20
 
     def _draw_loading(self, surface: Any, font: Any, font_small: Any) -> int:
-        surface.blit(font.render("Аналитика роя", True, TEXT_COLOR), (0, 6))
-        text = "Данные ещё не собраны. Нажмите A заново или R для обновления."
+        surface.blit(font.render(tr("Аналитика роя"), True, TEXT_COLOR), (0, 6))
+        text = tr("Данные ещё не собраны. Нажмите A заново или R для обновления.")
         surface.blit(font_small.render(text, True, MUTED_TEXT), (0, 42))
         return 70
 
@@ -229,44 +230,57 @@ class SwarmAnalyticsOverlay:
         female = int(metrics.get("female_count", 0.0))
         male = int(metrics.get("male_count", 0.0))
         sleeping = int(metrics.get("sleeping_count", 0.0))
-        title = "ТЕКУЩИЙ СРЕЗ КОЛОНИИ"
+        title = tr("ТЕКУЩИЙ СРЕЗ КОЛОНИИ")
         surface.blit(font.render(title, True, TEXT_COLOR), (0, y))
         y += 28
-        info = (
-            f"sim_time: {_fmt_time(data.snapshot_time)}  |  живых: {data.living_count} "
-            f"({female}F {male}M)  |  умерших: {data.dead_count}"
+        info = tr(
+            "sim_time: {time}  |  живых: {living} ({female}F {male}M)  |  умерших: {dead}"
+        ).format(
+            time=_fmt_time(data.snapshot_time),
+            living=data.living_count,
+            female=female,
+            male=male,
+            dead=data.dead_count,
         )
         surface.blit(font_small.render(info, True, MUTED_TEXT), (0, y))
         y += 20
-        gen_info = f"Поколения: G{data.generation_range[0]}-G{data.generation_range[1]}  |  средний возраст: {_fmt_time(metrics.get('mean_age', 0.0))}  |  спящих: {sleeping}"
+        gen_info = tr("Поколения: G{a}-G{b}  |  средний возраст: {age}  |  спящих: {sleeping}").format(
+            a=data.generation_range[0],
+            b=data.generation_range[1],
+            age=_fmt_time(metrics.get("mean_age", 0.0)),
+            sleeping=sleeping,
+        )
         surface.blit(font_small.render(gen_info, True, MUTED_TEXT), (0, y))
         y += 30
 
-        y = self._section(surface, font_small, y, "Аффективный срез")
-        tone = "ХРОНИЧЕСКАЯ ТРЕВОГА" if metrics.get("mean_stress", 0.0) > 0.65 else "СТАБИЛЬНЫЙ ФОН"
-        surface.blit(font_small.render(f"Итоговый аффективный тон роя: {tone}", True, TEXT_COLOR), (0, y))
+        y = self._section(surface, font_small, y, tr("Аффективный срез"))
+        tone = tr("ХРОНИЧЕСКАЯ ТРЕВОГА") if metrics.get("mean_stress", 0.0) > 0.65 else tr("СТАБИЛЬНЫЙ ФОН")
+        surface.blit(
+            font_small.render(tr("Итоговый аффективный тон роя: {tone}").format(tone=tone), True, TEXT_COLOR),
+            (0, y),
+        )
         y += 24
         critical_stress = int(round(data.living_count * max(0.0, metrics.get("mean_stress", 0.0) - 0.65) / 0.35))
-        y = self._metric_row(surface, font_small, y, "стресс", metrics.get("mean_stress", 0.0), std=metrics.get("std_stress", 0.0), color=BAD, note=f"критический у {critical_stress} из {data.living_count}")
-        y = self._metric_row(surface, font_small, y, "кортизол", metrics.get("mean_cortisol", 0.0), std=metrics.get("std_cortisol", 0.0), color=BAD)
-        y = self._metric_row(surface, font_small, y, "энергия", metrics.get("mean_energy", 0.0), std=metrics.get("std_energy", 0.0), color=GOOD)
-        y = self._metric_row(surface, font_small, y, "социал. драйв", metrics.get("mean_social_drive", 0.0), color=BLUE)
-        y = self._metric_row(surface, font_small, y, "любопытство", metrics.get("mean_curiosity", 0.0), color=(80, 170, 200))
+        y = self._metric_row(surface, font_small, y, tr("стресс"), metrics.get("mean_stress", 0.0), std=metrics.get("std_stress", 0.0), color=BAD, note=tr("критический у {n} из {total}").format(n=critical_stress, total=data.living_count))
+        y = self._metric_row(surface, font_small, y, tr("кортизол"), metrics.get("mean_cortisol", 0.0), std=metrics.get("std_cortisol", 0.0), color=BAD)
+        y = self._metric_row(surface, font_small, y, tr("энергия"), metrics.get("mean_energy", 0.0), std=metrics.get("std_energy", 0.0), color=GOOD)
+        y = self._metric_row(surface, font_small, y, tr("социал. драйв"), metrics.get("mean_social_drive", 0.0), color=BLUE)
+        y = self._metric_row(surface, font_small, y, tr("любопытство"), metrics.get("mean_curiosity", 0.0), color=(80, 170, 200))
         y += 10
 
-        y = self._section(surface, font_small, y, "Нейрохимия популяции")
-        y = self._metric_row(surface, font_small, y, "дофамин", metrics.get("mean_dopamine", 0.0), color=(100, 160, 220))
-        y = self._metric_row(surface, font_small, y, "серотонин", metrics.get("mean_serotonin", 0.0), color=(90, 190, 130))
-        y = self._metric_row(surface, font_small, y, "норадреналин", metrics.get("mean_norepinephrine", 0.0), color=(215, 140, 65))
-        y = self._metric_row(surface, font_small, y, "кортизол", metrics.get("mean_cortisol", 0.0), color=BAD)
-        y = self._metric_row(surface, font_small, y, "ацетилхолин", metrics.get("mean_acetylcholine", 0.0), color=(140, 110, 200))
+        y = self._section(surface, font_small, y, tr("Нейрохимия популяции"))
+        y = self._metric_row(surface, font_small, y, tr("дофамин"), metrics.get("mean_dopamine", 0.0), color=(100, 160, 220))
+        y = self._metric_row(surface, font_small, y, tr("серотонин"), metrics.get("mean_serotonin", 0.0), color=(90, 190, 130))
+        y = self._metric_row(surface, font_small, y, tr("норадреналин"), metrics.get("mean_norepinephrine", 0.0), color=(215, 140, 65))
+        y = self._metric_row(surface, font_small, y, tr("кортизол"), metrics.get("mean_cortisol", 0.0), color=BAD)
+        y = self._metric_row(surface, font_small, y, tr("ацетилхолин"), metrics.get("mean_acetylcholine", 0.0), color=(140, 110, 200))
         y += 10
 
-        y = self._section(surface, font_small, y, "Ресурсы")
+        y = self._section(surface, font_small, y, tr("Ресурсы"))
         x = 0
-        for label, key, color in [("корм", "food_pellets", (190, 142, 82)), ("сено", "hay", (188, 170, 74)), ("вода", "water", (88, 156, 225))]:
+        for row_label, key, color in [(tr("корм"), "food_pellets", (190, 142, 82)), (tr("сено"), "hay", (188, 170, 74)), (tr("вода"), "water", (88, 156, 225))]:
             value = float(data.resources.get(key, 0.0))
-            surface.blit(font_small.render(label, True, TEXT_COLOR), (x, y))
+            surface.blit(font_small.render(row_label, True, TEXT_COLOR), (x, y))
             self._bar(surface, x + 42, y + 4, 100, value, color)
             surface.blit(font_small.render(f"{value:.2f}", True, TEXT_COLOR), (x + 150, y))
             x += 245
@@ -297,31 +311,34 @@ class SwarmAnalyticsOverlay:
             surface.blit(font_small.render(f"{value:.2f}" if value < 10 else f"{value:.0f}", True, TEXT_COLOR), (x, y + 31))
             x += max_w
         trend, magnitude = compare_first_last_third(values, normalize)
-        surface.blit(font_small.render(f"тренд: {trend}  Δ{magnitude:.2f}", True, MUTED_TEXT), (0, y + 34))
+        surface.blit(font_small.render(tr("тренд: {trend}  Δ{magnitude:.2f}").format(trend=trend, magnitude=magnitude), True, MUTED_TEXT), (0, y + 34))
         return y + 58
 
     def _draw_tab_evolution(self, surface: Any, font: Any, font_small: Any, _font_mono: Any) -> int:
         assert self._data is not None
         data = self._data
         y = 6
-        surface.blit(font.render("ЭВОЛЮЦИОННЫЕ ТРЕНДЫ ПО ПОКОЛЕНИЯМ", True, TEXT_COLOR), (0, y))
+        surface.blit(font.render(tr("ЭВОЛЮЦИОННЫЕ ТРЕНДЫ ПО ПОКОЛЕНИЯМ"), True, TEXT_COLOR), (0, y))
         y += 28
-        info = f"{len(data.generation_summaries)} поколений  |  {data.dead_count} умерших агентов в базе"
+        info = tr("{n} поколений  |  {dead} умерших агентов в базе").format(
+            n=len(data.generation_summaries),
+            dead=data.dead_count,
+        )
         surface.blit(font_small.render(info, True, MUTED_TEXT), (0, y))
         y += 30
         if len(data.generation_summaries) < 2:
-            surface.blit(font_small.render("Для эволюционных трендов нужно минимум два поколения.", True, MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Для эволюционных трендов нужно минимум два поколения."), True, MUTED_TEXT), (0, y))
             return y + 30
-        y = self._section(surface, font_small, y, "Стресс и кортизол")
-        y = self._draw_generation_series(surface, font_small, y, "стресс", data.generation_summaries, lambda s: s.mean_stress_at_death)
-        y = self._draw_generation_series(surface, font_small, y, "кортизол", data.generation_summaries, lambda s: s.mean_cortisol_at_death)
-        y = self._section(surface, font_small, y + 8, "Продолжительность жизни")
+        y = self._section(surface, font_small, y, tr("Стресс и кортизол"))
+        y = self._draw_generation_series(surface, font_small, y, tr("стресс"), data.generation_summaries, lambda s: s.mean_stress_at_death)
+        y = self._draw_generation_series(surface, font_small, y, tr("кортизол"), data.generation_summaries, lambda s: s.mean_cortisol_at_death)
+        y = self._section(surface, font_small, y + 8, tr("Продолжительность жизни"))
         lifespan_norm = max(1.0, max(summary.mean_lived_steps for summary in data.generation_summaries))
-        y = self._draw_generation_series(surface, font_small, y, "ср. прожито шагов", data.generation_summaries, lambda s: s.mean_lived_steps, normalize=lifespan_norm)
-        y = self._section(surface, font_small, y + 8, "Энергия при смерти")
-        y = self._draw_generation_series(surface, font_small, y, "энергия", data.generation_summaries, lambda s: s.mean_energy_at_death)
-        y = self._section(surface, font_small, y + 8, "Репродукция")
-        return self._draw_generation_series(surface, font_small, y, "потомков/агента", data.generation_summaries, lambda s: s.mean_total_offspring, normalize=max(1.0, max(summary.mean_total_offspring for summary in data.generation_summaries)))
+        y = self._draw_generation_series(surface, font_small, y, tr("ср. прожито шагов"), data.generation_summaries, lambda s: s.mean_lived_steps, normalize=lifespan_norm)
+        y = self._section(surface, font_small, y + 8, tr("Энергия при смерти"))
+        y = self._draw_generation_series(surface, font_small, y, tr("энергия"), data.generation_summaries, lambda s: s.mean_energy_at_death)
+        y = self._section(surface, font_small, y + 8, tr("Репродукция"))
+        return self._draw_generation_series(surface, font_small, y, tr("потомков/агента"), data.generation_summaries, lambda s: s.mean_total_offspring, normalize=max(1.0, max(summary.mean_total_offspring for summary in data.generation_summaries)))
 
     def _draw_gene_track(self, surface: Any, font_small: Any, y: int, track: Any) -> int:
         first_gen = min(track.values_by_gen)
@@ -329,7 +346,7 @@ class SwarmAnalyticsOverlay:
         first = track.values_by_gen[first_gen]
         last = track.values_by_gen[last_gen]
         marker = "●" if track.is_under_selection else "~"
-        headline = f"{marker} {track.gene_key:<28} {track.trend_label:<12} Δ{track.trend_magnitude:.2f} ({first:.2f} → {last:.2f})"
+        headline = f"{marker} {label('lineage_gene', track.gene_key, track.gene_key)}  {track.trend_label}  Δ{track.trend_magnitude:.2f} ({first:.2f} → {last:.2f})"
         surface.blit(font_small.render(self._fit_text(headline, font_small, surface.get_width() - 4), True, TEXT_COLOR), (0, y))
         y += 18
         for line in self._wrap_text(f'"{track.interpretation}"', font_small, surface.get_width() - 12)[:2]:
@@ -357,24 +374,24 @@ class SwarmAnalyticsOverlay:
         y = 6
         selected = [track for track in data.gene_tracks if track.is_under_selection]
         stable = [track for track in data.gene_tracks if not track.is_under_selection]
-        surface.blit(font.render("ЭВОЛЮЦИЯ ГЕНОМА ПО ПОКОЛЕНИЯМ", True, TEXT_COLOR), (0, y))
+        surface.blit(font.render(tr("ЭВОЛЮЦИЯ ГЕНОМА ПО ПОКОЛЕНИЯМ"), True, TEXT_COLOR), (0, y))
         y += 28
-        surface.blit(font_small.render(f"{len(data.gene_tracks)} отслеживаемых генов | под отбором: {len(selected)} | стабильных: {len(stable)}", True, MUTED_TEXT), (0, y))
+        surface.blit(font_small.render(tr("{n} отслеживаемых генов | под отбором: {sel} | стабильных: {stable}").format(n=len(data.gene_tracks), sel=len(selected), stable=len(stable)), True, MUTED_TEXT), (0, y))
         y += 28
-        y = self._section(surface, font_small, y, "Гены под активным отбором")
+        y = self._section(surface, font_small, y, tr("Гены под активным отбором"))
         if not selected:
-            surface.blit(font_small.render("Выраженного направленного отбора пока не видно.", True, MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Выраженного направленного отбора пока не видно."), True, MUTED_TEXT), (0, y))
             y += 22
         for track in selected[:5]:
             y = self._draw_gene_track(surface, font_small, y, track) + 8
-        y = self._section(surface, font_small, y, "Стабильные гены")
+        y = self._section(surface, font_small, y, tr("Стабильные гены"))
         for track in stable[:10]:
-            text = f"~ {track.gene_key:<28} {track.trend_label:<12} Δ±{track.trend_magnitude:.2f}"
+            text = f"~ {label('lineage_gene', track.gene_key, track.gene_key)}  {track.trend_label}  Δ±{track.trend_magnitude:.2f}"
             surface.blit(font_small.render(self._fit_text(text, font_small, surface.get_width() - 4), True, MUTED_TEXT), (0, y))
             y += 18
-        y = self._section(surface, font_small, y + 8, "Генетическое разнообразие")
+        y = self._section(surface, font_small, y + 8, tr("Генетическое разнообразие"))
         diversity = data.health_index.components.get("diversity", 0.0)
-        surface.blit(font_small.render(f"Текущий индекс: {diversity:.2f}", True, TEXT_COLOR), (0, y))
+        surface.blit(font_small.render(tr("Текущий индекс: {value:.2f}").format(value=diversity), True, TEXT_COLOR), (0, y))
         self._bar(surface, 180, y + 4, 150, diversity, GOOD if diversity > 0.3 else WARN)
         return y + 28
 
@@ -386,7 +403,7 @@ class SwarmAnalyticsOverlay:
             surface.blit(font_small.render(f"{pattern.count} ({pattern.fraction:.0%})", True, TEXT_COLOR), (200 + width + 12, y))
             y += 20
         if not patterns:
-            surface.blit(font_small.render("Данных пока нет.", True, MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Данных пока нет."), True, MUTED_TEXT), (0, y))
             y += 20
         return y
 
@@ -394,35 +411,45 @@ class SwarmAnalyticsOverlay:
         assert self._data is not None
         data = self._data
         y = 6
-        surface.blit(font.render("ПОВЕДЕНЧЕСКИЙ ПРОФИЛЬ КОЛОНИИ", True, TEXT_COLOR), (0, y))
+        surface.blit(font.render(tr("ПОВЕДЕНЧЕСКИЙ ПРОФИЛЬ КОЛОНИИ"), True, TEXT_COLOR), (0, y))
         y += 32
-        y = self._section(surface, font_small, y, "Текущее распределение действий")
+        y = self._section(surface, font_small, y, tr("Текущее распределение действий"))
         y = self._draw_pattern_list(surface, font_small, y, data.current_action_distribution[:8], data.living_count)
         y += 8
-        y = self._section(surface, font_small, y, "Социальная структура")
+        y = self._section(surface, font_small, y, tr("Социальная структура"))
         social = data.current_social
         lines = [
-            f"Всего известных пар: {social.total_known_pairs}",
-            f"Bonded: {social.bonded_pairs}   Rival: {social.rival_pairs}   Kin: {social.kin_pairs}",
-            f"Без связей: {social.isolation_count} агентов",
-            f"Индекс сплочённости: {social.cohesion_index:.2f}",
+            tr("Всего известных пар: {n}").format(n=social.total_known_pairs),
+            tr("Связанные: {bonded}   Соперники: {rival}   Родня: {kin}").format(
+                bonded=social.bonded_pairs,
+                rival=social.rival_pairs,
+                kin=social.kin_pairs,
+            ),
+            tr("Без связей: {n} агентов").format(n=social.isolation_count),
+            tr("Индекс сплочённости: {value:.2f}").format(value=social.cohesion_index),
         ]
         for line in lines:
             surface.blit(font_small.render(line, True, TEXT_COLOR), (0, y))
             y += 18
         y += 8
-        y = self._section(surface, font_small, y, "Характеры роя")
+        y = self._section(surface, font_small, y, tr("Характеры роя"))
         y = self._draw_pattern_list(surface, font_small, y, data.personality_distribution[:8], data.living_count)
         y += 8
-        y = self._section(surface, font_small, y, "Гиппокамп и кортекс")
+        y = self._section(surface, font_small, y, tr("Гиппокамп и кортекс"))
         memory_lines = [
-            f"Средний размер гиппокампа: {data.mean_hippocampus_size:.0f} эпизодов (±{data.std_hippocampus_size:.0f})",
-            f"Средний размер кортекса: {data.mean_cortex_patterns:.0f} паттернов (±{data.std_cortex_patterns:.0f})",
+            tr("Средний размер гиппокампа: {mean:.0f} эпизодов (±{std:.0f})").format(
+                mean=data.mean_hippocampus_size,
+                std=data.std_hippocampus_size,
+            ),
+            tr("Средний размер кортекса: {mean:.0f} паттернов (±{std:.0f})").format(
+                mean=data.mean_cortex_patterns,
+                std=data.std_cortex_patterns,
+            ),
         ]
         for line in memory_lines:
             surface.blit(font_small.render(line, True, TEXT_COLOR), (0, y))
             y += 18
-        surface.blit(font_small.render("Топ доминирующих привычек роя:", True, MUTED_TEXT), (0, y))
+        surface.blit(font_small.render(tr("Топ доминирующих привычек роя:"), True, MUTED_TEXT), (0, y))
         y += 20
         return self._draw_pattern_list(surface, font_small, y, data.dominant_habits[:5], data.living_count)
 
@@ -431,33 +458,42 @@ class SwarmAnalyticsOverlay:
         data = self._data
         forecast = data.forecast
         y = 6
-        surface.blit(font.render("ЭВОЛЮЦИОННЫЙ ПРОГНОЗ", True, TEXT_COLOR), (0, y))
+        surface.blit(font.render(tr("ЭВОЛЮЦИОННЫЙ ПРОГНОЗ"), True, TEXT_COLOR), (0, y))
         y += 32
-        y = self._section(surface, font_small, y, "Индекс здоровья колонии")
+        y = self._section(surface, font_small, y, tr("Индекс здоровья колонии"))
         self._bar(surface, 0, y + 4, 180, data.health_index.overall, data.health_index.color, height=13)
         surface.blit(font_small.render(f"{data.health_index.overall:.2f}  {data.health_index.verdict.upper()}", True, TEXT_COLOR), (198, y))
         y += 28
         for key, value in data.health_index.components.items():
-            y = self._metric_row(surface, font_small, y, key, value, color=data.health_index.color)
+            y = self._metric_row(
+                surface,
+                font_small,
+                y,
+                label("health", key, key),
+                value,
+                color=data.health_index.color,
+            )
         y += 8
-        y = self._section(surface, font_small, y, "Риски")
-        for risk in forecast.key_risks[:8] or ["Критических рисков не выявлено"]:
+        y = self._section(surface, font_small, y, tr("Риски"))
+        for risk in forecast.key_risks[:8] or [tr("Критических рисков не выявлено")]:
             surface.blit(font_small.render(f"✗ {risk}", True, BAD), (0, y))
             y += 18
         y += 8
-        y = self._section(surface, font_small, y, "Позитивные тренды")
-        for item in forecast.key_opportunities[:8] or ["Позитивные тренды пока не выражены"]:
+        y = self._section(surface, font_small, y, tr("Позитивные тренды"))
+        for item in forecast.key_opportunities[:8] or [tr("Позитивные тренды пока не выражены")]:
             surface.blit(font_small.render(f"✓ {item}", True, GOOD), (0, y))
             y += 18
         y += 8
-        y = self._section(surface, font_small, y, "Давление отбора")
-        surface.blit(font_small.render(f"Главный фактор: {forecast.dominant_pressure}", True, TEXT_COLOR), (0, y))
+        y = self._section(surface, font_small, y, tr("Давление отбора"))
+        surface.blit(font_small.render(tr("Главный фактор: {name}").format(name=forecast.dominant_pressure), True, TEXT_COLOR), (0, y))
         y += 18
-        surface.blit(font_small.render(self._fit_text(f"Адаптируется: {', '.join(forecast.adapting_traits) or '-'}", font_small, surface.get_width() - 4), True, MUTED_TEXT), (0, y))
+        adapting_names = ", ".join(label("lineage_gene", key, key) for key in forecast.adapting_traits) or "-"
+        stagnant_names = ", ".join(label("lineage_gene", key, key) for key in forecast.stagnant_traits) or "-"
+        surface.blit(font_small.render(self._fit_text(tr("Адаптируется: {names}").format(names=adapting_names), font_small, surface.get_width() - 4), True, MUTED_TEXT), (0, y))
         y += 18
-        surface.blit(font_small.render(self._fit_text(f"Без отбора: {', '.join(forecast.stagnant_traits) or '-'}", font_small, surface.get_width() - 4), True, MUTED_TEXT), (0, y))
+        surface.blit(font_small.render(self._fit_text(tr("Без отбора: {names}").format(names=stagnant_names), font_small, surface.get_width() - 4), True, MUTED_TEXT), (0, y))
         y += 26
-        y = self._section(surface, font_small, y, "Итоговый вывод")
+        y = self._section(surface, font_small, y, tr("Итоговый вывод"))
         for line in self._wrap_text(f'"{forecast.summary}"', font_small, surface.get_width() - 4)[:5]:
             surface.blit(font_small.render(line, True, TEXT_COLOR), (0, y))
             y += 18
@@ -511,11 +547,15 @@ class SwarmAnalyticsOverlay:
         pygame.draw.rect(panel, OVERLAY_HEADER, pygame.Rect(0, 0, panel_w, 60), border_radius=8)
 
         if self._data is not None:
-            header = f"Аналитика роя  |  живых: {self._data.living_count}  умерших: {self._data.dead_count}  поколений: {len(self._data.generation_summaries)}"
+            header = tr("Аналитика роя  |  живых: {living}  умерших: {dead}  поколений: {gens}").format(
+                living=self._data.living_count,
+                dead=self._data.dead_count,
+                gens=len(self._data.generation_summaries),
+            )
         else:
-            header = "Аналитика роя"
+            header = tr("Аналитика роя")
         panel.blit(font.render(header, True, TEXT_COLOR), (16, 12))
-        panel.blit(font_small.render("ESC / A закрыть   ← → вкладки   R обновить", True, MUTED_TEXT), (16, 36))
+        panel.blit(font_small.render(tr("ESC / A закрыть   ← → вкладки   R обновить"), True, MUTED_TEXT), (16, 36))
 
         tabs_top = 66
         tab_h = 30
@@ -526,7 +566,7 @@ class SwarmAnalyticsOverlay:
             self._tab_rects.append(rect.move(panel_x, panel_y))
             active = idx == self._active_tab
             pygame.draw.rect(panel, TAB_ACTIVE if active else TAB_INACTIVE, rect, border_radius=4)
-            rendered = font_small.render(title, True, TAB_TEXT_ACTIVE if active else TAB_TEXT_INACTIVE)
+            rendered = font_small.render(label("tab", title), True, TAB_TEXT_ACTIVE if active else TAB_TEXT_INACTIVE)
             panel.blit(rendered, rendered.get_rect(center=rect.center))
 
         content_rect = pygame.Rect(16, tabs_top + tab_h + 12, panel_w - 32, panel_h - tabs_top - tab_h - 24)

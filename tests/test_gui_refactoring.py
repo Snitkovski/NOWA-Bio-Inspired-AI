@@ -31,7 +31,19 @@ class TestGUIRefactoring(unittest.TestCase):
         self.agent = Agent(self.hippocampus, self.cortex, self.selector, self.sleep_manager)
     
     def test_gui_imports(self):
-        """Test that GUI imports correctly with new architecture"""
+        """Test that GUI imports correctly with new architecture."""
+        try:
+            import tkinter as tk
+
+            root = tk.Tk()
+            root.withdraw()
+            root.update_idletasks()
+            root.destroy()
+        except Exception as exc:
+            self.skipTest(
+                "Tk/Tcl runtime is not usable in this environment "
+                f"({exc.__class__.__name__})"
+            )
         try:
             from gui import NOWAGUI
             self.assertIsNotNone(NOWAGUI)

@@ -9,8 +9,9 @@ import pytest
 
 DEMO_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = DEMO_ROOT.parents[1]
+TESTS_DIR = Path(__file__).resolve().parent
 
-for _path in (DEMO_ROOT / "src", REPO_ROOT / "src"):
+for _path in (TESTS_DIR, DEMO_ROOT / "src", REPO_ROOT / "src"):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
@@ -55,7 +56,7 @@ def pytest_collection_modifyitems(config, items):
     if _tkinter_is_usable():
         return
     skip_tk = pytest.mark.skip(
-        reason="Tk/Tcl runtime is not usable in this environment"
+        reason="Tk/Tcl runtime is not usable in this environment (tkinter missing or no display)"
     )
     for item in items:
         if item.get_closest_marker("tk"):

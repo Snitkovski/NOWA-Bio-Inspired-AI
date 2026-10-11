@@ -2260,7 +2260,9 @@ class ChinchillaAgent:
         return meta.subtitle_ru or action_id
 
     def _chain_preview(self, chain_name: str) -> str:
-        return chain_name.replace("_", " ")
+        from tama_i18n import chain_label
+
+        return chain_label(chain_name)
 
     def _build_candidate_chains(
         self,
@@ -3430,7 +3432,37 @@ class ChinchillaAgent:
 # ENTRY POINT
 # ============================================================================
 
+def _consume_lang_flag(argv: list[str]) -> tuple[str | None, list[str]]:
+    """Pull ``--lang en|ru`` out of argv before the agent starts."""
+
+    lang = None
+    kept: list[str] = []
+    index = 0
+    while index < len(argv):
+        item = argv[index]
+        if item == "--lang" and index + 1 < len(argv):
+            lang = argv[index + 1]
+            index += 2
+            continue
+        if item.startswith("--lang="):
+            lang = item.split("=", 1)[1]
+            index += 1
+            continue
+        kept.append(item)
+        index += 1
+    return lang, kept
+
+
 if __name__ == "__main__":
+    import sys
+
+    from tama_i18n import set_language
+
+    chosen_lang, remaining = _consume_lang_flag(sys.argv[1:])
+    sys.argv = [sys.argv[0], *remaining]
+    if chosen_lang in ("en", "ru"):
+        set_language(chosen_lang)
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s %(levelname)s %(message)s",

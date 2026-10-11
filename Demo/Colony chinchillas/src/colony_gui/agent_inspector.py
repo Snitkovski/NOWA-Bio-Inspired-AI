@@ -7,6 +7,7 @@ import re
 from typing import Any
 
 from death_registry import AgentMemorial
+from .i18n import cause_label, get_language, has_label, label as ui_label, sex_label, tr
 from .genome_portrait import (
     GENE_REGISTRY,
     LINEAGE_GENE_LABELS_RU,
@@ -31,7 +32,7 @@ from .nowa_interpreter import (
 
 INSPECTOR_WIDTH = 500
 INSPECTOR_HEIGHT = 620
-TABS = ["NOWA", "Социум", "Репро", "Геном", "История"]
+_TAB_KEYS = ["nowa", "social", "repro", "genome", "history"]
 
 INSPECTOR_BG = (245, 239, 229, 245)
 INSPECTOR_HEADER = (220, 210, 195)
@@ -403,18 +404,18 @@ def _humanize_action(value: Any) -> str:
     if not raw:
         return "-"
     key = raw.lower()
-    if key in _ACTION_LABELS_RU:
-        return _ACTION_LABELS_RU[key]
+    if has_label("action", key):
+        return ui_label("action", key)
     return _humanize_raw_phrase(raw)
 
 
 def _humanize_zone(value: Any) -> str:
     raw = _safe_str(value, "").strip()
     if not raw:
-        return "неизвестно"
+        return tr("неизвестно")
     key = raw.lower()
-    if key in _ZONE_LABELS_RU:
-        return _ZONE_LABELS_RU[key]
+    if has_label("zone", key):
+        return ui_label("zone", key)
     return _humanize_raw_phrase(raw)
 
 
@@ -423,33 +424,33 @@ def _humanize_consequence(value: Any) -> str:
     if not raw:
         return "-"
     key = raw.lower()
-    if key in _CONSEQUENCE_LABELS_RU:
-        return _CONSEQUENCE_LABELS_RU[key]
-    if key in _OUTCOME_LABELS_RU:
-        return _OUTCOME_LABELS_RU[key]
+    if has_label("consequence", key):
+        return ui_label("consequence", key)
+    if has_label("outcome", key):
+        return ui_label("outcome", key)
     if key.startswith("feedback:"):
         payload = raw.split(":", 1)[1].strip()
         parsed = _safe_float(payload, float("nan"))
         if parsed == parsed:
-            return f"обратная связь {parsed:+.2f}"
+            return tr("обратная связь {value}").format(value=f"{parsed:+.2f}")
         if payload:
-            return f"обратная связь {payload}"
-        return "обратная связь"
+            return tr("обратная связь {value}").format(value=payload)
+        return tr("обратная связь")
     if ":" in raw:
         prefix, rest = raw.split(":", 1)
         p = prefix.strip().lower()
         r = rest.strip()
         if p == "zone":
-            return f"зона: {_humanize_zone(r)}"
+            return tr("зона: {name}").format(name=_humanize_zone(r))
         if p == "action":
-            return f"действие: {_humanize_action(r)}"
+            return tr("действие: {name}").format(name=_humanize_action(r))
         if p == "consequence":
-            return f"последствие: {_humanize_consequence(r)}"
+            return tr("последствие: {name}").format(name=_humanize_consequence(r))
         if p == "social_contact":
             count = _safe_int(r, 0)
             if count > 0:
-                return f"социальных контактов рядом: {count}"
-            return "социальный контакт рядом"
+                return tr("социальных контактов рядом: {n}").format(n=count)
+            return tr("социальный контакт рядом")
         if p == "feedback":
             return _humanize_consequence(raw)
         if r:
@@ -463,14 +464,14 @@ def _humanize_context_token(value: Any) -> str:
     if not raw:
         return ""
     key = raw.lower()
-    if key in _CONTEXT_LABELS_RU:
-        return _CONTEXT_LABELS_RU[key]
-    if key in _ACTION_LABELS_RU:
-        return _ACTION_LABELS_RU[key]
-    if key in _OUTCOME_LABELS_RU:
-        return _OUTCOME_LABELS_RU[key]
-    if key in _CONSEQUENCE_LABELS_RU:
-        return _CONSEQUENCE_LABELS_RU[key]
+    if has_label("context", key):
+        return ui_label("context", key)
+    if has_label("action", key):
+        return ui_label("action", key)
+    if has_label("outcome", key):
+        return ui_label("outcome", key)
+    if has_label("consequence", key):
+        return ui_label("consequence", key)
     if ":" not in raw:
         return _humanize_raw_phrase(raw)
 
@@ -478,16 +479,16 @@ def _humanize_context_token(value: Any) -> str:
     p = prefix.strip().lower()
     r = rest.strip()
     if p == "zone":
-        return f"зона: {_humanize_zone(r)}"
+        return tr("зона: {name}").format(name=_humanize_zone(r))
     if p == "action":
-        return f"действие: {_humanize_action(r)}"
+        return tr("действие: {name}").format(name=_humanize_action(r))
     if p == "consequence":
-        return f"последствие: {_humanize_consequence(r)}"
+        return tr("последствие: {name}").format(name=_humanize_consequence(r))
     if p == "social_contact":
         count = _safe_int(r, 0)
         if count > 0:
-            return f"социальных контактов рядом: {count}"
-        return "социальный контакт рядом"
+            return tr("социальных контактов рядом: {n}").format(n=count)
+        return tr("социальный контакт рядом")
     if p == "feedback":
         return _humanize_consequence(raw)
     if r:
@@ -598,17 +599,17 @@ def _resolve_offspring_display_names(agent: Any, knowledge: dict[str, Any], name
 
 
 def _bool_ru(value: Any) -> str:
-    return "да" if bool(value) else "нет"
+    return tr("да") if bool(value) else tr("нет")
 
 
 def _relationship_ru(value: Any) -> str:
     key = _safe_str(value, "")
-    return _RELATIONSHIP_LABELS_RU.get(key, key or "неизвестно")
+    return ui_label("relationship", key, tr("неизвестно") if not key else key)
 
 
 def _outcome_ru(value: Any) -> str:
     key = _safe_str(value, "")
-    return _OUTCOME_LABELS_RU.get(key, key or "неизвестно")
+    return ui_label("outcome", key, tr("неизвестно") if not key else key)
 
 
 def _lineage_rows_from_lineage_id(lineage_id: Any) -> list[str]:
@@ -1298,10 +1299,10 @@ class AgentInspectorOverlay:
         if self._data is None:
             return
         if key == "hippocampus_size":
-            title = "Гиппокамп: эпизоды памяти"
+            title = tr("Гиппокамп: эпизоды памяти")
             lines = self._build_hippocampus_detail_lines()
         elif key == "cortex_patterns":
-            title = "Кортекс: паттерны консолидации"
+            title = tr("Кортекс: паттерны консолидации")
             lines = self._build_cortex_detail_lines()
         else:
             return
@@ -1313,21 +1314,21 @@ class AgentInspectorOverlay:
 
     def _build_hippocampus_detail_lines(self) -> list[str]:
         if self._data is None:
-            return ["Данные отсутствуют."]
+            return [tr("Данные отсутствуют.")]
         rows = list(self._data.hippocampus_episodes or [])
         total = _safe_int(self._data.memory.get("hippocampus_size", len(rows)), len(rows))
         if not rows:
             if self._data.is_deceased:
                 return [
-                    f"Всего эпизодов (на момент смерти): {total}",
-                    "Детальный снимок эпизодов для умершего агента не хранится.",
+                    tr("Всего эпизодов (на момент смерти): {total}").format(total=total),
+                    tr("Детальный снимок эпизодов для умершего агента не хранится."),
                 ]
-            return ["Эпизоды гиппокампа отсутствуют."]
+            return [tr("Эпизоды гиппокампа отсутствуют.")]
 
         shown_rows = rows[-MEMORY_DETAIL_SHOW_LIMIT:]
-        lines = [f"Всего эпизодов: {total}"]
+        lines = [tr("Всего эпизодов: {total}").format(total=total)]
         if len(rows) > len(shown_rows):
-            lines.append(f"Показаны последние {len(shown_rows)} эпизодов.")
+            lines.append(tr("Показаны последние {n} эпизодов.").format(n=len(shown_rows)))
         lines.append("")
         for item in reversed(shown_rows):
             idx = _safe_int(item.get("index", 0), 0)
@@ -1336,8 +1337,15 @@ class AgentInspectorOverlay:
             consequence = _humanize_consequence(item.get("consequence", ""))
             context_tokens = _humanize_context_tokens(_safe_list_str(item.get("context_tokens", [])))
             context_text = ", ".join(context_tokens[:8]) if context_tokens else "-"
-            lines.append(f"#{idx} | t={timestamp:.1f}с | действие={action} | результат={consequence}")
-            lines.append(f"  контекст: {context_text}")
+            lines.append(
+                tr("#{idx} | t={timestamp:.1f}с | действие={action} | результат={consequence}").format(
+                    idx=idx,
+                    timestamp=timestamp,
+                    action=action,
+                    consequence=consequence,
+                )
+            )
+            lines.append("  " + tr("контекст: {text}").format(text=context_text))
             lines.append(
                 "  "
                 f"I={_safe_float(item.get('intensity', 0.0), 0.0):.2f} "
@@ -1355,29 +1363,29 @@ class AgentInspectorOverlay:
                     "  "
                     f"replay={replay_priority:.2f} "
                     f"cons={consolidation_weight:.2f} "
-                    f"shock={'да' if prediction_shock else 'нет'}"
+                    + tr("shock={value}").format(value=tr("да") if prediction_shock else tr("нет"))
                 )
             lines.append("")
         return lines
 
     def _build_cortex_detail_lines(self) -> list[str]:
         if self._data is None:
-            return ["Данные отсутствуют."]
+            return [tr("Данные отсутствуют.")]
         rows = list(self._data.cortex_patterns_detail or [])
         total = _safe_int(self._data.memory.get("cortex_patterns", len(rows)), len(rows))
         if not rows:
             if self._data.is_deceased:
                 return [
-                    f"Всего паттернов (на момент смерти): {total}",
-                    "Детальный снимок паттернов для умершего агента не хранится.",
+                    tr("Всего паттернов (на момент смерти): {total}").format(total=total),
+                    tr("Детальный снимок паттернов для умершего агента не хранится."),
                 ]
-            return ["Корковые паттерны отсутствуют."]
+            return [tr("Корковые паттерны отсутствуют.")]
 
         rows.sort(key=lambda item: _safe_float(item.get("strength", 0.0), 0.0), reverse=True)
         shown_rows = rows[:MEMORY_DETAIL_SHOW_LIMIT]
-        lines = [f"Всего паттернов: {total}"]
+        lines = [tr("Всего паттернов: {total}").format(total=total)]
         if len(rows) > len(shown_rows):
-            lines.append(f"Показаны {len(shown_rows)} наиболее сильных паттернов.")
+            lines.append(tr("Показаны {n} наиболее сильных паттернов.").format(n=len(shown_rows)))
         lines.append("")
         for item in shown_rows:
             idx = _safe_int(item.get("index", 0), 0)
@@ -1388,14 +1396,19 @@ class AgentInspectorOverlay:
             context_tokens = _humanize_context_tokens(_safe_list_str(item.get("context_tokens", [])))
             context_text = ", ".join(context_tokens[:8]) if context_tokens else "-"
             lines.append(
-                f"#{idx} | сила={strength:.3f} | источники={source_experiences} | активации={activation_count}"
+                tr("#{idx} | сила={strength:.3f} | источники={sources} | активации={activations}").format(
+                    idx=idx,
+                    strength=strength,
+                    sources=source_experiences,
+                    activations=activation_count,
+                )
             )
-            lines.append(f"  контекст: {context_text}")
+            lines.append("  " + tr("контекст: {text}").format(text=context_text))
             if action and action != "-":
-                lines.append(f"  действие: {action}")
+                lines.append("  " + tr("действие: {name}").format(name=action))
             consequence = _humanize_consequence(item.get("consequence", ""))
             if consequence and consequence != "-":
-                lines.append(f"  последствие: {consequence}")
+                lines.append("  " + tr("последствие: {name}").format(name=consequence))
             lines.append("")
         return lines
 
@@ -1485,6 +1498,24 @@ class AgentInspectorOverlay:
     def draw(self, screen: Any, font: Any, font_small: Any, font_mono: Any) -> None:
         if not self._visible or self._data is None:
             return
+        if getattr(self, "_drawn_lang", None) != get_language():
+            self._drawn_lang = get_language()
+            self._data.nowa_interpretation = None
+            if self._data.genome_genes:
+                trend = self._data.genome_portrait.lineage_trend if self._data.genome_portrait else None
+                try:
+                    portrait = build_portrait(
+                        self._data.genome_genes,
+                        self._data.genome_inheritance_meta or {},
+                        display_name=self._data.display_name,
+                    )
+                    if trend is not None:
+                        portrait.lineage_trend = trend
+                    self._data.genome_portrait = portrait
+                except Exception:
+                    pass
+            if self._memory_detail_visible and self._memory_detail_kind:
+                self._open_memory_detail(self._memory_detail_kind)
         import pygame  # type: ignore
 
         screen_w, screen_h = screen.get_size()
@@ -1503,22 +1534,28 @@ class AgentInspectorOverlay:
         pygame.draw.rect(panel, INSPECTOR_HEADER, header_rect, border_radius=8)
         title = self._data.display_name
         if self._data.is_deceased:
-            cause = self._data.cause_of_death or "неизвестно"
+            cause = cause_label(self._data.cause_of_death) or tr("неизвестно")
             title = f"† {title} [{cause}]"
         panel.blit(font.render(title, True, INSPECTOR_TEXT), (14, 10))
-        sub = f"{self._data.sex} | G{self._data.generation} | возраст {self._data.age:.1f}с | шаги {self._data.lived_steps}"
+        sub = tr("{sex} | G{generation} | возраст {age:.1f}с | шаги {steps}").format(
+            sex=sex_label(self._data.sex),
+            generation=self._data.generation,
+            age=self._data.age,
+            steps=self._data.lived_steps,
+        )
         panel.blit(font_small.render(sub, True, INSPECTOR_MUTED_TEXT), (14, 33))
 
         tabs_top = 62
         tab_h = 28
-        tab_w = panel_rect.width // len(TABS)
+        tab_w = panel_rect.width // len(_TAB_KEYS)
         self._tab_rects = []
-        for idx, label in enumerate(TABS):
+        for idx, tab_key in enumerate(_TAB_KEYS):
+            tab_label = ui_label("tab", tab_key)
             rect = pygame.Rect(idx * tab_w, tabs_top, tab_w, tab_h)
             self._tab_rects.append(rect.move(panel_rect.x, panel_rect.y))
             active = idx == self._active_tab
             pygame.draw.rect(panel, TAB_ACTIVE if active else TAB_INACTIVE, rect, border_radius=4)
-            text = font_small.render(label, True, TAB_TEXT_ACTIVE if active else TAB_TEXT_INACTIVE)
+            text = font_small.render(tab_label, True, TAB_TEXT_ACTIVE if active else TAB_TEXT_INACTIVE)
             panel.blit(text, text.get_rect(center=rect.center))
 
         content_rect = pygame.Rect(10, tabs_top + tab_h + 8, panel_rect.width - 20, panel_rect.height - tabs_top - tab_h - 16)
@@ -1746,18 +1783,18 @@ class AgentInspectorOverlay:
         header_h = 44
         header_rect = pygame.Rect(0, 0, width, header_h)
         pygame.draw.rect(panel, DETAIL_HEADER, header_rect, border_radius=10)
-        panel.blit(font.render(self._memory_detail_title or "Детали памяти", True, INSPECTOR_TEXT), (14, 10))
+        panel.blit(font.render(self._memory_detail_title or tr("Детали памяти"), True, INSPECTOR_TEXT), (14, 10))
 
-        close_surface = font_small.render("закрыть x", True, LINK_TEXT)
+        close_surface = font_small.render(tr("закрыть x"), True, LINK_TEXT)
         close_local = close_surface.get_rect(topright=(width - 14, 14))
         panel.blit(close_surface, close_local.topleft)
         self._memory_detail_close_rect = close_local.move(x, y)
 
-        hint = font_small.render("Esc или клик вне окна", True, INSPECTOR_MUTED_TEXT)
+        hint = font_small.render(tr("Esc или клик вне окна"), True, INSPECTOR_MUTED_TEXT)
         panel.blit(hint, (14, header_h - 2))
 
         content_rect = pygame.Rect(12, header_h + 14, width - 24, height - header_h - 24)
-        base_lines = list(self._memory_detail_lines or ["Нет данных."])
+        base_lines = list(self._memory_detail_lines or [tr("Нет данных.")])
         wrapped_lines: list[str] = []
         for line in base_lines:
             wrapped_lines.extend(self._wrap_text_to_width(line, font_small=font_small, max_width=content_rect.width - 8))
@@ -1797,7 +1834,7 @@ class AgentInspectorOverlay:
 
     def _nowa_section_title(self, title: str) -> str:
         if self._data is not None and self._data.is_deceased:
-            return f"{title} (при смерти)"
+            return tr("{title} (при смерти)").format(title=title)
         return title
 
     def _fit_text_to_width(self, text: str, font_small: Any, max_width: int) -> str:
@@ -1846,7 +1883,7 @@ class AgentInspectorOverlay:
     ) -> int:
         import pygame  # type: ignore
 
-        badge_text = f"Итоговый аффективный тон: {interp.tone_label}"
+        badge_text = tr("Итоговый аффективный тон: {label}").format(label=interp.tone_label)
         text_surface = font_small.render(badge_text, True, INSPECTOR_TEXT)
         badge_w = min(surface.get_width() - 4, max(220, text_surface.get_width() + 18))
         badge_rect = pygame.Rect(0, y, badge_w, 24)
@@ -1866,7 +1903,7 @@ class AgentInspectorOverlay:
     ) -> int:
         import pygame  # type: ignore
 
-        text = f"Профиль: {profile.profile_label}"
+        text = tr("Профиль: {label}").format(label=profile.profile_label)
         rendered = font_small.render(text, True, INSPECTOR_TEXT)
         rect = pygame.Rect(0, y, min(surface.get_width() - 4, max(220, rendered.get_width() + 18)), 24)
         pygame.draw.rect(surface, (224, 216, 202, 150), rect, border_radius=6)
@@ -1953,18 +1990,19 @@ class AgentInspectorOverlay:
         if layers and layers[0].top_actions:
             action = layers[0].top_actions[0][0]
             interpretations = {
-                "eat": "Решения агента устойчиво направлены к еде.",
-                "drink": "Решения агента вращаются вокруг воды и восстановления баланса.",
-                "sleep": "Сон и восстановление доминируют над прочими действиями.",
-                "explore": "Исследование окружения сейчас является ведущей стратегией.",
-                "hide": "Защитная стратегия заметно сильнее остальных вариантов.",
-                "rest": "Агент выбирает экономию сил и восстановление.",
+                "eat": tr("Решения агента устойчиво направлены к еде."),
+                "drink": tr("Решения агента вращаются вокруг воды и восстановления баланса."),
+                "sleep": tr("Сон и восстановление доминируют над прочими действиями."),
+                "explore": tr("Исследование окружения сейчас является ведущей стратегией."),
+                "hide": tr("Защитная стратегия заметно сильнее остальных вариантов."),
+                "rest": tr("Агент выбирает экономию сил и восстановление."),
             }
+            fallback = tr("Доминирующее действие задаёт текущую стратегию агента.")
             y = self._draw_summary_text(
                 surface,
                 font_small,
                 y + 2,
-                f'"{interpretations.get(action, "Доминирующее действие задаёт текущую стратегию агента.")}"',
+                f'"{interpretations.get(action, fallback)}"',
                 max_lines=2,
             )
         return y
@@ -1972,7 +2010,12 @@ class AgentInspectorOverlay:
     def _draw_habit(self, surface: Any, font_small: Any, y: int, habit: Any) -> int:
         action = _humanize_action(habit.action)
         context = " + ".join(_humanize_context_tokens(habit.context_tokens[:3])) or "-"
-        text = f"• {action} ← {context}     сила {habit.strength:.2f}  ×{habit.activation_count}"
+        text = tr("• {action} ← {context}     сила {strength:.2f}  ×{count}").format(
+            action=action,
+            context=context,
+            strength=habit.strength,
+            count=habit.activation_count,
+        )
         if habit.consequence:
             text = f"{text}  → {_humanize_consequence(habit.consequence)}"
         lines = self._wrap_text_to_width(text, font_small=font_small, max_width=max(80, surface.get_width() - 4))
@@ -1994,7 +2037,7 @@ class AgentInspectorOverlay:
         return y + 18
 
     def _draw_personality_readout(self, surface: Any, font: Any, font_small: Any, y: int, personality: Any) -> int:
-        surface.blit(font_small.render(f"Характер: {personality.character_label}", True, INSPECTOR_TEXT), (0, y))
+        surface.blit(font_small.render(tr("Характер: {label}").format(label=personality.character_label), True, INSPECTOR_TEXT), (0, y))
         y += 20
         return self._draw_summary_text(surface, font_small, y, f'"{personality.summary}"', max_lines=4)
 
@@ -2011,11 +2054,11 @@ class AgentInspectorOverlay:
                 interp = build_nowa_interpretation(None)
 
         y = 6
-        title = "NOWA (при смерти)" if self._data.is_deceased else "NOWA"
+        title = tr("NOWA (при смерти)") if self._data.is_deceased else tr("NOWA")
         surface.blit(font.render(title, True, INSPECTOR_TEXT), (0, y))
         y += 28
 
-        y = self._draw_nowa_section_header(surface, font_small, y, "Аффективное состояние")
+        y = self._draw_nowa_section_header(surface, font_small, y, tr("Аффективное состояние"))
         y = self._draw_affect_tone_badge(surface, font, font_small, y, interp.affect)
         y += 6
         for key in [*_AFFECT_KEYS, "energy", "social_drive"]:
@@ -2024,7 +2067,7 @@ class AgentInspectorOverlay:
                 surface,
                 font_small,
                 y,
-                label=_AFFECT_LABELS_RU.get(key, key),
+                label=ui_label("affect", key, key),
                 value=value,
                 short_label=interp.affect.axis_labels.get(key, get_axis_label(key, value)),
                 value_range=(-1.0, 1.0) if key == "valence" else (0.0, 1.0),
@@ -2032,7 +2075,7 @@ class AgentInspectorOverlay:
             )
 
         y += 8
-        y = self._draw_nowa_section_header(surface, font_small, y, "Нейрохимический профиль")
+        y = self._draw_nowa_section_header(surface, font_small, y, tr("Нейрохимический профиль"))
         y = self._draw_neuro_profile_badge(surface, font, font_small, y, interp.neuro)
         y += 6
         for key in ["dopamine", "serotonin", "norepinephrine", "cortisol", "acetylcholine"]:
@@ -2041,21 +2084,21 @@ class AgentInspectorOverlay:
                 surface,
                 font_small,
                 y,
-                label=_NEURO_LABELS_RU.get(key, key),
+                label=ui_label("neuro", key, key),
                 value=value,
                 short_label=interp.neuro.modulator_labels.get(key, ""),
                 bar_color=AXIS_COLORS.get(key, BAR_FG),
             )
 
         y += 8
-        y = self._draw_nowa_section_header(surface, font_small, y, "Бодрствование и энергия")
+        y = self._draw_nowa_section_header(surface, font_small, y, tr("Бодрствование и энергия"))
         for key in ["wakefulness", "sleep_pressure", "circadian", "alertness"]:
             value = _safe_float(self._data.wakefulness.get(key, 0.0), 0.0)
             y = self._draw_axis_row(
                 surface,
                 font_small,
                 y,
-                label=_WAKE_LABELS_RU.get(key, key),
+                label=ui_label("wake", key, key),
                 value=value,
                 short_label=get_axis_label(key, value),
                 bar_color=AXIS_COLORS.get(key, BAR_FG),
@@ -2063,50 +2106,53 @@ class AgentInspectorOverlay:
 
         if interp.value_layers:
             y += 8
-            y = self._draw_nowa_section_header(surface, font_small, y, "Value layers")
+            y = self._draw_nowa_section_header(surface, font_small, y, tr("Ценностные слои"))
             y = self._draw_value_layers(surface, font_small, y, interp.value_layers)
 
         if interp.habits:
             y += 8
-            y = self._draw_nowa_section_header(surface, font_small, y, "Активные привычки")
+            y = self._draw_nowa_section_header(surface, font_small, y, tr("Активные привычки"))
             total = _safe_int(self._data.memory.get("cortex_patterns", len(interp.habits)), len(interp.habits))
             y = self._draw_memory_link_line(
                 surface,
                 font_small,
                 y,
                 "cortex_patterns",
-                f"{len(interp.habits)} устойчивых паттерна из {total}:",
+                tr("{n} устойчивых паттерна из {total}:").format(n=len(interp.habits), total=total),
             )
             for habit in interp.habits:
                 y = self._draw_habit(surface, font_small, y, habit)
 
         if interp.recent_episodes:
             y += 8
-            y = self._draw_nowa_section_header(surface, font_small, y, "Недавний опыт")
+            y = self._draw_nowa_section_header(surface, font_small, y, tr("Недавний опыт"))
             total = _safe_int(self._data.memory.get("hippocampus_size", len(interp.recent_episodes)), len(interp.recent_episodes))
             y = self._draw_memory_link_line(
                 surface,
                 font_small,
                 y,
                 "hippocampus_size",
-                f"Последние {len(interp.recent_episodes)} значимых эпизодов из {total}:",
+                tr("Последние {n} значимых эпизодов из {total}:").format(n=len(interp.recent_episodes), total=total),
             )
             for episode in interp.recent_episodes:
                 y = self._draw_episode(surface, font_small, y, episode)
 
         y += 8
-        y = self._draw_nowa_section_header(surface, font_small, y, "Интерпретация личности")
+        y = self._draw_nowa_section_header(surface, font_small, y, tr("Интерпретация личности"))
         y = self._draw_personality_readout(surface, font, font_small, y, interp.personality)
         return y + 8
 
     def _draw_tab_social(self, surface: Any, font: Any, font_small: Any) -> int:
         assert self._data is not None
         y = 6
-        surface.blit(font.render("Социум", True, INSPECTOR_TEXT), (0, y))
+        surface.blit(font.render(tr("Социум"), True, INSPECTOR_TEXT), (0, y))
         y += 24
         surface.blit(
             font_small.render(
-                f"известных: {len(self._data.known_agents)} | слухов получено: {self._data.hearsay_received}",
+                tr("известных: {known} | слухов получено: {hearsay}").format(
+                    known=len(self._data.known_agents),
+                    hearsay=self._data.hearsay_received,
+                ),
                 True,
                 INSPECTOR_MUTED_TEXT,
             ),
@@ -2115,38 +2161,45 @@ class AgentInspectorOverlay:
         y += 20
         for item in self._data.known_agents:
             rel = _relationship_ru(item.get("relationship_type", "stranger"))
-            line = (
-                f"{item.get('name', '?')} [{rel}] "
-                f"симпатия {item.get('affinity', 0.0):.2f} "
-                f"поз. {item.get('positive_count', 0)} нег. {item.get('negative_count', 0)}"
+            raw_name = item.get("name", "?")
+            if raw_name == "(архив)":
+                raw_name = tr("(архив)")
+            line = tr("{name} [{rel}] симпатия {affinity:.2f} поз. {pos} нег. {neg}").format(
+                name=raw_name,
+                rel=rel,
+                affinity=float(item.get("affinity", 0.0) or 0.0),
+                pos=item.get("positive_count", 0),
+                neg=item.get("negative_count", 0),
             )
             surface.blit(font_small.render(line, True, INSPECTOR_TEXT), (0, y))
             y += 18
         if not self._data.known_agents:
-            surface.blit(font_small.render("Нет социальных данных", True, INSPECTOR_MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Нет социальных данных"), True, INSPECTOR_MUTED_TEXT), (0, y))
             y += 18
         return y + 6
 
     def _draw_tab_repro(self, surface: Any, font: Any, font_small: Any) -> int:
         assert self._data is not None
         y = 6
-        surface.blit(font.render("Репро", True, INSPECTOR_TEXT), (0, y))
+        surface.blit(font.render(tr("Репро"), True, INSPECTOR_TEXT), (0, y))
         y += 24
         rows = [
-            f"пол: {self._data.sex}",
-            f"репродуктивный драйв: {self._data.reproductive_drive:.3f}",
-            f"шаги восстановления: {self._data.cooldown_steps}",
-            f"всего потомков: {self._data.total_offspring_count}",
-            f"витальность: {self._data.vitality:.3f}",
-            f"темп старения: {self._data.senescence_rate:.4f}",
-            f"беременна: {_bool_ru(self._data.sex_specific.get('is_pregnant', False))}",
-            f"причина смерти: {self._data.cause_of_death or '-'}",
+            tr("пол: {sex}").format(sex=sex_label(self._data.sex)),
+            tr("репродуктивный драйв: {value:.3f}").format(value=self._data.reproductive_drive),
+            tr("шаги восстановления: {n}").format(n=self._data.cooldown_steps),
+            tr("всего потомков: {n}").format(n=self._data.total_offspring_count),
+            tr("витальность: {value:.3f}").format(value=self._data.vitality),
+            tr("темп старения: {value:.4f}").format(value=self._data.senescence_rate),
+            tr("беременна: {value}").format(value=_bool_ru(self._data.sex_specific.get("is_pregnant", False))),
+            tr("причина смерти: {cause}").format(
+                cause=cause_label(self._data.cause_of_death) or "-"
+            ),
         ]
         for line in rows:
             surface.blit(font_small.render(line, True, INSPECTOR_TEXT), (0, y))
             y += 18
         if self._data.own_offspring_ids:
-            surface.blit(font_small.render("собственные потомки:", True, INSPECTOR_MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("собственные потомки:"), True, INSPECTOR_MUTED_TEXT), (0, y))
             y += 18
             for item in self._data.own_offspring_ids:
                 surface.blit(font_small.render(f"- {item}", True, INSPECTOR_TEXT), (12, y))
@@ -2156,13 +2209,13 @@ class AgentInspectorOverlay:
     def _draw_tab_genome(self, surface: Any, font: Any, font_small: Any, font_mono: Any) -> int:
         assert self._data is not None
         y = 6
-        header = f"Геном G{self._data.genome_generation}"
+        header = tr("Геном G{generation}").format(generation=self._data.genome_generation)
         surface.blit(font.render(header, True, INSPECTOR_TEXT), (0, y))
         y += 24
 
         lineage_rows = list(self._data.genome_lineage_rows or _lineage_rows_from_lineage_id(self._data.genome_lineage_id))
         if lineage_rows:
-            surface.blit(font_small.render("Линия:", True, INSPECTOR_MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Линия:"), True, INSPECTOR_MUTED_TEXT), (0, y))
             y += 18
             for idx, row in enumerate(lineage_rows):
                 surface.blit(font_mono.render(row, True, INSPECTOR_TEXT), (0, y))
@@ -2172,7 +2225,7 @@ class AgentInspectorOverlay:
                     y += 16
             y += 4
         else:
-            surface.blit(font_small.render("Линия: -", True, INSPECTOR_MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Линия: -"), True, INSPECTOR_MUTED_TEXT), (0, y))
             y += 22
 
         portrait = self._data.genome_portrait
@@ -2190,7 +2243,7 @@ class AgentInspectorOverlay:
         return y
 
     def _draw_genome_portrait(self, surface: Any, font: Any, font_small: Any, y: int, portrait: GenomePortrait) -> int:
-        surface.blit(font.render("Портрет личности", True, INSPECTOR_TEXT), (0, y))
+        surface.blit(font.render(tr("Портрет личности"), True, INSPECTOR_TEXT), (0, y))
         y += 22
         trait_colors = {
             "temperament": (210, 120, 80),
@@ -2203,7 +2256,7 @@ class AgentInspectorOverlay:
             ts = portrait.trait_scores.get(cat)
             if ts is None:
                 continue
-            label = TRAIT_LABELS_RU.get(cat, cat)
+            label = ui_label("trait", cat, cat)
             score = max(0.0, min(1.0, float(ts.score)))
             surface.blit(font_small.render(label, True, INSPECTOR_MUTED_TEXT), (0, y))
             try:
@@ -2225,19 +2278,19 @@ class AgentInspectorOverlay:
 
         y += 8
         if portrait.strengths:
-            surface.blit(font_small.render("Сильные стороны:", True, INSPECTOR_MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Сильные стороны:"), True, INSPECTOR_MUTED_TEXT), (0, y))
             y += 16
             for item in portrait.strengths:
                 surface.blit(font_small.render(f"  + {item}", True, (80, 150, 80)), (0, y))
                 y += 15
         if portrait.weaknesses:
-            surface.blit(font_small.render("Слабые стороны:", True, INSPECTOR_MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Слабые стороны:"), True, INSPECTOR_MUTED_TEXT), (0, y))
             y += 16
             for item in portrait.weaknesses:
                 surface.blit(font_small.render(f"  - {item}", True, (180, 80, 60)), (0, y))
                 y += 15
         if portrait.neutral_traits:
-            surface.blit(font_small.render("Нейтральные:", True, INSPECTOR_MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Нейтральные:"), True, INSPECTOR_MUTED_TEXT), (0, y))
             y += 16
             for item in portrait.neutral_traits:
                 surface.blit(font_small.render(f"  ~ {item}", True, INSPECTOR_MUTED_TEXT), (0, y))
@@ -2251,13 +2304,14 @@ class AgentInspectorOverlay:
             "neutral": INSPECTOR_MUTED_TEXT,
         }
         magnitude_prefix = {"major": "*", "moderate": "+", "minor": "."}
-        surface.blit(font.render("Изменения в генах", True, INSPECTOR_TEXT), (0, y))
+        surface.blit(font.render(tr("Изменения в генах"), True, INSPECTOR_TEXT), (0, y))
         y += 22
         for mut in mutations[:8]:
             color = valence_colors.get(getattr(mut, "valence", "neutral"), INSPECTOR_MUTED_TEXT)
             prefix = magnitude_prefix.get(getattr(mut, "magnitude", "minor"), ".")
             delta = _safe_float(getattr(mut, "delta", 0.0), 0.0)
-            header = f"{prefix} {getattr(mut, 'gene_key', ''):<28} {delta:+.3f}"
+            gene_name = ui_label("lineage_gene", str(getattr(mut, "gene_key", "") or ""), str(getattr(mut, "gene_key", "") or ""))
+            header = f"{prefix} {gene_name} {delta:+.3f}"
             surface.blit(font_small.render(header, True, color), (0, y))
             y += 15
             surface.blit(font_small.render(f"  -> {getattr(mut, 'consequence_short', '')}", True, INSPECTOR_TEXT), (0, y))
@@ -2269,7 +2323,7 @@ class AgentInspectorOverlay:
         return y
 
     def _draw_lineage_trend(self, surface: Any, font: Any, font_small: Any, y: int, trend_points: list[Any]) -> int:
-        surface.blit(font.render("Тренд линии", True, INSPECTOR_TEXT), (0, y))
+        surface.blit(font.render(tr("Тренд линии"), True, INSPECTOR_TEXT), (0, y))
         y += 22
         names = " → ".join(_safe_str(getattr(point, "display_name", ""), "") for point in trend_points)
         for line in wrap_text(names, max_chars=60):
@@ -2281,7 +2335,7 @@ class AgentInspectorOverlay:
             values = [point.gene_values[gene_key] for point in trend_points if gene_key in getattr(point, "gene_values", {})]
             if len(values) < 2:
                 continue
-            label = LINEAGE_GENE_LABELS_RU.get(gene_key, gene_key.replace("_", " "))
+            label = ui_label("lineage_gene", gene_key, gene_key.replace("_", " "))
             value_chain = " → ".join(f"{float(value):.2f}" for value in values)
             description = describe_lineage_trend(trend_points, gene_key)
             text = f"{label}: {value_chain}; {description}"
@@ -2294,12 +2348,12 @@ class AgentInspectorOverlay:
             y += 4
             stress_vals = [f"{_safe_float(getattr(point, 'stress_at_death', 0.0), 0.0):.2f}" for point in trend_points if _safe_float(getattr(point, "stress_at_death", 0.0), 0.0) > 0]
             if stress_vals:
-                surface.blit(font_small.render("Стресс при смерти:", True, INSPECTOR_MUTED_TEXT), (0, y))
+                surface.blit(font_small.render(tr("Стресс при смерти:"), True, INSPECTOR_MUTED_TEXT), (0, y))
                 surface.blit(font_small.render(" → ".join(stress_vals), True, INSPECTOR_TEXT), (148, y))
                 y += 16
             cort_vals = [f"{_safe_float(getattr(point, 'cortisol_at_death', 0.0), 0.0):.2f}" for point in trend_points if _safe_float(getattr(point, "cortisol_at_death", 0.0), 0.0) > 0]
             if cort_vals:
-                surface.blit(font_small.render("Кортизол при смерти:", True, INSPECTOR_MUTED_TEXT), (0, y))
+                surface.blit(font_small.render(tr("Кортизол при смерти:"), True, INSPECTOR_MUTED_TEXT), (0, y))
                 surface.blit(font_small.render(" → ".join(cort_vals), True, INSPECTOR_TEXT), (148, y))
                 y += 16
         return y
@@ -2308,13 +2362,13 @@ class AgentInspectorOverlay:
         assert self._data is not None
         genes = sorted(self._data.genome_genes.items(), key=lambda pair: pair[0])
         self._genome_table_toggle_rect_y = y
-        label = "v все гены" if self._genome_table_expanded else "> все гены"
+        label = tr("v все гены") if self._genome_table_expanded else tr("> все гены")
         if genes:
             label = f"{label} ({len(genes)})"
         surface.blit(font_small.render(label, True, INSPECTOR_MUTED_TEXT), (0, y))
         if not genes:
             y += 18
-            surface.blit(font_small.render("Геном недоступен", True, INSPECTOR_MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Геном недоступен"), True, INSPECTOR_MUTED_TEXT), (0, y))
             return y + 22
         if not self._genome_table_expanded:
             return y + 18
@@ -2327,21 +2381,25 @@ class AgentInspectorOverlay:
     def _draw_tab_history(self, surface: Any, font: Any, font_small: Any) -> int:
         assert self._data is not None
         y = 6
-        title = "История (при смерти)" if self._data.is_deceased else "История"
+        title = tr("История (при смерти)") if self._data.is_deceased else tr("История")
         surface.blit(font.render(title, True, INSPECTOR_TEXT), (0, y))
         y += 24
         if not self._data.recent_interactions:
-            summary = f"всего взаимодействий: {sum(item.get('interactions', 0) for item in self._data.known_agents)}"
+            summary = tr("всего взаимодействий: {n}").format(
+                n=sum(item.get("interactions", 0) for item in self._data.known_agents)
+            )
             surface.blit(font_small.render(summary, True, INSPECTOR_MUTED_TEXT), (0, y))
             y += 18
-            surface.blit(font_small.render("Подробная история недоступна", True, INSPECTOR_MUTED_TEXT), (0, y))
+            surface.blit(font_small.render(tr("Подробная история недоступна"), True, INSPECTOR_MUTED_TEXT), (0, y))
             return y + 18
         for item in self._data.recent_interactions:
             outcome = _outcome_ru(item.get("outcome", "?"))
-            line = (
-                f"[{item.get('time', 0.0):.1f}] {item.get('type', 'social')} "
-                f"с {item.get('with_name', '?')} -> {outcome} "
-                f"Δ{item.get('affect_delta', 0.0):+.2f}"
+            line = tr("[{time:.1f}] {kind} с {name} -> {outcome} Δ{delta:+.2f}").format(
+                time=float(item.get("time", 0.0) or 0.0),
+                kind=item.get("type", "social"),
+                name=item.get("with_name", "?"),
+                outcome=outcome,
+                delta=float(item.get("affect_delta", 0.0) or 0.0),
             )
             surface.blit(font_small.render(line, True, INSPECTOR_TEXT), (0, y))
             y += 18

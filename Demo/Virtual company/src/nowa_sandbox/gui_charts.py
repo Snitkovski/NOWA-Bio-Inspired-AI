@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-import tkinter as tk
+try:
+    import tkinter as tk
+except ImportError:  # pragma: no cover - minimal Python builds omit Tk
+    tk = None  # type: ignore[assignment]
+
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 
@@ -19,7 +23,7 @@ CRITERION_COLORS = {
 _HIT_RADIUS = 10
 
 
-class FitnessChart(tk.Canvas):
+class FitnessChart(tk.Canvas if tk is not None else object):
     """Multi-series line chart; values expected in [0, 1].
 
     Legend is drawn below the plot. Hovering near a data point shows a

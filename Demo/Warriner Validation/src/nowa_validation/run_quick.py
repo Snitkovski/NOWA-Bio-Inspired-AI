@@ -13,12 +13,13 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from nowa_validation.nowa_colony import NOWAColony
+from nowa_validation.ui_i18n import peek_lang, t
 from nowa_validation.warriner_validator import ValidationResult, WarrinerValidator
 from nowa_validation.word_stimulus_encoder import WordStimulusEncoder
 
 
-def _progress(index: int, total: int, word: str) -> None:
-    print(f"[Validation] Processing word {index}/{total}: {word}")
+def _progress(index: int, total: int, word: str, lang: str) -> None:
+    print(t("cli_progress", lang, index=index, total=total, word=word))
 
 
 def _json_default(value: Any) -> Any:
@@ -28,7 +29,9 @@ def _json_default(value: Any) -> Any:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run NOWA x Warriner validation.")
+    lang = peek_lang(list(sys.argv[1:] if argv is None else argv))
+    parser = argparse.ArgumentParser(description=t("cli_description", lang))
+    parser.add_argument("--lang", choices=["en", "ru"], default=None, help="UI language (en or ru). Overrides NOWA_LANG.")
     parser.add_argument("--warriner", required=True, help="Path to Warriner CSV.")
     parser.add_argument("--words", type=int, default=300, help="Held-out words to test.")
     parser.add_argument("--agents", type=int, default=100, help="Colony size.")
@@ -73,8 +76,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=42, help="Deterministic random seed.")
     parser.add_argument("--output", default="", help="Optional JSON output path.")
     args = parser.parse_args(argv)
+    if args.lang in ("en", "ru"):
+        lang = args.lang
 
-    print(f"[Colony] Initializing {args.agents} agents...")
+    print(t("cli_init", lang, n=args.agents))
     colony = NOWAColony(
         n_agents=args.agents,
         ticks_per_stimulus=args.ticks,
@@ -94,25 +99,30 @@ def main(argv: list[str] | None = None) -> int:
         seed=args.seed,
     )
 
-    print(f"[Seeder] Loading up to {args.seed_size} seed episodes per agent...")
+    print(t("cli_seed", lang, n=args.seed_size))
     result: ValidationResult = validator.run(
         seed_size=args.seed_size,
-        progress_callback=_progress,
+        progress_callback=lambda index, total, word: _progress(index, total, word, lang),
     )
 
     print()
     print(result.summary())
-    print(f"\nCore backend: {colony.backend_name}")
-    print(f"Validation protocol: {args.protocol}")
+    print()
+    print(t("cli_backend", lang, name=colony.backend_name))
+    print(t("cli_protocol", lang, protocol=args.protocol))
     print(
-        "Signal parameters: "
-        f"gain={colony.affective_gain}, signal_ticks={colony.signal_ticks}, "
-        f"memory_top_k={colony.memory_top_k}, "
-        f"memory_min_activation={colony.memory_min_activation}"
+        t(
+            "cli_signal",
+            lang,
+            gain=colony.affective_gain,
+            ticks=colony.signal_ticks,
+            topk=colony.memory_top_k,
+            threshold=colony.memory_min_activation,
+        )
     )
     if result.archetype_correlations:
         print()
-        print("PER-ARCHETYPE correlations (valence):")
+        print(t("cli_archetype", lang))
         for archetype, rho in sorted(result.archetype_correlations.items()):
             print(f"  {archetype:20s} rho = {rho:.3f}")
 
@@ -123,7 +133,8 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(asdict(result), ensure_ascii=False, indent=2, default=_json_default),
             encoding="utf-8",
         )
-        print(f"\n[Output] Wrote {output_path}")
+        print()
+        print(t("cli_output", lang, path=output_path))
 
     return 0
 

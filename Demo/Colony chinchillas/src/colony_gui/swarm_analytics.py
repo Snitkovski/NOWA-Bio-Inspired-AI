@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from math import sqrt
 from typing import Any
 
+from .i18n import label, tr
+
 from .genome_portrait import GENE_REGISTRY
 from .nowa_interpreter import (
     AffectInterpretation,
@@ -375,17 +377,17 @@ def compare_first_last_third(values: list[float], gene_range: float) -> tuple[st
     """Compare first and last third and return label plus normalized magnitude."""
 
     if not values:
-        return ("↔ стабильно", 0.0)
+        return (tr("↔ стабильно"), 0.0)
     chunk = max(1, len(values) // 3)
     first_mean = _mean(values[:chunk])
     last_mean = _mean(values[-chunk:])
     change = (last_mean - first_mean) / max(abs(gene_range), 1e-6)
     magnitude = abs(change)
     if change > 0.05:
-        return ("↗ растёт", magnitude)
+        return (tr("↗ растёт"), magnitude)
     if change < -0.05:
-        return ("↘ снижается", magnitude)
-    return ("↔ стабильно", magnitude)
+        return (tr("↘ снижается"), magnitude)
+    return (tr("↔ стабильно"), magnitude)
 
 
 def _gene_range(gene_key: str) -> float:
@@ -396,9 +398,10 @@ def _gene_range(gene_key: str) -> float:
 
 
 def _trend_direction(trend_label: str) -> str:
-    if "раст" in trend_label:
+    label_text = str(trend_label)
+    if label_text.startswith("↗") or "раст" in label_text or "ris" in label_text.lower():
         return "up"
-    if "сни" in trend_label:
+    if label_text.startswith("↘") or "сни" in label_text or "fall" in label_text.lower():
         return "down"
     return "flat"
 
@@ -441,7 +444,7 @@ def build_gene_tracks(
                     std_by_gen=std_by_gen,
                     trend_label=trend_label,
                     trend_magnitude=trend_magnitude,
-                    interpretation=interpretations.get(direction, interpretations["flat"]),
+                    interpretation=tr(interpretations.get(direction, interpretations["flat"])),
                     is_under_selection=direction != "flat" and trend_magnitude > 0.08,
                 )
             )
@@ -455,7 +458,7 @@ def build_action_distribution(living_agents: list[Any]) -> list[BehaviorPattern]
     total = len(living_agents)
     counts = Counter(str(getattr(agent, "current_action", "idle") or "idle") for agent in living_agents)
     return [
-        BehaviorPattern(action=action, count=count, fraction=count / float(max(1, total)), label_ru=ACTION_LABELS_RU.get(action, action))
+        BehaviorPattern(action=action, count=count, fraction=count / float(max(1, total)), label_ru=label("action_short", action, action))
         for action, count in counts.most_common()
     ]
 
@@ -575,19 +578,19 @@ def compute_health_index(
     if not living_agents:
         overall = min(overall, 0.25)
     if overall > 0.75:
-        verdict, color = "Колония здорова и активно развивается", (90, 175, 110)
+        verdict, color = tr("Колония здорова и активно развивается"), (90, 175, 110)
     elif overall > 0.55:
-        verdict, color = "Колония стабильна с умеренными рисками", (185, 165, 65)
+        verdict, color = tr("Колония стабильна с умеренными рисками"), (185, 165, 65)
     elif overall > 0.35:
-        verdict, color = "Колония под давлением, требует внимания", (210, 120, 60)
+        verdict, color = tr("Колония под давлением, требует внимания"), (210, 120, 60)
     else:
-        verdict, color = "Колония в критическом состоянии", (200, 65, 55)
+        verdict, color = tr("Колония в критическом состоянии"), (200, 65, 55)
     return ColonyHealthIndex(_clamp(overall), raw_components, verdict, color)
 
 
 def _trend_from_values(values: Sequence[float]) -> str:
     if len(values) < 2:
-        return "↔ стабильно"
+        return tr("↔ стабильно")
     label, _ = compare_first_last_third([_safe_float(value, 0.0) for value in values], 1.0)
     return label
 
@@ -684,7 +687,7 @@ def _dominant_habits(living_agents: list[Any]) -> list[BehaviorPattern]:
             counts[action] += 1
     total = len(living_agents)
     return [
-        BehaviorPattern(action=action, count=count, fraction=count / float(max(1, total)), label_ru=ACTION_LABELS_RU.get(action, action))
+        BehaviorPattern(action=action, count=count, fraction=count / float(max(1, total)), label_ru=label("action_short", action, action))
         for action, count in counts.most_common(5)
     ]
 
@@ -706,7 +709,7 @@ def _build_forecast(
     female_fraction = female_count / float(max(1, len(living_agents)))
     diversity = health.components.get("diversity", 0.0)
     lt_track = next((track for track in gene_tracks if track.gene_key == "lt_max_lifespan_factor"), None)
-    lt_trend = lt_track.trend_label if lt_track is not None else "↔ стабильно"
+    lt_trend = lt_track.trend_label if lt_track is not None else tr("↔ стабильно")
     extinction_risk = 1.0 - health.overall
     if observer is not None:
         try:
@@ -728,45 +731,52 @@ def _build_forecast(
         "mean_offspring_per_agent": summaries[-1].mean_total_offspring if summaries else 0.0,
     }
     risk_rules = [
-        (context["mean_cortisol"] > 0.80, "Хронический кортизол блокирует репродукцию"),
-        (context["lt_trend"] == "↘ снижается", "Потенциальная продолжительность жизни сокращается"),
-        (context["diversity"] < 0.15, "Низкое генетическое разнообразие - founder effect"),
-        (context["female_fraction"] < 0.35 or context["female_fraction"] > 0.65, "Половой дисбаланс угрожает размножению"),
-        (context["mean_energy_at_death"] < 0.15, "Агенты умирают с истощёнными энергетическими резервами"),
-        (context["cohesion"] < 0.10, "Слабая социальная сплочённость - изоляция особей"),
-        (context["extinction_risk"] > 0.50, "Высокий риск вымирания по оценке ColonyPopulationObserver"),
+        (context["mean_cortisol"] > 0.80, tr("Хронический кортизол блокирует репродукцию")),
+        (_trend_direction(context["lt_trend"]) == "down", tr("Потенциальная продолжительность жизни сокращается")),
+        (context["diversity"] < 0.15, tr("Низкое генетическое разнообразие — эффект основателя")),
+        (context["female_fraction"] < 0.35 or context["female_fraction"] > 0.65, tr("Половой дисбаланс угрожает размножению")),
+        (context["mean_energy_at_death"] < 0.15, tr("Агенты умирают с истощёнными энергетическими резервами")),
+        (context["cohesion"] < 0.10, tr("Слабая социальная сплочённость - изоляция особей")),
+        (context["extinction_risk"] > 0.50, tr("Высокий риск вымирания по оценке наблюдателя популяции")),
     ]
     opportunity_rules = [
-        (context["lt_trend"] == "↗ растёт", "Ген долголетия под положительным отбором"),
-        (context["stress_trend"] == "↘ снижается", "Стресс снижается - репродуктивный потенциал растёт"),
-        (context["cortisol_trend"] == "↘ снижается", "Кортизол снижается - адаптация к стрессу работает"),
-        (context["social_trend"] == "↗ растёт", "Социальная сплочённость растёт - колония укрепляется"),
-        (context["diversity"] > 0.30, "Высокое генетическое разнообразие - хороший эволюционный потенциал"),
-        (context["mean_offspring_per_agent"] > 2.5, "Высокая репродуктивная успешность"),
+        (_trend_direction(context["lt_trend"]) == "up", tr("Ген долголетия под положительным отбором")),
+        (_trend_direction(context["stress_trend"]) == "down", tr("Стресс снижается - репродуктивный потенциал растёт")),
+        (_trend_direction(context["cortisol_trend"]) == "down", tr("Кортизол снижается - адаптация к стрессу работает")),
+        (_trend_direction(context["social_trend"]) == "up", tr("Социальная сплочённость растёт - колония укрепляется")),
+        (context["diversity"] > 0.30, tr("Высокое генетическое разнообразие - хороший эволюционный потенциал")),
+        (context["mean_offspring_per_agent"] > 2.5, tr("Высокая репродуктивная успешность")),
     ]
     risks = [text for condition, text in risk_rules if condition]
     opportunities = [text for condition, text in opportunity_rules if condition]
     adapting = [track.gene_key for track in gene_tracks if track.is_under_selection][:5]
     stagnant = [track.gene_key for track in gene_tracks if not track.is_under_selection][-5:]
     if mean_cortisol > 0.65:
-        pressure = "хронический стресс"
+        pressure = tr("хронический стресс")
     elif social.cohesion_index < 0.15:
-        pressure = "социальная изоляция"
+        pressure = tr("социальная изоляция")
     elif health.components.get("energy", 0.0) < 0.35:
-        pressure = "энергетический дефицит"
+        pressure = tr("энергетический дефицит")
     else:
-        pressure = "умеренный отбор по устойчивости"
+        pressure = tr("умеренный отбор по устойчивости")
     if extinction_risk > 0.70:
-        risk_label = "высокий"
+        risk_label = tr("высокий")
     elif extinction_risk > 0.40:
-        risk_label = "умеренный"
+        risk_label = tr("умеренный")
     else:
-        risk_label = "низкий"
-    summary = (
-        f"Колония сейчас оценивается как: {health.verdict.lower()}. "
-        f"Главный фактор отбора - {pressure}. "
-        f"Активно адаптируются: {', '.join(adapting[:3]) if adapting else 'выраженных генов под отбором нет'}. "
-        f"Ключевой риск: {risks[0] if risks else 'критических рисков не выявлено'}."
+        risk_label = tr("низкий")
+    summary = tr(
+        "Колония сейчас оценивается как: {verdict}. Главный фактор отбора - {pressure}. "
+        "Активно адаптируются: {adapting}. Ключевой риск: {risk}."
+    ).format(
+        verdict=health.verdict.lower(),
+        pressure=pressure,
+        adapting=(
+            ", ".join(label("lineage_gene", key, key) for key in adapting[:3])
+            if adapting
+            else tr("выраженных генов под отбором нет")
+        ),
+        risk=risks[0] if risks else tr("критических рисков не выявлено"),
     )
     return EvolutionaryForecast(
         extinction_risk=_clamp(extinction_risk),

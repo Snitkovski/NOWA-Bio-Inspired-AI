@@ -19,6 +19,15 @@ from death_registry import DeathRegistry, LineageNode
 from simulation_runner import SimulationRunner
 
 
+@pytest.fixture(autouse=True)
+def _russian_ui():
+    from colony_gui.i18n import reset_language, set_language
+
+    set_language("ru")
+    yield
+    reset_language()
+
+
 def test_tc_death_registry_01_register_birth_and_death() -> None:
     registry = DeathRegistry()
     agent = ChinchillaAgent(sex="F", generation=0)
@@ -354,6 +363,13 @@ def test_tc_death_registry_13b_inspector_memory_link_opens_detail_window() -> No
     inspector.draw(screen, font, font_small, font_mono)
 
     link_rect = inspector._memory_link_screen_rects.get("hippocampus_size")
+    if link_rect is None:
+        # Default-font metrics can push the link below the first viewport.
+        local = inspector._memory_link_local_rects.get("hippocampus_size")
+        assert local is not None
+        inspector._scroll = max(0, int(local.y) - 8)
+        inspector.draw(screen, font, font_small, font_mono)
+        link_rect = inspector._memory_link_screen_rects.get("hippocampus_size")
     assert link_rect is not None
 
     click_event = pygame.event.Event(

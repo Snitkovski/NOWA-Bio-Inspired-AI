@@ -10,16 +10,22 @@ from __future__ import annotations
 
 import json
 import sys
-import tkinter as tk
 from datetime import datetime, timedelta
 from pathlib import Path
-from tkinter import messagebox, ttk
 from typing import Any, Dict, List, Optional
+
+try:
+    import tkinter as tk
+    from tkinter import messagebox, ttk
+except ImportError:  # pragma: no cover - minimal Python builds omit Tk
+    tk = None  # type: ignore[assignment]
+    messagebox = None  # type: ignore[assignment]
+    ttk = None  # type: ignore[assignment]
 
 if __package__ in (None, ""):  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from nowa_body.gui_i18n import FLAG_EN, FLAG_RU, I18n
+from nowa_body.gui_i18n import I18n
 from nowa_body.lab_session import (
     FORCE_ACTIONS,
     FORCE_AUTO,
@@ -32,14 +38,30 @@ from nowa_body.lab_session import (
 DEMO_ROOT = Path(__file__).resolve().parents[2]
 
 
-class BodyLabApp(tk.Tk):
+def _idle_button_bg(widget) -> str:
+    """Windows system button color when this Tk knows it."""
+
+    if tk is None:
+        return "#f0f0f0"
+    try:
+        widget.tk.call("winfo", "rgb", widget, "SystemButtonFace")
+    except tk.TclError:
+        return "#f0f0f0"
+    return "SystemButtonFace"
+
+
+class BodyLabApp(tk.Tk if tk is not None else object):
     """Interactive MockMCP lab: tick, approve, inspect memory and sleep."""
 
-    def __init__(self) -> None:
+    def __init__(self, lang: str | None = None) -> None:
         super().__init__()
         self.geometry("1280x820")
         self.minsize(1040, 700)
-        self.i18n = I18n(pref_path=DEMO_ROOT / "results" / ".body_lab_lang.json")
+        self.i18n = I18n(
+            lang=lang or "en",
+            pref_path=DEMO_ROOT / "results" / ".body_lab_lang.json",
+            force=lang in ("en", "ru"),
+        )
         self.session = BodyLabSession()
         self._auto_job: Optional[str] = None
         self._build()
@@ -63,12 +85,12 @@ class BodyLabApp(tk.Tk):
         lang_bar = ttk.Frame(header)
         lang_bar.pack(side="right")
         self.btn_lang_en = tk.Button(
-            lang_bar, text=f"{FLAG_EN} EN", command=lambda: self._set_language("en"),
-            relief="raised", padx=8, pady=2, font=("Segoe UI Emoji", 10), cursor="hand2",
+            lang_bar, text="EN", command=lambda: self._set_language("en"),
+            relief="raised", padx=8, pady=2, font=("Segoe UI", 10), cursor="hand2",
         )
         self.btn_lang_ru = tk.Button(
-            lang_bar, text=f"{FLAG_RU} RU", command=lambda: self._set_language("ru"),
-            relief="raised", padx=8, pady=2, font=("Segoe UI Emoji", 10), cursor="hand2",
+            lang_bar, text="RU", command=lambda: self._set_language("ru"),
+            relief="raised", padx=8, pady=2, font=("Segoe UI", 10), cursor="hand2",
         )
         self.btn_lang_en.pack(side="left", padx=(0, 4))
         self.btn_lang_ru.pack(side="left")
@@ -283,9 +305,20 @@ class BodyLabApp(tk.Tk):
         self._apply_language()
         self._refresh_view()
 
+    def _highlight_lang_buttons(self) -> None:
+        active = {"relief": "sunken", "bg": "#dbeafe"}
+        idle = {"relief": "raised", "bg": _idle_button_bg(self.btn_lang_en)}
+        if self.i18n.lang == "en":
+            self.btn_lang_en.configure(**active)
+            self.btn_lang_ru.configure(**idle)
+        else:
+            self.btn_lang_ru.configure(**active)
+            self.btn_lang_en.configure(**idle)
+
     def _apply_language(self) -> None:
         self.title(self.t("app.title"))
         self.lbl_title.configure(text=self.t("app.title"))
+        self._highlight_lang_buttons()
         tabs = (
             (0, "tab.pipeline"),
             (1, "tab.pending"),
@@ -549,6 +582,11 @@ class BodyLabApp(tk.Tk):
                 break
 
     # ------------------------------------------------------------------ view
+    def _risk_label(self, code: str) -> str:
+        key = f"risk.{code}"
+        text = self.t(key)
+        return str(code or "") if text == key else text
+
     def _refresh_view(self) -> None:
         snap = self.session.snapshot()
         self.var_clock.set(self.session.now.strftime("%H:%M:%S"))
@@ -578,7 +616,7 @@ class BodyLabApp(tk.Tk):
         self._fill_tree(
             self.tree_pending,
             [
-                (row["action_id"], row["action_id"][:8], row["tool_id"], row["risk"], row["summary"])
+                (row["action_id"], row["action_id"][:8], row["tool_id"], self._risk_label(row["risk"]), row["summary"])
                 for row in snap.get("pending") or []
             ],
         )
@@ -623,8 +661,25 @@ class BodyLabApp(tk.Tk):
         self.destroy()
 
 
-def main() -> int:
-    app = BodyLabApp()
+def main(argv: Optional[list[str]] = None) -> int:
+    import argparse
+
+    raw = list(sys.argv[1:] if argv is None else argv)
+    preview = None
+    if "--lang" in raw:
+        index = raw.index("--lang")
+        if index + 1 < len(raw):
+            preview = raw[index + 1]
+    help_i18n = I18n(lang=preview or "en", force=preview in ("en", "ru"))
+    parser = argparse.ArgumentParser(description=help_i18n.t("cli.description"))
+    parser.add_argument(
+        "--lang",
+        choices=("en", "ru"),
+        default=None,
+        help=help_i18n.t("cli.lang_help"),
+    )
+    args = parser.parse_args(argv)
+    app = BodyLabApp(lang=args.lang)
     app.mainloop()
     return 0
 

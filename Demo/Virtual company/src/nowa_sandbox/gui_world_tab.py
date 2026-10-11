@@ -2,10 +2,18 @@
 
 from __future__ import annotations
 
-import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Any, Dict, List, Optional
+
+try:
+    import tkinter as tk
+    from tkinter import filedialog, messagebox, simpledialog, ttk
+except ImportError:  # pragma: no cover - minimal Python builds omit Tk
+    tk = None  # type: ignore[assignment]
+    filedialog = None  # type: ignore[assignment]
+    messagebox = None  # type: ignore[assignment]
+    simpledialog = None  # type: ignore[assignment]
+    ttk = None  # type: ignore[assignment]
 
 from nowa_sandbox.procurement_fitness import GRADUATION_THRESHOLDS
 from nowa_sandbox.procurement_world import ProcurementWorldConfig

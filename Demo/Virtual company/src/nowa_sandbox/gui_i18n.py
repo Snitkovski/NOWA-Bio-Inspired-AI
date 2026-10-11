@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
 
@@ -26,6 +27,8 @@ CRITERION_KEYS = (
 STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "app.title": "NOWA Procurement Sandbox Lab  v{version}",
+        "cli.description": "NOWA procurement sandbox lab",
+        "cli.lang_help": "UI language. Overrides NOWA_LANG and the saved preference.",
         "tab.run": "Run",
         "tab.world": "World",
         "tab.sweep": "Multi-seed",
@@ -261,6 +264,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
     },
     "ru": {
         "app.title": "Лаборатория NOWA Procurement Sandbox  v{version}",
+        "cli.description": "Лаборатория песочницы закупок NOWA",
+        "cli.lang_help": "Язык интерфейса. Важнее NOWA_LANG и сохранённого выбора.",
         "tab.run": "Запуск",
         "tab.world": "Мир",
         "tab.sweep": "Перебор",
@@ -531,18 +536,30 @@ def criterion_labels(i18n: "I18n") -> Dict[str, str]:
 class I18n:
     """Simple key → string translator with optional preference file."""
 
-    def __init__(self, lang: str = DEFAULT_LANG, pref_path: Optional[Path] = None) -> None:
+    def __init__(
+        self,
+        lang: str = DEFAULT_LANG,
+        pref_path: Optional[Path] = None,
+        *,
+        force: bool = False,
+    ) -> None:
+        """Resolve language: ``force`` (``--lang``) > ``NOWA_LANG`` > saved pref > argument."""
+
         self.pref_path = pref_path
         if lang not in SUPPORTED:
             lang = DEFAULT_LANG
-        if pref_path and pref_path.exists():
-            try:
-                data = json.loads(pref_path.read_text(encoding="utf-8"))
-                saved = data.get("lang")
-                if saved in SUPPORTED:
-                    lang = saved
-            except (OSError, json.JSONDecodeError, TypeError):
-                pass
+        if not force:
+            env = os.environ.get("NOWA_LANG", "").strip().lower()
+            if env in SUPPORTED:
+                lang = env
+            elif pref_path and pref_path.exists():
+                try:
+                    data = json.loads(pref_path.read_text(encoding="utf-8"))
+                    saved = data.get("lang")
+                    if saved in SUPPORTED:
+                        lang = saved
+                except (OSError, json.JSONDecodeError, TypeError):
+                    pass
         self._lang = lang
 
     @property

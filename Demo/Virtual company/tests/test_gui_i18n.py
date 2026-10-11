@@ -66,6 +66,15 @@ class TestI18nCatalog:
         assert again.lang == "ru"
         assert again.t("tab.run") == "Запуск"
 
+    def test_env_and_force_precedence(self, monkeypatch, tmp_path: Path):
+        pref = tmp_path / "lang.json"
+        pref.write_text('{"lang": "ru"}', encoding="utf-8")
+        monkeypatch.delenv("NOWA_LANG", raising=False)
+        assert I18n(lang="en", pref_path=pref).lang == "ru"
+        monkeypatch.setenv("NOWA_LANG", "en")
+        assert I18n(lang="ru", pref_path=pref).lang == "en"
+        assert I18n(lang="ru", pref_path=pref, force=True).lang == "ru"
+
     def test_format_kwargs(self):
         i18n = I18n(lang="en")
         assert "42" in i18n.t("status.added_files", n=42)

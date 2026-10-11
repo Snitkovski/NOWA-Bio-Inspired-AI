@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -14,6 +15,8 @@ FLAG_RU = "\U0001F1F7\U0001F1FA"
 STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "app.title": "NOWA Body Layer Lab  —  Phase 1",
+        "cli.description": "NOWA body layer lab",
+        "cli.lang_help": "UI language. Overrides NOWA_LANG and the saved preference.",
         "tab.pipeline": "Pipeline",
         "tab.pending": "Approvals",
         "tab.memory": "Memory",
@@ -92,6 +95,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "col.tool": "tool",
         "col.summary": "summary",
         "col.risk": "risk",
+        "risk.read_only": "Read only",
+        "risk.low_write": "Low write",
+        "risk.medium_write": "Medium write",
+        "risk.high_write": "High write",
+        "risk.irreversible": "Irreversible",
         "col.params": "params",
         "col.path": "path",
         "col.consequence": "consequence",
@@ -105,6 +113,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
     },
     "ru": {
         "app.title": "Лаборатория слоя «тело» NOWA  —  Фаза 1",
+        "cli.description": "Лаборатория слоя «тело» NOWA",
+        "cli.lang_help": "Язык интерфейса. Важнее NOWA_LANG и сохранённого выбора.",
         "tab.pipeline": "Конвейер",
         "tab.pending": "Согласования",
         "tab.memory": "Память",
@@ -183,6 +193,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "col.tool": "тул",
         "col.summary": "суть",
         "col.risk": "риск",
+        "risk.read_only": "Только чтение",
+        "risk.low_write": "Небольшая запись",
+        "risk.medium_write": "Средняя запись",
+        "risk.high_write": "Опасная запись",
+        "risk.irreversible": "Необратимо",
         "col.params": "параметры",
         "col.path": "путь",
         "col.consequence": "следствие",
@@ -210,18 +225,30 @@ def assert_string_parity() -> None:
 class I18n:
     """Simple key → string translator with optional preference file."""
 
-    def __init__(self, lang: str = DEFAULT_LANG, pref_path: Optional[Path] = None) -> None:
+    def __init__(
+        self,
+        lang: str = DEFAULT_LANG,
+        pref_path: Optional[Path] = None,
+        *,
+        force: bool = False,
+    ) -> None:
+        """Resolve language: ``force`` (``--lang``) > ``NOWA_LANG`` > saved pref > argument."""
+
         self.pref_path = pref_path
         if lang not in SUPPORTED:
             lang = DEFAULT_LANG
-        if pref_path and pref_path.exists():
-            try:
-                data = json.loads(pref_path.read_text(encoding="utf-8"))
-                saved = data.get("lang")
-                if saved in SUPPORTED:
-                    lang = saved
-            except (OSError, json.JSONDecodeError, TypeError):
-                pass
+        if not force:
+            env = os.environ.get("NOWA_LANG", "").strip().lower()
+            if env in SUPPORTED:
+                lang = env
+            elif pref_path and pref_path.exists():
+                try:
+                    data = json.loads(pref_path.read_text(encoding="utf-8"))
+                    saved = data.get("lang")
+                    if saved in SUPPORTED:
+                        lang = saved
+                except (OSError, json.JSONDecodeError, TypeError):
+                    pass
         self._lang = lang
 
     @property

@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .i18n import get_language, label, tr
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Data structures
@@ -636,7 +638,10 @@ def _generate_summary(
     dom_score = dom[1].score if dom else 0.5
     weak_score = weak[1].score if weak else 0.5
 
-    name = display_name.split()[0] if display_name else "Агент"
+    name = display_name.split()[0] if display_name else tr("Агент")
+
+    def _named(template: str) -> str:
+        return tr(" ".join(template.split())).format(name=name)
     lifespan = trait_scores.get("lifespan")
     lifespan_score = lifespan.score if lifespan else 0.5
     social = trait_scores.get("social")
@@ -652,134 +657,136 @@ def _generate_summary(
     if dom_score >= 0.70 and weak_score <= 0.35:
         # Выраженная сильная и слабая сторона
         if dom_cat == "temperament" and weak_cat == "social":
-            return (
-                f"{name} — эмоционально устойчивая особь с выраженной "
-                f"независимостью от социального окружения. "
-                f"Быстро гасит стресс и сохраняет ровное состояние "
-                f"даже при тревоге в колонии. "
-                f"Социальные связи формирует медленно, "
-                f"но при наличии — держится за них крепко."
+            return _named(
+                "{name} — эмоционально устойчивая особь с выраженной "
+                "независимостью от социального окружения. "
+                "Быстро гасит стресс и сохраняет ровное состояние "
+                "даже при тревоге в колонии. "
+                "Социальные связи формирует медленно, "
+                "но при наличии — держится за них крепко."
             )
         if dom_cat == "social" and weak_cat == "endurance":
-            return (
-                f"{name} — общительная особь с высокой потребностью "
-                f"в контактах, но быстро утомляющаяся. "
-                f"Активно строит связи и участвует в жизни колонии, "
-                f"однако нуждается в частом отдыхе. "
-                f"Риск хронической усталости при высокой плотности популяции."
+            return _named(
+                "{name} — общительная особь с высокой потребностью "
+                "в контактах, но быстро утомляющаяся. "
+                "Активно строит связи и участвует в жизни колонии, "
+                "однако нуждается в частом отдыхе. "
+                "Риск хронической усталости при высокой плотности популяции."
             )
         if dom_cat == "lifespan" and weak_cat == "temperament":
-            return (
-                f"{name} несёт гены потенциального долгожителя, "
-                f"однако чувствителен к хроническому стрессу. "
-                f"Генетический бонус продолжительности жизни реализуется "
-                f"только при низком кортизоле — "
-                f"ключевой кандидат для отслеживания в будущих поколениях."
+            return _named(
+                "{name} несёт гены потенциального долгожителя, "
+                "однако чувствителен к хроническому стрессу. "
+                "Генетический бонус продолжительности жизни реализуется "
+                "только при низком кортизоле — "
+                "ключевой кандидат для отслеживания в будущих поколениях."
             )
         if dom_cat == "cognition" and weak_cat == "endurance":
-            return (
-                f"{name} — пытливый и быстро обучающийся агент "
-                f"с ограниченной физической выносливостью. "
-                f"Хорошо ориентируется в сложных ситуациях "
-                f"и находит ресурсы, но требует частого сна. "
-                f"Эффективен в стабильной среде с доступными ресурсами."
+            return _named(
+                "{name} — пытливый и быстро обучающийся агент "
+                "с ограниченной физической выносливостью. "
+                "Хорошо ориентируется в сложных ситуациях "
+                "и находит ресурсы, но требует частого сна. "
+                "Эффективен в стабильной среде с доступными ресурсами."
             )
         if dom_cat == "endurance" and weak_cat == "social":
-            return (
-                f"{name} — выносливая и физически крепкая особь-одиночка. "
-                f"Долго остаётся активной без сна, "
-                f"медленно накапливает усталость. "
-                f"Социальные связи не являются приоритетом — "
-                f"самодостаточна в условиях ресурсного дефицита."
+            return _named(
+                "{name} — выносливая и физически крепкая особь-одиночка. "
+                "Долго остаётся активной без сна, "
+                "медленно накапливает усталость. "
+                "Социальные связи не являются приоритетом — "
+                "самодостаточна в условиях ресурсного дефицита."
             )
 
     # По доминирующей черте без явной слабой стороны
     if dom_score >= 0.70:
         if dom_cat == "temperament":
-            return (
-                f"{name} — эмоционально устойчивая особь "
-                f"с хорошей аффективной регуляцией. "
-                f"Быстро восстанавливается после стресса, "
-                f"редко впадает в хронические тревожные состояния. "
-                f"Надёжный член колонии в кризисных ситуациях."
+            return _named(
+                "{name} — эмоционально устойчивая особь "
+                "с хорошей аффективной регуляцией. "
+                "Быстро восстанавливается после стресса, "
+                "редко впадает в хронические тревожные состояния. "
+                "Надёжный член колонии в кризисных ситуациях."
             )
         if dom_cat == "social":
-            return (
-                f"{name} — высоко-социальная особь "
-                f"с выраженным стадным инстинктом. "
-                f"Активно участвует в грумингоe, формирует bonded-пары "
-                f"и быстро интегрируется в новую социальную среду. "
-                f"Ценный вклад в сплочённость колонии."
+            return _named(
+                "{name} — высоко-социальная особь "
+                "с выраженным стадным инстинктом. "
+                "Активно участвует в грумингоe, формирует bonded-пары "
+                "и быстро интегрируется в новую социальную среду. "
+                "Ценный вклад в сплочённость колонии."
             )
         if dom_cat == "endurance":
-            return (
-                f"{name} — физически выносливая особь "
-                f"с эффективным циклом сон-бодрствование. "
-                f"Медленно устаёт и быстро восстанавливается, "
-                f"что даёт преимущество при конкуренции "
-                f"за ресурсы и партнёров."
+            return _named(
+                "{name} — физически выносливая особь "
+                "с эффективным циклом сон-бодрствование. "
+                "Медленно устаёт и быстро восстанавливается, "
+                "что даёт преимущество при конкуренции "
+                "за ресурсы и партнёров."
             )
         if dom_cat == "cognition":
-            return (
-                f"{name} — любопытная и быстро обучающаяся особь "
-                f"с широким полем восприятия. "
-                f"Хорошо адаптируется к изменениям среды "
-                f"и находит нестандартные решения. "
-                f"Ценный исследователь в колонии."
+            return _named(
+                "{name} — любопытная и быстро обучающаяся особь "
+                "с широким полем восприятия. "
+                "Хорошо адаптируется к изменениям среды "
+                "и находит нестандартные решения. "
+                "Ценный исследователь в колонии."
             )
         if dom_cat == "lifespan":
-            return (
-                f"{name} несёт гены потенциального долгожителя. "
-                f"При благоприятном кортизоле проживёт "
-                f"значительно дольше среднего по колонии. "
-                f"Ценный носитель опыта и генетического разнообразия "
-                f"для будущих поколений."
+            return _named(
+                "{name} несёт гены потенциального долгожителя. "
+                "При благоприятном кортизоле проживёт "
+                "значительно дольше среднего по колонии. "
+                "Ценный носитель опыта и генетического разнообразия "
+                "для будущих поколений."
             )
 
     # Сбалансированный профиль
     if max(ts.score for ts in trait_scores.values()) < 0.6 and \
        min(ts.score for ts in trait_scores.values()) > 0.4:
-        return (
-            f"{name} — особь со сбалансированным генетическим профилем "
-            f"без выраженных крайностей. "
-            f"Хорошо адаптируется к изменяющимся условиям "
-            f"и не имеет критических уязвимостей. "
-            f"Устойчивый, предсказуемый член колонии."
+        return _named(
+            "{name} — особь со сбалансированным генетическим профилем "
+            "без выраженных крайностей. "
+            "Хорошо адаптируется к изменяющимся условиям "
+            "и не имеет критических уязвимостей. "
+            "Устойчивый, предсказуемый член колонии."
         )
 
     # Специфические комбинации
     if lifespan_score >= 0.65 and temp_score >= 0.60:
-        return (
-            f"{name} — перспективный долгожитель "
-            f"с хорошей эмоциональной устойчивостью. "
-            f"Сочетание длинного жизненного потенциала "
-            f"и низкого хронического стресса — "
-            f"оптимальная комбинация для эволюционного успеха линии."
+        return _named(
+            "{name} — перспективный долгожитель "
+            "с хорошей эмоциональной устойчивостью. "
+            "Сочетание длинного жизненного потенциала "
+            "и низкого хронического стресса — "
+            "оптимальная комбинация для эволюционного успеха линии."
         )
 
     if social_score >= 0.65 and cognition_score >= 0.60:
-        return (
-            f"{name} — социально развитая и любопытная особь. "
-            f"Активно строит связи и исследует окружение, "
-            f"быстро накапливает опыт взаимодействий. "
-            f"Высокий потенциал для передачи знаний в колонии."
+        return _named(
+            "{name} — социально развитая и любопытная особь. "
+            "Активно строит связи и исследует окружение, "
+            "быстро накапливает опыт взаимодействий. "
+            "Высокий потенциал для передачи знаний в колонии."
         )
 
     if endurance_score >= 0.65 and lifespan_score >= 0.60:
-        return (
-            f"{name} — физически крепкая особь "
-            f"с генами долголетия. "
-            f"Медленно устаёт и эффективно восстанавливается, "
-            f"что позволяет реализовать генетический потенциал "
-            f"длинной жизни в полной мере."
+        return _named(
+            "{name} — физически крепкая особь "
+            "с генами долголетия. "
+            "Медленно устаёт и эффективно восстанавливается, "
+            "что позволяет реализовать генетический потенциал "
+            "длинной жизни в полной мере."
         )
 
-    # Дефолт
-    return (
-        f"{name} — особь с умеренно выраженными чертами характера. "
-        f"{'Наиболее развита сторона: ' + TRAIT_LABELS_RU.get(dom_cat, dom_cat) + '.' if dom_score >= 0.55 else ''} "
-        f"{'Требует внимания: ' + TRAIT_LABELS_RU.get(weak_cat, weak_cat) + '.' if weak_score <= 0.40 else ''}"
-    ).strip()
+    parts = [_named("{name} — особь с умеренно выраженными чертами характера.")]
+    if dom_score >= 0.55:
+        trait = label("trait", dom_cat, dom_cat)
+        parts.append(tr("Наиболее развита сторона: {trait}.").format(trait=trait))
+    if weak_score <= 0.40:
+        trait = label("trait", weak_cat, weak_cat)
+        parts.append(tr("Требует внимания: {trait}.").format(trait=trait))
+    return " ".join(part for part in parts if part).strip()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -805,14 +812,14 @@ def _gene_to_trait_score(normalized: float, polarity: str) -> float:
 
 def _trait_label(score: float) -> str:
     if score >= 0.80:
-        return "очень высокое"
+        return tr("очень высокое")
     if score >= 0.65:
-        return "выше среднего"
+        return tr("выше среднего")
     if score >= 0.45:
-        return "умеренное"
+        return tr("умеренное")
     if score >= 0.30:
-        return "ниже среднего"
-    return "слабо выражено"
+        return tr("ниже среднего")
+    return tr("слабо выражено")
 
 
 def _compute_trait_scores(genes: dict[str, float]) -> dict[str, TraitScore]:
@@ -832,7 +839,7 @@ def _compute_trait_scores(genes: dict[str, float]) -> dict[str, TraitScore]:
             result[cat] = TraitScore(
                 category=cat,
                 score=0.5,
-                label="нет данных",
+                label=tr("нет данных"),
                 contributing_genes=[],
             )
             continue
@@ -873,11 +880,11 @@ def _classify_strengths_weaknesses(
         if ts is None:
             continue
         if ts.score >= 0.68:
-            strengths.append(STRENGTH_LABELS.get(cat, cat))
+            strengths.append(tr(STRENGTH_LABELS.get(cat, cat)))
         elif ts.score <= 0.40:
-            weaknesses.append(WEAKNESS_LABELS.get(cat, cat))
+            weaknesses.append(tr(WEAKNESS_LABELS.get(cat, cat)))
         elif 0.45 <= ts.score <= 0.58:
-            neutral.append(TRAIT_LABELS_RU.get(cat, cat).lower())
+            neutral.append(label("trait", cat, cat).lower())
 
     return strengths[:4], weaknesses[:4], neutral[:3]
 
@@ -938,8 +945,8 @@ def _make_mutation(key: str, parent_mid: float, current: float, delta: float) ->
     gene = GENE_REGISTRY.get(key)
     if gene is None:
         valence = "neutral"
-        short = f"{'↑' if direction == 'up' else '↓'} сдвиг гена {key}"
-        detail = f"Изменение на {delta:+.3f} относительно родительского среднего."
+        short = tr("↑ сдвиг гена {key}" if direction == "up" else "↓ сдвиг гена {key}").format(key=key)
+        detail = tr("Изменение на {delta} относительно родительского среднего.").format(delta=f"{delta:+.3f}")
     else:
         # Determine valence
         if gene.polarity == "high_good":
@@ -956,13 +963,14 @@ def _make_mutation(key: str, parent_mid: float, current: float, delta: float) ->
         consequences = MUTATION_CONSEQUENCES.get(key, {})
         if direction in consequences:
             short, detail = consequences[direction]
+            short, detail = tr(short), tr(detail)
         else:
             # Fallback to low_label/high_label
             if direction == "up":
-                short = gene.high_label
+                short = tr(gene.high_label)
             else:
-                short = gene.low_label
-            detail = f"Сдвиг {delta:+.3f} относительно родительского среднего."
+                short = tr(gene.low_label)
+            detail = tr("Сдвиг {delta} относительно родительского среднего.").format(delta=f"{delta:+.3f}")
 
     return MutationEffect(
         gene_key=key,
@@ -1107,22 +1115,21 @@ def analyze_trend(points: list[LineageTrendPoint], gene_key: str) -> str:
     threshold = span * 0.05   # 5% диапазона = значимое изменение
 
     if total_delta > threshold:
-        # Проверяем монотонность
         if all(vals[i] <= vals[i + 1] for i in range(len(vals) - 1)):
-            return "↗ стабильно растёт"
-        return "↗ растёт"
+            return tr("↗ стабильно растёт")
+        return tr("↗ растёт")
     if total_delta < -threshold:
         if all(vals[i] >= vals[i + 1] for i in range(len(vals) - 1)):
-            return "↘ стабильно снижается"
-        return "↘ снижается"
-    return "↔ стабильно"
+            return tr("↘ стабильно снижается")
+        return tr("↘ снижается")
+    return tr("↔ стабильно")
 
 
 def describe_lineage_trend(points: list[LineageTrendPoint], gene_key: str) -> str:
-    """Return a short human-readable trend explanation in Russian."""
+    """Return a short human-readable trend explanation."""
     vals = [p.gene_values[gene_key] for p in points if gene_key in p.gene_values]
     if len(vals) < 2:
-        return "недостаточно данных"
+        return tr("недостаточно данных")
 
     gene = GENE_REGISTRY.get(gene_key)
     span = (gene.high - gene.low) if gene else 1.0
@@ -1136,16 +1143,20 @@ def describe_lineage_trend(points: list[LineageTrendPoint], gene_key: str) -> st
 
     if delta > threshold:
         direction = "up"
-        direction_text = "растёт"
+        direction_text = tr("растёт")
     elif delta < -threshold:
         direction = "down"
-        direction_text = "снижается"
+        direction_text = tr("снижается")
     else:
         direction = "flat"
-        direction_text = "стабильно"
+        direction_text = tr("стабильно")
 
-    meaning = LINEAGE_TREND_MEANINGS_RU.get(gene_key, {}).get(direction, "линия без выраженного сдвига")
-    return f"{direction_text}: {meaning}"
+    meaning = label(
+        "trend_meaning",
+        f"{gene_key}.{direction}",
+        tr("линия без выраженного сдвига"),
+    )
+    return tr("{direction}: {meaning}").format(direction=direction_text, meaning=meaning)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1164,8 +1175,10 @@ def build_portrait(
         stress_gene = GENE_REGISTRY.get("af_decay_stress")
         if stress_gene is not None and "af_decay_stress" in genes:
             stress_norm = _normalize_gene(float(genes["af_decay_stress"]), stress_gene)
-            if stress_norm >= 0.80 and not any("стресс" in item.lower() for item in weaknesses):
-                weaknesses.insert(0, stress_gene.high_label)
+            if stress_norm >= 0.80 and not any(
+                token in item.lower() for item in weaknesses for token in ("стресс", "stress")
+            ):
+                weaknesses.insert(0, tr(stress_gene.high_label))
                 weaknesses = weaknesses[:4]
         summary = _generate_summary(trait_scores, genes, display_name)
         mutations = _analyze_mutations(genes, genome_inheritance_meta)
@@ -1180,12 +1193,12 @@ def build_portrait(
         )
     except Exception:
         empty_scores = {
-            cat: TraitScore(cat, 0.5, "нет данных", [])
+            cat: TraitScore(cat, 0.5, tr("нет данных"), [])
             for cat in TRAIT_CATEGORIES
         }
         return GenomePortrait(
             trait_scores=empty_scores,
-            summary="Генетические данные недоступны.",
+            summary=tr("Генетические данные недоступны."),
             strengths=[],
             weaknesses=[],
             neutral_traits=[],
