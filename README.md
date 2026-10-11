@@ -4,7 +4,7 @@
 
 [![License: PolyForm Strict 1.0.0](https://img.shields.io/badge/license-PolyForm%20Strict%201.0.0-1f6feb)](https://polyformproject.org/licenses/strict/1.0.0)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![tests](https://img.shields.io/github/actions/workflow/status/burlakovmb/NOWA-Bio-Ispired-AI/tests.yml?branch=main&label=tests)](https://github.com/burlakovmb/NOWA-Bio-Ispired-AI/actions/workflows/tests.yml)
+[![tests](https://img.shields.io/github/actions/workflow/status/burlakovmb/NOWA-Bio-Inspired-AI/tests.yml?branch=main&label=tests)](https://github.com/burlakovmb/NOWA-Bio-Inspired-AI/actions/workflows/tests.yml)
 
 Source-available, not open source. Free for research and other non-commercial use under the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0). Redistribution, modification, and commercial use need a separate license from the author ([@burlakovmb](https://github.com/burlakovmb)).
 
