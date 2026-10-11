@@ -19,10 +19,17 @@ from __future__ import annotations
 import os
 import queue
 import sys
-import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
 from typing import Any, Dict, List, Optional, Sequence
+
+try:
+    import tkinter as tk
+    from tkinter import filedialog, messagebox, ttk
+except ImportError:  # pragma: no cover - minimal Python builds omit Tk
+    tk = None  # type: ignore[assignment]
+    filedialog = None  # type: ignore[assignment]
+    messagebox = None  # type: ignore[assignment]
+    ttk = None  # type: ignore[assignment]
 
 if __package__ in (None, ""):  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -73,7 +80,7 @@ from nowa_sandbox.world_editor import (
 )
 
 
-class SandboxLabApp(tk.Tk):
+class SandboxLabApp(tk.Tk if tk is not None else object):
     """Main laboratory window."""
 
     def __init__(self) -> None:

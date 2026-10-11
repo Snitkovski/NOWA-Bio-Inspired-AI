@@ -10,11 +10,18 @@ from __future__ import annotations
 
 import json
 import sys
-import tkinter as tk
 from datetime import datetime
 from pathlib import Path
-from tkinter import messagebox, simpledialog, ttk
 from typing import Any, Dict, List, Optional
+
+try:
+    import tkinter as tk
+    from tkinter import messagebox, simpledialog, ttk
+except ImportError:  # pragma: no cover - minimal Python builds omit Tk
+    tk = None  # type: ignore[assignment]
+    messagebox = None  # type: ignore[assignment]
+    simpledialog = None  # type: ignore[assignment]
+    ttk = None  # type: ignore[assignment]
 
 if __package__ in (None, ""):  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -69,7 +76,7 @@ SCENARIO_I18N = {
 }
 
 
-class RoleConfiguratorApp(tk.Tk):
+class RoleConfiguratorApp(tk.Tk if tk is not None else object):
     """Role list + seven-tab editor. Business rules live in the controller."""
 
     def __init__(

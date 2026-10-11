@@ -10,11 +10,17 @@ from __future__ import annotations
 
 import json
 import sys
-import tkinter as tk
 from datetime import datetime, timedelta
 from pathlib import Path
-from tkinter import messagebox, ttk
 from typing import Any, Dict, List, Optional
+
+try:
+    import tkinter as tk
+    from tkinter import messagebox, ttk
+except ImportError:  # pragma: no cover - minimal Python builds omit Tk
+    tk = None  # type: ignore[assignment]
+    messagebox = None  # type: ignore[assignment]
+    ttk = None  # type: ignore[assignment]
 
 if __package__ in (None, ""):  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -32,7 +38,7 @@ from nowa_body.lab_session import (
 DEMO_ROOT = Path(__file__).resolve().parents[2]
 
 
-class BodyLabApp(tk.Tk):
+class BodyLabApp(tk.Tk if tk is not None else object):
     """Interactive MockMCP lab: tick, approve, inspect memory and sleep."""
 
     def __init__(self) -> None:

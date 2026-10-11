@@ -1,0 +1,4 @@
+# Dependencies for the full test suite. Includes the demo libraries that
+# some demo tests import (numpy, pygame, PyYAML).
+-r requirements-demo.txt
+pytest>=7.4

@@ -1,5 +1,68 @@
 # NOWA-Cognitive
 
+**An AI agent that sleeps, feels, and inherits a genome — and learns without backprop.**
+
+[![License: PolyForm Strict 1.0.0](https://img.shields.io/badge/license-PolyForm%20Strict%201.0.0-1f6feb)](https://polyformproject.org/licenses/strict/1.0.0)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![tests](https://img.shields.io/github/actions/workflow/status/burlakovmb/NOWA-Bio-Ispired-AI/tests.yml?branch=main&label=tests)](https://github.com/burlakovmb/NOWA-Bio-Ispired-AI/actions/workflows/tests.yml)
+
+Source-available, not open source. Free for research and other non-commercial use under the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0). Redistribution, modification, and commercial use need a separate license from the author ([@burlakovmb](https://github.com/burlakovmb)).
+
+<p align="center">
+  <img src="docs/media/colony.gif" alt="Six NOWA agents in the chinchilla colony, each with its own memory, moving through a shared cage" width="760">
+</p>
+
+### Why it's interesting
+
+- **It sleeps.** Waking only records episodes and picks an action. Slow memory is rewritten later, in a separate sleep phase.
+- **No backprop, no global loss.** Learning is local reward-prediction error. Dopamine, serotonin, norepinephrine, acetylcholine, and cortisol scale plasticity.
+- **It has a body of feelings and a genome.** An 8-dimensional affect vector biases action. Offspring inherit module coefficients, and a bounded epigenome of traces that already consolidated.
+- **Same mind, different bodies.** A chinchilla colony, a tamagotchi, a virtual company, and a check against published word-emotion norms. Tools are organs. Risky writes wait for a person. No language model in the loop.
+
+### Quickstart in 60 seconds
+
+The cognitive core is the Python standard library. From a clean clone, no packages to install. On Windows, use `python` or `py -3` wherever this page says `python3`.
+
+```bash
+python3 tools/sixty_seconds.py
+```
+
+That wakes one agent, shows the affect vector and the five neuromodulators, sleeps once, then breeds a child genome.
+
+A colony, still with no extra packages:
+
+```bash
+PYTHONPATH="Demo/Colony chinchillas/src" python3 -m colony_gui --headless --agents 4 --duration 2
+```
+
+The full test suite (GUI tests skip when Tk or a display is missing):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate          # Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+Visual demos. `requirements-dev.txt` already includes them; otherwise `pip install -r requirements-demo.txt`. With the virtualenv still active:
+
+```bash
+# Colony window. It runs until you close it.
+# Headless Linux can still draw a frame with SDL_VIDEODRIVER=dummy; omit that on a desktop.
+PYTHONPATH="Demo/Colony chinchillas/src" python -m colony_gui --agents 6
+
+# One chinchilla, pygame. Runs until you close the window.
+python "Demo/Tamagochi Chinchilla/src/main.py"
+```
+
+The clips above were captured headlessly (`SDL_VIDEODRIVER=dummy`) from those demos. Regenerate them with `python tools/render_promo_media.py` (also needs `pillow`).
+
+| Colony | Tamagotchi | Family tree |
+|---|---|---|
+| ![Colony still](docs/media/colony.png) | ![Tamagotchi](docs/media/tamagotchi.gif) | ![Lineage](docs/media/lineage.png) |
+
+The family tree is the colony lineage overlay: founders, offspring, living agents in color, dead agents in grey.
+
 [English](#en) · [Русский](#ru)
 
 <a id="en"></a>
@@ -67,16 +130,18 @@ During waking the agent records episodes, activates memory, and selects an actio
 ### Reproduction
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 ```
 
 Activate the environment in Windows PowerShell with `.venv\Scripts\Activate.ps1`.  
-On macOS and Linux: `source .venv/bin/activate`.
+On macOS and Linux: `source .venv/bin/activate`.  
+If the `python3` command is named `python` on your machine, use that.
 
-Core verification:
+Install test dependencies, then run the full suite. Tests that open a Tk window are skipped when Tk or a display is unavailable.
 
 ```bash
-python -m pytest -q tests
+pip install -r requirements-dev.txt
+python -m pytest -q
 ```
 
 Core observation interface:
@@ -93,16 +158,24 @@ The English links above stay in English. The Russian text of the same documents 
 
 ### License
 
-Licensed under the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0); the full text is in [LICENSE](LICENSE).
-Noncommercial use is permitted under the terms of the license.
+Source-available, not open source. Licensed under the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0); the full text is in [LICENSE](LICENSE).
+Research and other noncommercial use are permitted under the terms of the license.
+The public license does not allow redistribution or derivative works.
 Modification, redistribution and any commercial use require a separate commercial license from the author.
 Commercial licensing: GitHub [@burlakovmb](https://github.com/burlakovmb).
+If you use this in research, see [CITATION.cff](CITATION.cff).
 
 ---
 
 <a id="ru"></a>
 
 ## Русский
+
+**Агент, который спит, чувствует и наследует геном — и учится без обратного распространения ошибки.**
+
+Исходный код доступен, это не открытая лицензия. Исследовательское и иное некоммерческое использование — по [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0). Распространение, изменение и коммерческое использование требуют отдельной лицензии автора ([@burlakovmb](https://github.com/burlakovmb)).
+
+Короткий прогон без дополнительных пакетов — те же команды, что в английском блоке «Quickstart in 60 seconds» выше: `python tools/sixty_seconds.py`, затем колония в headless-режиме. Полный набор тестов: `pip install -r requirements-dev.txt` и `python -m pytest -q`. Тесты графического интерфейса пропускаются, если нет Tk или дисплея.
 
 Когнитивная архитектура автономного агента с раздельными фазами бодрствования и сна, каноническим восьмимерным аффективным пространством, локальным обучением по ошибке предсказания награды и эволюционной настройкой параметров модулей.
 
@@ -165,16 +238,18 @@ NOWA — программная модель агента, который жив
 ### Воспроизведение
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 ```
 
 Активация среды в Windows PowerShell: `.venv\Scripts\Activate.ps1`.  
-В macOS и Linux: `source .venv/bin/activate`.
+В macOS и Linux: `source .venv/bin/activate`.  
+Если команда называется `python`, а не `python3`, используйте её.
 
-Проверка ядра:
+Установите зависимости тестов и запустите полный набор. Тесты, которым нужно окно Tk, пропускаются, если Tk или дисплей недоступны.
 
 ```bash
-python -m pytest -q tests
+pip install -r requirements-dev.txt
+python -m pytest -q
 ```
 
 Интерфейс наблюдения ядра:
@@ -191,7 +266,9 @@ python src/gui.py
 
 ### Лицензия
 
-Проект распространяется по лицензии [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0); полный текст — в файле [LICENSE](LICENSE).
-Некоммерческое использование разрешено на условиях лицензии.
+Исходный код доступен; это не открытая (open source) лицензия. Проект распространяется по лицензии [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0); полный текст — в файле [LICENSE](LICENSE).
+Исследовательское и иное некоммерческое использование разрешено на условиях лицензии.
+Публичная лицензия не разрешает распространение и производные произведения.
 Изменение, распространение и любое коммерческое использование требуют отдельной коммерческой лицензии от автора.
 По вопросам коммерческого лицензирования: GitHub [@burlakovmb](https://github.com/burlakovmb).
+Для научного цитирования: [CITATION.cff](CITATION.cff).

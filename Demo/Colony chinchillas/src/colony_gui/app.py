@@ -1263,8 +1263,18 @@ def _draw_mount_display_overlays(
         painted_pairs.add(pair_key)
 
 
-def run_pygame_demo(agent_count: int = 4) -> int:
-    """Start interactive pygame demo loop."""
+def run_pygame_demo(
+    agent_count: int = 4,
+    *,
+    max_frames: int | None = None,
+    frame_dt_s: float | None = None,
+    on_frame: Any | None = None,
+) -> int:
+    """Start interactive pygame demo loop.
+
+    ``max_frames``, ``frame_dt_s`` and ``on_frame`` are for headless capture.
+    Leave them unset for the interactive window.
+    """
     if not PYGAME_AVAILABLE:
         raise RuntimeError(
             "pygame is not installed. Install it first: pip install pygame"
@@ -1289,9 +1299,9 @@ def run_pygame_demo(agent_count: int = 4) -> int:
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Colony GUI - Chinchilla Simulation")
     clock = pygame.time.Clock()
-    font = pygame.font.SysFont("Arial", 16)
-    font_small = pygame.font.SysFont("Arial", 13)
-    font_mono = pygame.font.SysFont("Courier New", 12)
+    font = pygame.font.SysFont("DejaVu Sans, Liberation Sans, Arial", 16)
+    font_small = pygame.font.SysFont("DejaVu Sans, Liberation Sans, Arial", 13)
+    font_mono = pygame.font.SysFont("DejaVu Sans Mono, Liberation Mono, Courier New", 12)
     static_scene = pygame.Surface((screen_width, screen_height)).convert()
     static_scene.fill((235, 228, 215))
     cage_x, cage_y, cage_w, cage_h = CAGE_RECT
@@ -1346,6 +1356,7 @@ def run_pygame_demo(agent_count: int = 4) -> int:
     lineage_deaths_seen = int(getattr(runner, "total_deaths", 0))
 
     running = True
+    frame_i = 0
     while running:
         current_agent_count = len(ordered_agents)
         target_fps = gui.FPS
@@ -1354,7 +1365,11 @@ def run_pygame_demo(agent_count: int = 4) -> int:
         elif current_agent_count >= HIGH_POPULATION_THRESHOLD:
             target_fps = HIGH_POP_RENDER_FPS
 
-        frame_dt = min(clock.tick(target_fps) / 1000.0, MAX_FRAME_DT_S)
+        if frame_dt_s is not None:
+            clock.tick()
+            frame_dt = max(0.0, float(frame_dt_s))
+        else:
+            frame_dt = min(clock.tick(target_fps) / 1000.0, MAX_FRAME_DT_S)
         layout_elapsed_s += frame_dt
         snapshot_elapsed_s += frame_dt
         for event in pygame.event.get():
@@ -1680,6 +1695,12 @@ def run_pygame_demo(agent_count: int = 4) -> int:
             gui.swarm_analytics.draw(screen, font, font_small, font_mono)
 
         pygame.display.flip()
+        if on_frame is not None:
+            on_frame(screen)
+        if max_frames is not None:
+            frame_i += 1
+            if frame_i >= max_frames:
+                running = False
 
     try:
         if audio_available and pygame.mixer.get_init() is not None:

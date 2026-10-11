@@ -1,1 +1,12 @@
-# No external Python dependencies are required for this project.
+# The cognitive core in src/ has no third-party dependencies.
+# A clean clone can run the 60-second demo with the standard library alone:
+#   python tools/sixty_seconds.py
+#
+# Full test suite (pytest, PyYAML, numpy, pygame):
+#   pip install -r requirements-dev.txt
+#
+# Visual demos (pygame colony and tamagotchi, plus PyYAML for the virtual company):
+#   pip install -r requirements-demo.txt
+#
+# Optional Warriner dashboard (streamlit, pandas, and heavier NLP packages):
+#   pip install -r "Demo/Warriner Validation/requirements.txt"
