@@ -19,6 +19,51 @@ def test_tc_01_empty_epigenome():
     assert epigenome.validate() == []
 
 
+def test_extract_collapses_duplicate_context_signatures():
+    """Two cortical patterns of one context become one inherited pattern."""
+
+    snapshot = EpigenomeSnapshot.extract(
+        cortex_patterns=[
+            {
+                "context_signature": "hungry|morning",
+                "action": "rest",
+                "strength": 0.4,
+                "reinforcement_count": 2,
+            },
+            {
+                "context_signature": "hungry|morning",
+                "action": "eat",
+                "strength": 0.9,
+                "reinforcement_count": 2,
+            },
+            {
+                "context_signature": "hungry|morning",
+                "action": "hide",
+                "strength": 0.9,
+                "reinforcement_count": 4,
+            },
+            {
+                "context_signature": "safe",
+                "action": "sleep",
+                "strength": 0.2,
+                "reinforcement_count": 2,
+            },
+        ],
+        action_metadata={},
+        value_profiles={},
+        min_reinforcement=0,
+        min_stability=0.0,
+        min_confirmation=0.0,
+    )
+
+    by_context = {item.context_signature: item for item in snapshot.patterns}
+    assert snapshot.validate() == []
+    assert set(by_context) == {"hungry|morning", "safe"}
+    # Equal strength keeps the higher reinforcement count.
+    assert by_context["hungry|morning"].action == "hide"
+    assert by_context["hungry|morning"].reinforcement_count == 4
+
+
 def test_tc_02_extract_from_valid_data():
     cortex_patterns = [
         {"context_signature": "ctx_a", "action": "eat", "strength": 0.9, "reinforcement_count": 5},

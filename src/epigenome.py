@@ -72,6 +72,23 @@ def _clamp_limit(value: int, fallback: int) -> int:
     return max(1, min(256, numeric))
 
 
+def _prefer_inherited_pattern(candidate: "InheritedPattern", current: "InheritedPattern") -> bool:
+    """Whether ``candidate`` should replace ``current`` for the same context.
+
+    A context signature is one inherited pattern. Sleep may store several
+    cortical patterns that differ only by the action token; extraction keeps
+    the stronger one. Equal strength keeps the higher reinforcement count,
+    then the lexicographically earlier action, so the choice does not depend
+    on list order.
+    """
+
+    if candidate.strength != current.strength:
+        return candidate.strength > current.strength
+    if candidate.reinforcement_count != current.reinforcement_count:
+        return candidate.reinforcement_count > current.reinforcement_count
+    return candidate.action < current.action
+
+
 @dataclass(frozen=True)
 class InheritedPattern:
     context_signature: str
@@ -176,6 +193,13 @@ class EpigenomeSnapshot:
                     reinforcement_count=reinforcement,
                 )
             )
+
+        chosen_patterns: Dict[str, InheritedPattern] = {}
+        for item in extracted_patterns:
+            current = chosen_patterns.get(item.context_signature)
+            if current is None or _prefer_inherited_pattern(item, current):
+                chosen_patterns[item.context_signature] = item
+        extracted_patterns = list(chosen_patterns.values())
 
         extracted_patterns.sort(
             key=lambda item: (
