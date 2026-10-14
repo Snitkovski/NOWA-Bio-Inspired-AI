@@ -83,7 +83,8 @@ def test_no_action_influence_from_traces():
     # Build a single experience that biases toward action_a
     path = Path().add_event(Event("ctx", event_type=EventType.CONTEXT))
     path = path.add_event(Event("action:action_a", event_type=EventType.ACTION))
-    exp = Experience(path, intensity=1.0)
+    # Bias comes from a positive outcome. Intensity alone is not a preference.
+    exp = Experience(path, intensity=1.0, reward=1.0)
 
     hip_exps = [exp]
     cortex_patterns = []

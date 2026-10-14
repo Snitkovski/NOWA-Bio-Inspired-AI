@@ -143,6 +143,23 @@ def test_thalamic_gate_ignores_non_finite_weights():
     assert action == "ok"
 
 
+def test_stress_does_not_close_every_action_with_a_positive_surplus():
+    """C09: a shared stress term must not veto the better action."""
+    bg = BasalGangliaGate(threshold=0.5)
+    gated = bg.process(
+        pressure_vector={"best": 0.40, "worse": 0.05},
+        dopamine_level=0.0,
+        cortisol_level=1.0,
+        norepinephrine_level=0.1,
+        habit_strengths={"best": 0.0, "worse": 0.0},
+        aversive_signal=0.8,
+    )
+
+    assert gated["best"] > 0.0
+    assert gated["best"] > gated["worse"]
+    assert abs(bg.last_nogo["best"] - bg.last_nogo["worse"]) < 1e-9
+
+
 def test_untried_action_receives_a_larger_exploration_bonus():
     bg = BasalGangliaGate()
     bg.process(

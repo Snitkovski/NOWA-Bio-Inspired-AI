@@ -144,7 +144,9 @@ class ThalamicGate:
         impulse_scale = 0.55 + 0.45 * stability_v  # low stability → harder impulsive Go
         for action_id, score in dict(gated_scores or {}).items():
             safe_score = max(0.0, _safe_finite_float(score, 0.0)) * impulse_scale
-            scores[str(action_id)] = safe_score
+            # A gated score of 0 is a veto, not a uniform-softmax candidate.
+            if safe_score > 1e-12:
+                scores[str(action_id)] = safe_score
         if not scores or sum(scores.values()) <= 0.0:
             self.last_probabilities = {}
             self.last_temperature = self.temperature_from_ne(
@@ -370,7 +372,11 @@ class BasalGangliaGate:
             if (not math.isfinite(go_cap)) or go_cap < 0.0:
                 go_cap = 0.0
             go_signal = min(go_signal_raw, go_cap) * (1.0 + 0.25 * go_speed)
-            nogo_signal = (abs(pressure) * (self.cortisol_gain_gamma * cort + self.aversion_gain_delta * aversive)) * nogo_weight
+            # NoGo is this channel's learned inhibition. Cortisol and stress
+            # scale that weight; they do not multiply |pressure| for every
+            # action, which used to drive every net negative at once.
+            stress_drive = (self.cortisol_gain_gamma * cort) + (self.aversion_gain_delta * aversive)
+            nogo_signal = nogo_weight * (0.05 + 0.12 * stress_drive)
             nogo_signal *= (1.0 + 0.35 * nogo_caution)
             if not math.isfinite(go_signal):
                 go_signal = 0.0
@@ -393,6 +399,18 @@ class BasalGangliaGate:
             gated[action_id] = gated_score
             uncertainty_bonus_map[action_id] = uncertainty_bonus
             go_cap_map[action_id] = go_cap
+
+        # A shared threshold may rise under stress, but it must not silence
+        # every channel while at least one action still has a positive surplus.
+        if gated and all(score <= 1e-12 for score in gated.values()):
+            positive_nets = {
+                action_id: net
+                for action_id, net in net_map.items()
+                if math.isfinite(net) and net > 1e-8
+            }
+            if positive_nets:
+                for action_id, net in positive_nets.items():
+                    gated[action_id] = net
 
         self.last_go = go_map
         self.last_nogo = nogo_map

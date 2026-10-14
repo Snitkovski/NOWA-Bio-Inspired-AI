@@ -78,18 +78,21 @@ class TestIntentMemoryIntegration:
         agent.basal_ganglia.temperature = 0.05
 
         context = ["user:кто ты"]
-        for _ in range(8):
+        target = selector.actions[0]
+        for _ in range(16):
             action = agent.step(context)
-            # A habit is an outcome, not a repetition count.
+            # Only the rewarded action becomes a habit. Repeating a punished
+            # action must not count as one.
+            rating = 2 if action == target else -2
             agent.apply_feedback_to_last_experience(
-                2,
+                rating,
                 context_events=context,
                 action_id=action,
             )
 
         intent, confidence = intent_memory.get_dominant_intent(context)
-        assert intent is not None
-        assert confidence > 0.5  # Should have some habit
+        assert intent == target
+        assert confidence > 0.5
     
     def test_selector_uses_intent_pressure(self):
         """Selector использует intent_pressure от intent_memory"""
@@ -212,10 +215,13 @@ class TestIntentMemoryIntegration:
         agent.thalamic_gate.base_temperature = 0.03
         agent.thalamic_gate.min_temperature = 0.03
         
-        # A rewarded action becomes the habit. Bare repetition does not.
-        for _ in range(10):
+        # One action is rewarded. The others are punished, so repetition alone
+        # cannot make them the habit.
+        target = selector.actions[0]
+        for _ in range(16):
             action = agent.step(context)
-            agent.apply_feedback_to_last_experience(2, context_events=context, action_id=action)
+            rating = 2 if action == target else -2
+            agent.apply_feedback_to_last_experience(rating, context_events=context, action_id=action)
         
         # Get the dominant intent
         dominant_intent, confidence = intent_memory.get_dominant_intent(context)

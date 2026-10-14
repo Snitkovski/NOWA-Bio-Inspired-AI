@@ -852,10 +852,15 @@ class Agent:
             novelty=float(novelty),
             conflict=float(conflict),
         )
+        # Stash counts on self so monkeypatched pipeline wrappers keep their
+        # original signature. The real pipeline reads this attribute.
+        self._pending_visit_counts = self._visit_counts_for(
+            context_events,
+            list(pressure_vector or {}),
+        )
         action = self._select_action_via_basal_ganglia_pipeline(
             pressure_vector,
             cer_modulation_factors=effective_modulation,
-            visit_counts=self._visit_counts_for(context_events, list(pressure_vector or {})),
         )
         # NO_ACTION is the gate's answer. Do not replace it with argmax(pressure).
 
@@ -2586,6 +2591,8 @@ class Agent:
         cer_modulation_factors: Optional[Mapping[str, Any]] = None,
         visit_counts: Optional[Mapping[str, int]] = None,
     ) -> str:
+        if visit_counts is None:
+            visit_counts = getattr(self, "_pending_visit_counts", None)
         pressures = dict(pressure_vector or {})
         if not pressures:
             actions_attr = getattr(self.selector, "actions", [])
@@ -2798,6 +2805,7 @@ class Agent:
         except Exception:
             cer_modulation = {}
 
+        self._pending_visit_counts = None
         return self._select_action_via_basal_ganglia_pipeline(
             pressure_vector,
             cer_modulation_factors=cer_modulation,
@@ -2824,6 +2832,32 @@ class Agent:
             self.neuromodulators.cortisol,
             self.neuromodulators.serotonin
         ))
+
+    def _apply_outcome_to_channel(self, action_id: str, outcome: float) -> None:
+        """Move this action's learned Go/NoGo. Other actions are left alone."""
+        if not action_id or action_id == NO_ACTION:
+            return
+        channel = getattr(self, "bg_action_channels", {}).get(str(action_id))
+        if channel is None or not hasattr(channel, "update_weights"):
+            return
+        try:
+            outcome_v = float(outcome)
+        except (TypeError, ValueError):
+            return
+        if not math.isfinite(outcome_v) or abs(outcome_v) < 1e-12:
+            return
+        rate = 0.08
+        if outcome_v > 0.0:
+            channel.update_weights(
+                go_delta=rate * outcome_v,
+                nogo_delta=-0.5 * rate * outcome_v,
+            )
+        else:
+            magnitude = abs(outcome_v)
+            channel.update_weights(
+                go_delta=-0.5 * rate * magnitude,
+                nogo_delta=rate * magnitude,
+            )
 
     def _apply_outcome_to_habits(self, context_events, action_id: str, outcome: float) -> None:
         """Outcome-gated habit update. Affect scales the rate only."""
@@ -2931,11 +2965,13 @@ class Agent:
             exp.reward = reward_signal
         except Exception:
             pass
+        resolved_action = str(action_id or getattr(exp, "replay_action_id", "") or "")
         self._apply_outcome_to_habits(
             context_events=list(context_events or []),
-            action_id=str(action_id or getattr(exp, "replay_action_id", "") or ""),
+            action_id=resolved_action,
             outcome=reward_signal,
         )
+        self._apply_outcome_to_channel(resolved_action, reward_signal)
 
         state_snapshot = getattr(exp, "value_state_snapshot", None)
         if not isinstance(state_snapshot, dict):
