@@ -257,6 +257,20 @@ class TestIntentMemory:
         assert "greet_user" in stats["by_intent"]
 
 
+def test_apply_outcome_is_bounded_and_signed():
+    """C06: success moves toward 1, failure toward 0, affect cannot overflow."""
+    memory = IntentMemory()
+    context = ["ctx"]
+    for _ in range(40):
+        memory.apply_outcome(context, "go", 1.0, affect_gain=5.0)
+    strength = list(memory.traces.values())[0].strength
+    assert 0.9 <= strength <= 1.0
+    for _ in range(40):
+        memory.apply_outcome(context, "go", -1.0, affect_gain=5.0)
+    strength = list(memory.traces.values())[0].strength
+    assert 0.0 <= strength <= 0.05
+
+
 class TestIntentMemoryScenarios:
     """Интеграционные тесты для типичных сценариев"""
     

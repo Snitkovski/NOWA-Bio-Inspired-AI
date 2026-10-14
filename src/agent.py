@@ -871,12 +871,12 @@ class Agent:
         # Record the trace in intent_memory for habit formation
         # Include affective context for habit learning
         if self.intent_memory and action != NO_ACTION:
-            self.intent_memory.record_trace(context_events, action)
-            # Update habits based on affective state
-            # Apply affect modulation as multiplier (not boolean decision)
-            reinforcement_mod = self.affect_state.get_habit_reinforcement_modifier(1.0)
-            if reinforcement_mod > 0.0:
-                self.intent_memory.strengthen_trace(context_events, action, reinforcement_mod)
+            # Selection is not evidence. Strength moves only when the outcome
+            # is known (see apply_feedback_to_last_experience).
+            if hasattr(self.intent_memory, "note_selection"):
+                self.intent_memory.note_selection(context_events, action)
+            else:
+                self.intent_memory.record_trace(context_events, action)
         
         # Add action to path
         path = path.add_event(Event(f"action:{action}", event_type=EventType.ACTION))
@@ -2788,6 +2788,28 @@ class Agent:
             self.neuromodulators.serotonin
         ))
 
+    def _apply_outcome_to_habits(self, context_events, action_id: str, outcome: float) -> None:
+        """Outcome-gated habit update. Affect scales the rate only."""
+        if not action_id or action_id == NO_ACTION:
+            return
+        memory = getattr(self, "intent_memory", None)
+        if memory is None or not hasattr(memory, "apply_outcome"):
+            return
+        affect_gain = 1.0
+        try:
+            affect_gain = float(self.affect_state.get_habit_reinforcement_modifier(1.0))
+        except Exception:
+            affect_gain = 1.0
+        try:
+            memory.apply_outcome(
+                list(context_events or []),
+                str(action_id),
+                float(outcome),
+                affect_gain=affect_gain,
+            )
+        except TypeError:
+            memory.apply_outcome(list(context_events or []), str(action_id), float(outcome))
+
     def _stable_bootstrap_prior(self, context_key: str, action_name: str) -> float:
         """Small cold-start prior that does not use process-salted hash()."""
         digest = hashlib.sha256(f"{context_key}|{action_name}".encode("utf-8")).digest()
@@ -2847,6 +2869,11 @@ class Agent:
             exp.reward = reward_signal
         except Exception:
             pass
+        self._apply_outcome_to_habits(
+            context_events=list(context_events or []),
+            action_id=str(action_id or getattr(exp, "replay_action_id", "") or ""),
+            outcome=reward_signal,
+        )
 
         state_snapshot = getattr(exp, "value_state_snapshot", None)
         if not isinstance(state_snapshot, dict):

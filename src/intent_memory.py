@@ -5,9 +5,10 @@ IntentMemory — память привычек, связывающая конт�
 Формирует давление привычки на основе опыта.
 """
 
+import math
 import time
 import hashlib
-from typing import Dict, List, Tuple
+from typing import ClassVar, Dict, List, Tuple
 from dataclasses import dataclass, field
 
 
@@ -19,6 +20,7 @@ class IntentTrace:
     """
     intent_type: str
     context_signature: str
+    MAX_STRENGTH: ClassVar[float] = 64.0
     strength: float = 1.0  # Частота / устойчивость
     recency: float = 0.0   # Свежесть (0-1), decay со временем
     timestamp: float = field(default_factory=time.time)
@@ -39,8 +41,8 @@ class IntentTrace:
         self.recency = 2.0 ** (-age / half_life)  # Exponential decay
     
     def strengthen(self):
-        """Усилить trace при повторном использовании"""
-        self.strength += 1.0
+        """Усилить trace при повторном использовании. Рост ограничен."""
+        self.strength = min(self.MAX_STRENGTH, self.strength + 1.0)
         self.timestamp = time.time()
         self.recency = 1.0
 
@@ -179,9 +181,78 @@ class IntentMemory:
         trace_key = f"{intent_type}:{context_sig}"
         
         if trace_key in self.traces:
-            self.traces[trace_key].strength *= factor
-            self.traces[trace_key].recency = 1.0
-            self.traces[trace_key].timestamp = time.time()
+            trace = self.traces[trace_key]
+            try:
+                factor_v = float(factor)
+            except (TypeError, ValueError):
+                factor_v = 1.0
+            if not math.isfinite(factor_v):
+                factor_v = 1.0
+            updated = trace.strength * factor_v
+            if not math.isfinite(updated):
+                updated = IntentTrace.MAX_STRENGTH
+            trace.strength = min(IntentTrace.MAX_STRENGTH, max(0.0, updated))
+            trace.recency = 1.0
+            trace.timestamp = time.time()
+
+    def note_selection(self, context: List[str], intent_type: str) -> None:
+        """Remember that an action was selected, without counting it as success.
+
+        Outcome-blind ``strength += 1`` locked the first pick. The trace is
+        created at strength 0 until ``apply_outcome`` sees a real result.
+        """
+        context_sig = self._compute_context_signature(context)
+        trace_key = f"{intent_type}:{context_sig}"
+        if trace_key in self.traces:
+            trace = self.traces[trace_key]
+            trace.timestamp = time.time()
+            trace.recency = 1.0
+            return
+        self.traces[trace_key] = IntentTrace(
+            intent_type=intent_type,
+            context_signature=context_sig,
+            strength=0.0,
+            recency=1.0,
+            timestamp=time.time(),
+        )
+
+    def apply_outcome(
+        self,
+        context: List[str],
+        intent_type: str,
+        outcome: float,
+        affect_gain: float = 1.0,
+    ) -> None:
+        """EMA the habit toward 1 on success and toward 0 on failure.
+
+        Affect only scales the learning rate, and only inside a fixed bound.
+        It does not multiply the trace.
+        """
+        try:
+            outcome_v = float(outcome)
+        except (TypeError, ValueError):
+            return
+        if not math.isfinite(outcome_v):
+            return
+        outcome_v = max(-1.0, min(1.0, outcome_v))
+        self.note_selection(context, intent_type)
+        if abs(outcome_v) < 1e-12:
+            return
+        try:
+            gain = float(affect_gain)
+        except (TypeError, ValueError):
+            gain = 1.0
+        if not math.isfinite(gain):
+            gain = 1.0
+        gain = max(0.25, min(1.5, gain))
+        rate = 0.20 * gain
+        target = 1.0 if outcome_v > 0.0 else 0.0
+        context_sig = self._compute_context_signature(context)
+        trace = self.traces[f"{intent_type}:{context_sig}"]
+        updated = trace.strength + (rate * (target - trace.strength))
+        trace.strength = max(0.0, min(1.0, updated))
+        trace.timestamp = time.time()
+        trace.recency = 1.0
     
     def get_habit_affect_modulation(self, affect_state):
         """
@@ -237,10 +308,15 @@ class IntentMemory:
         """
         for trace_key, multiplier in affect_modulation.items():
             if trace_key in self.traces:
-                # Apply multiplier; allow strengthening above 1.0 for consolidation
-                self.traces[trace_key].strength *= multiplier
-                # Ensure non-negative strength
-                self.traces[trace_key].strength = max(0.0, self.traces[trace_key].strength)
+                # Apply multiplier; allow strengthening above 1.0 for consolidation,
+                # but never let a geometric affect factor overflow the trace.
+                updated = self.traces[trace_key].strength * multiplier
+                if not math.isfinite(updated):
+                    updated = IntentTrace.MAX_STRENGTH
+                self.traces[trace_key].strength = min(
+                    IntentTrace.MAX_STRENGTH,
+                    max(0.0, updated),
+                )
     
     def consolidate_with_affect_profile(self, context: List[str], intent_type: str, 
                                        affect_profile: dict):

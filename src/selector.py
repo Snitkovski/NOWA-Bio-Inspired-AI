@@ -174,42 +174,49 @@ class ActionSelector:
         """
         pressure = {a: 0.0 for a in self.actions}
 
-        # 1. Hippocampal pressure (recent traces)
-        for exp in hippocampal_exps:
-            exp_weight = exp.intensity * exp.activation_energy
-            for event in exp.path.events:
-                if event.event_type.value == "action":
-                    action_name = event.name.split(":", 1)[-1]
-                    if action_name in pressure:
-                        pressure[action_name] += exp_weight
+        # 1. Hippocampal pressure: mean signed outcome, not raw frequency.
+        #    Repeating a punished action must not outgrow a rare rewarded one.
+        signed = self._signed_recall_means(hippocampal_exps)
+        for action_name, signed_mean in signed.items():
+            if action_name in pressure:
+                pressure[action_name] += _clamp(signed_mean, -1.0, 1.0)
 
-        # 2. Cortical pressure (stable patterns)
+        # 2. Cortical pressure (stable patterns), clipped per pattern.
         for pattern in cortical_patterns:
-            pattern_weight = pattern.strength * 0.3
+            pattern_weight = _clamp(getattr(pattern, "strength", 0.0), 0.0, 1.0) * 0.3
             for event in pattern.signature:
                 if event.startswith("action:"):
                     action = event.split(":", 1)[1]
                     if action in pressure:
                         pressure[action] += pattern_weight
 
-        # 3. Intent pressure (habit traces from intent memory)
+        # 3. Intent pressure. tanh keeps a large legacy count on the same
+        #    scale as go/nogo weights in [0, 1].
         if intent_pressure:
             for intent_type, intent_p in intent_pressure.items():
                 if intent_type in pressure:
-                    pressure[intent_type] += intent_p * 1.0
+                    try:
+                        # /3 keeps a clearly dominant habit above the selector
+                        # confidence threshold while the result stays in (-1, 1).
+                        pressure[intent_type] += math.tanh(float(intent_p) / 3.0)
+                    except (TypeError, ValueError):
+                        continue
 
         # 4. Temporal chains advisory pressure
         if temporal_chains_bias:
             for action_name, chain_bias in temporal_chains_bias.items():
                 if action_name in pressure:
-                    pressure[action_name] += chain_bias * 0.6
+                    try:
+                        pressure[action_name] += _clamp(float(chain_bias), -1.0, 1.0) * 0.6
+                    except (TypeError, ValueError):
+                        continue
 
         # 5. Prediction-layer advisory pressure
         if prediction_pressure:
             try:
                 for action_name, pred_p in prediction_pressure.items():
                     if action_name in pressure:
-                        pressure[action_name] += pred_p * 0.8
+                        pressure[action_name] += _clamp(float(pred_p), -1.0, 1.0) * 0.8
             except Exception:
                 pass
 
@@ -235,11 +242,56 @@ class ActionSelector:
         # Selector output should remain cortical/cognitive competition only.
         _ = affect_modifier
 
+        # One bounded scale for every gate term. tanh keeps ordering and
+        # stops a large sum from swamping weights that live in [0, 1].
+        for action_name in list(pressure.keys()):
+            try:
+                value = float(pressure[action_name])
+            except (TypeError, ValueError):
+                value = 0.0
+            if not math.isfinite(value):
+                value = 0.0
+            pressure[action_name] = math.tanh(value)
+
         if verbose:
             print(f"Pressure vector: {pressure}")
             print(f"Affect modifier: {affect_modifier:.2f}")
 
         return pressure
+
+    def _signed_recall_means(self, hippocampal_exps) -> Dict[str, float]:
+        """Energy-weighted mean of episode reward for each recalled action."""
+        sums = {action: 0.0 for action in self.actions}
+        weights = {action: 0.0 for action in self.actions}
+        for exp in list(hippocampal_exps or []):
+            try:
+                outcome = _clamp(getattr(exp, "reward", 0.0), -1.0, 1.0)
+                intensity = _clamp(getattr(exp, "intensity", 0.0), 0.0, 2.0) / 2.0
+                activation = _clamp(getattr(exp, "activation_energy", 0.0), 0.0, 1.0)
+            except Exception:
+                continue
+            energy = intensity * activation
+            if energy <= 1e-12:
+                continue
+            events = getattr(getattr(exp, "path", None), "events", None) or []
+            seen = set()
+            for event in events:
+                try:
+                    if getattr(getattr(event, "event_type", None), "value", "") != "action":
+                        continue
+                    action_name = str(event.name).split(":", 1)[-1]
+                except Exception:
+                    continue
+                if action_name not in sums or action_name in seen:
+                    continue
+                seen.add(action_name)
+                sums[action_name] += outcome * energy
+                weights[action_name] += energy
+        means = {}
+        for action_name, weight in weights.items():
+            if weight > 1e-12:
+                means[action_name] = sums[action_name] / weight
+        return means
 
     def choose(
         self,

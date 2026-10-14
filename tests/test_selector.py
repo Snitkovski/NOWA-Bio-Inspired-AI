@@ -79,8 +79,8 @@ class TestActionSelectorPressure(unittest.TestCase):
         path = path.add_event(Event("danger", EventType.CONTEXT))
         path = path.add_event(Event("action:flee", EventType.ACTION))
         
-        # Create experience with high intensity
-        exp = Experience(path, intensity=2.0)
+        # Positive outcome, not mere repetition. Intensity is not reward.
+        exp = Experience(path, intensity=2.0, reward=1.0)
         exp.activation_energy = 1.0
         
         # Multiple selections with this experience
@@ -109,6 +109,35 @@ class TestActionSelectorPressure(unittest.TestCase):
         self.assertIn(action, self.selector.actions)
 
 
+class TestSignedRecallPressure(unittest.TestCase):
+    """Frequency must not outvote a signed outcome. Refs #3."""
+
+    def test_punished_repetition_does_not_outrank_rare_reward(self):
+        selector = ActionSelector(["a", "b"])
+        punished = []
+        for _ in range(20):
+            path = Path()
+            path = path.add_event(Event("ctx", EventType.CONTEXT))
+            path = path.add_event(Event("action:a", EventType.ACTION))
+            exp = Experience(path, intensity=1.0, reward=-1.0)
+            exp.activation_energy = 1.0
+            punished.append(exp)
+        rewarded = []
+        for _ in range(2):
+            path = Path()
+            path = path.add_event(Event("ctx", EventType.CONTEXT))
+            path = path.add_event(Event("action:b", EventType.ACTION))
+            exp = Experience(path, intensity=1.0, reward=1.0)
+            exp.activation_energy = 1.0
+            rewarded.append(exp)
+
+        pressure = selector.compute_pressures(punished + rewarded, [])
+        self.assertLess(pressure["a"], 0.0)
+        self.assertGreater(pressure["b"], 0.0)
+        self.assertGreater(pressure["b"], pressure["a"])
+        self.assertLessEqual(max(abs(value) for value in pressure.values()), 1.0)
+
+
 class TestActionSelectorConfidence(unittest.TestCase):
     """Test confidence-based deterministic vs stochastic selection"""
     
@@ -121,7 +150,7 @@ class TestActionSelectorConfidence(unittest.TestCase):
         path = path.add_event(Event("danger", EventType.CONTEXT))
         path = path.add_event(Event("action:flee", EventType.ACTION))
         
-        exp = Experience(path, intensity=2.0)
+        exp = Experience(path, intensity=2.0, reward=1.0)
         exp.activation_energy = 1.0
         
         # With very strong single experience, choices should favor that action
@@ -147,7 +176,7 @@ class TestActionSelectorConfidence(unittest.TestCase):
             path = path.add_event(Event("context", EventType.CONTEXT))
             path = path.add_event(Event(f"action:{action_name}", EventType.ACTION))
             
-            exp = Experience(path, intensity=1.0)
+            exp = Experience(path, intensity=1.0, reward=1.0)
             exp.activation_energy = 1.0
             exps.append(exp)
         
