@@ -182,3 +182,17 @@ def test_contextual_bandit_beats_chance_for_every_mapping_and_hash_seed():
 def test_bandit_worker_rejects_incomplete_case_spec():
     with pytest.raises(ValueError):
         _parse_case("only-actions")
+
+
+def test_bootstrap_prior_is_seeded_and_does_not_single_out_one_action():
+    """C02: tie-break comes from sha256 + the agent RNG, not hash()."""
+    left = _build_agent(("red", "green", "blue"), seed=11)
+    right = _build_agent(("red", "green", "blue"), seed=11)
+    actions = ("red", "green", "blue")
+    left_priors = [left._stable_bootstrap_prior("north", name) for name in actions]
+    right_priors = [right._stable_bootstrap_prior("north", name) for name in actions]
+    assert left_priors == right_priors
+    assert max(left_priors) - min(left_priors) < 0.02
+    other = _build_agent(("red", "green", "blue"), seed=12)
+    other_priors = [other._stable_bootstrap_prior("north", name) for name in actions]
+    assert other_priors != left_priors

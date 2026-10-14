@@ -12,6 +12,7 @@ Learning happens ONLY during sleep consolidation.
 No learning during waking behavior.
 """
 
+import hashlib
 import math
 import random
 import time
@@ -86,6 +87,7 @@ class Agent:
         prediction_layer=None,
         environment_interface=None,
         external_interaction_layer=None,
+        rng_seed: Optional[int] = None,
     ):
         """
         Initialize agent
@@ -170,6 +172,8 @@ class Agent:
         # Id of the episode stored by the latest step(). Feedback addresses
         # this id; hippocampal list order is not episode identity.
         self.last_episode_id: Optional[str] = None
+        # Seeded RNG for tie-breaks. Independent of PYTHONHASHSEED.
+        self._rng = random.Random(rng_seed) if rng_seed is not None else random.Random()
         # Creation timestamp for lifetime reporting
         self.created_ts = time.time()
         # Lifetime progress for background dynamics (steps-based)
@@ -443,11 +447,17 @@ class Agent:
             except Exception:
                 action_candidates = []
             if action_candidates:
+                # Equal optimistic prior plus a stable, seeded tie-break.
+                # Built-in hash() is salted per process (PYTHONHASHSEED) and
+                # then locked in by later frequency pressure.
                 key = "|".join(str(x) for x in list(context_events or []))
-                idx = abs(hash(key)) % len(action_candidates)
-                bootstrap_action = str(action_candidates[idx])
-                if bootstrap_action in pressure_vector:
-                    pressure_vector[bootstrap_action] = 0.12
+                ordered = sorted(
+                    str(action_name)
+                    for action_name in action_candidates
+                    if str(action_name) in pressure_vector
+                )
+                for action_name in ordered:
+                    pressure_vector[action_name] = self._stable_bootstrap_prior(key, action_name)
         pressure_vector = self._modulate_pressures_for_organs(pressure_vector)
         effective_modulation = dict(cer_modulation or {})
         acc_output = {}
@@ -2777,6 +2787,13 @@ class Agent:
             self.neuromodulators.cortisol,
             self.neuromodulators.serotonin
         ))
+
+    def _stable_bootstrap_prior(self, context_key: str, action_name: str) -> float:
+        """Small cold-start prior that does not use process-salted hash()."""
+        digest = hashlib.sha256(f"{context_key}|{action_name}".encode("utf-8")).digest()
+        stable = (int.from_bytes(digest[:4], "big") % 1000) / 1000.0
+        draw = float(self._rng.random())
+        return 0.12 + ((draw + stable) * 0.01)
 
     def _resolve_feedback_experience(self, episode_id: str = None):
         """Find the episode that just acted.
