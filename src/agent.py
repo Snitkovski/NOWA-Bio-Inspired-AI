@@ -174,6 +174,7 @@ class Agent:
         self.last_episode_id: Optional[str] = None
         # Seeded RNG for tie-breaks. Independent of PYTHONHASHSEED.
         self._rng = random.Random(rng_seed) if rng_seed is not None else random.Random()
+        self._action_visit_counts: dict = {}
         # Creation timestamp for lifetime reporting
         self.created_ts = time.time()
         # Lifetime progress for background dynamics (steps-based)
@@ -854,19 +855,12 @@ class Agent:
         action = self._select_action_via_basal_ganglia_pipeline(
             pressure_vector,
             cer_modulation_factors=effective_modulation,
+            visit_counts=self._visit_counts_for(context_events, list(pressure_vector or {})),
         )
-        if action == NO_ACTION and isinstance(pressure_vector, dict) and pressure_vector:
-            try:
-                max_pressure = max(float(v) for v in pressure_vector.values())
-            except Exception:
-                max_pressure = 0.0
-            if max_pressure > 0.0:
-                try:
-                    action = max(pressure_vector, key=pressure_vector.get)
-                except Exception:
-                    pass
+        # NO_ACTION is the gate's answer. Do not replace it with argmax(pressure).
 
         self.last_action = action
+        self._record_action_visit(context_events, action)
         if decision_only:
             return action
 
@@ -2590,6 +2584,7 @@ class Agent:
         self,
         pressure_vector: dict,
         cer_modulation_factors: Optional[Mapping[str, Any]] = None,
+        visit_counts: Optional[Mapping[str, int]] = None,
     ) -> str:
         pressures = dict(pressure_vector or {})
         if not pressures:
@@ -2645,6 +2640,7 @@ class Agent:
                 habit_gain_scale=habit_gain_scale,
                 response_speed=response_speed,
                 caution=caution,
+                visit_counts=None if visit_counts is None else dict(visit_counts),
             )
         except TypeError:
             # Backward compatibility for monkeypatched/custom process implementations.
@@ -2850,6 +2846,31 @@ class Agent:
             )
         except TypeError:
             memory.apply_outcome(list(context_events or []), str(action_id), float(outcome))
+
+    def _context_visit_key(self, context_events) -> str:
+        return "|".join(str(item) for item in list(context_events or []))
+
+    def _visit_counts_for(self, context_events, actions) -> dict:
+        key = self._context_visit_key(context_events)
+        counts = getattr(self, "_action_visit_counts", None)
+        if not isinstance(counts, dict):
+            counts = {}
+            self._action_visit_counts = counts
+        return {
+            str(action): int(counts.get((key, str(action)), 0))
+            for action in list(actions or [])
+        }
+
+    def _record_action_visit(self, context_events, action: str) -> None:
+        if not action or str(action) == NO_ACTION:
+            return
+        key = self._context_visit_key(context_events)
+        counts = getattr(self, "_action_visit_counts", None)
+        if not isinstance(counts, dict):
+            counts = {}
+            self._action_visit_counts = counts
+        token = (key, str(action))
+        counts[token] = int(counts.get(token, 0)) + 1
 
     def _stable_bootstrap_prior(self, context_key: str, action_name: str) -> float:
         """Small cold-start prior that does not use process-salted hash()."""

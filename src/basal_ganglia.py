@@ -279,6 +279,7 @@ class BasalGangliaGate:
         habit_gain_scale: float = 1.0,
         response_speed: float = 0.0,
         caution: float = 0.0,
+        visit_counts: Optional[Dict[str, int]] = None,
     ) -> Dict[str, float]:
         """
         Process pressure vector through BG Go/NoGo competition.
@@ -324,6 +325,12 @@ class BasalGangliaGate:
         gated: Dict[str, float] = {}
         uncertainty_bonus_map: Dict[str, float] = {}
         go_cap_map: Dict[str, float] = {}
+        use_visits = visit_counts is not None
+        visits = {
+            str(action_id): max(0, int(_safe_finite_float(count, 0.0)))
+            for action_id, count in dict(visit_counts or {}).items()
+        }
+        total_visits = sum(visits.values())
 
         for action_id in sorted(actions):
             pressure = _safe_finite_float(dict(pressure_vector or {}).get(action_id, 0.0), 0.0)
@@ -332,10 +339,15 @@ class BasalGangliaGate:
             go_weight = max(0.0, _safe_finite_float(action_mod.get("go_weight", 1.0), 1.0))
             nogo_weight = max(0.0, _safe_finite_float(action_mod.get("nogo_weight", 1.0), 1.0))
 
-            # CER exploration bias amplifies uncertain actions, but only when
-            # there is at least minimal evidence for the action.
+            # Optimism is larger for untried actions. Without visit counts,
+            # keep the previous evidence-gated CER bonus.
             uncertainty_bonus = 0.0
-            if abs(pressure) > 1e-12 or habit > 1e-12:
+            n_visits = int(visits.get(action_id, 0))
+            if use_visits:
+                optimism = math.sqrt(math.log(float(total_visits) + 2.0) / (float(n_visits) + 1.0))
+                uncertainty_bonus_raw = optimism * self.cer_bonus_gain * max(0.35, cer_exploration)
+                uncertainty_bonus = min(self.cer_bonus_cap_abs, max(0.0, uncertainty_bonus_raw))
+            elif abs(pressure) > 1e-12 or habit > 1e-12:
                 uncertainty_bonus_raw = cer_exploration * max(0.0, 0.25 - abs(pressure)) * self.cer_bonus_gain
                 uncertainty_bonus = min(self.cer_bonus_cap_abs, uncertainty_bonus_raw)
 
@@ -370,6 +382,10 @@ class BasalGangliaGate:
                 net_signal = 0.0
             if (not math.isfinite(gated_score)) or gated_score < 0.0:
                 gated_score = 0.0
+            # An untried action stays available. This is not a veto bypass:
+            # once the action has been visited, a non-positive gate stands.
+            if use_visits and n_visits <= 0 and uncertainty_bonus > 0.0:
+                gated_score = max(gated_score, uncertainty_bonus)
 
             go_map[action_id] = go_signal
             nogo_map[action_id] = nogo_signal
