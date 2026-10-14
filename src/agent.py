@@ -269,9 +269,9 @@ class Agent:
         }
     
     def step(self, context_events: list, consequence: Event = None,
-             intensity: float = 1.0, reward: float = 0.0, novelty: float = 0.0,
+             intensity: float = 1.0, reward: Optional[float] = None, novelty: float = 0.0,
              conflict: float = 0.0, affective_inputs: dict = None,
-             decision_only: bool = False) -> str:
+             decision_only: bool = False, terminal: bool = False) -> str:
         """
         Execute one behavioral step.
         
@@ -289,7 +289,9 @@ class Agent:
             context_events: List of context event names
             consequence: Optional consequence event
             intensity: Emotional intensity of this experience (0-2)
-            reward: Outcome signal (-1.0 to +1.0) for affect update
+            reward: Outcome signal (-1.0 to +1.0). None means the outcome is
+                not known yet; the TD update then waits for feedback.
+            terminal: This transition ends the episode, so the bootstrap is 0.
             novelty: Unexpectedness signal (0.0 to 1.0) for curiosity
             conflict: Conflict detection (0.0 to 1.0) for threat
             affective_inputs: Optional dict of inputs for Phase 4 affective space
@@ -306,6 +308,16 @@ class Agent:
             Action name chosen by selector
         """
         import time
+        outcome_known = reward is not None
+        if reward is None:
+            reward = 0.0
+        else:
+            try:
+                reward = float(reward)
+            except (TypeError, ValueError):
+                reward = 0.0
+                outcome_known = False
+        self._transition_terminal = bool(terminal)
         self.lived_steps += 1
         try:
             if hasattr(self, "external_interaction_layer") and self.external_interaction_layer is not None:
@@ -832,6 +844,13 @@ class Agent:
             ),
             "planning_temperature_factor": float(planning_temp_factor),
         }
+        pressure_vector = self._blend_learned_action_values(
+            pressure_vector,
+            context_events=context_events,
+            intensity=float(intensity),
+            novelty=float(novelty),
+            conflict=float(conflict),
+        )
         action = self._select_action_via_basal_ganglia_pipeline(
             pressure_vector,
             cer_modulation_factors=effective_modulation,
@@ -982,32 +1001,54 @@ class Agent:
                 except Exception:
                     stability_index = None
 
-                value_update = self.value_layer.update(
-                    state_snapshot=value_state_snapshot,
-                    reward=reward,
-                    next_state_snapshot=value_next_state_snapshot,
-                    gamma=getattr(self.value_layer, "gamma_default", 0.95),
-                    alpha=float(
-                        getattr(
-                            self.value_layer,
-                            "alpha_online_default",
-                            getattr(self.value_layer, "alpha_default", 0.03),
+                if outcome_known:
+                    transition_terminal = bool(getattr(self, "_transition_terminal", False))
+                    prior_value = float(self.value_layer.get_value(value_state_snapshot))
+                    value_update = self.value_layer.update(
+                        state_snapshot=value_state_snapshot,
+                        reward=reward,
+                        next_state_snapshot=value_next_state_snapshot,
+                        gamma=getattr(self.value_layer, "gamma_default", 0.95),
+                        alpha=float(
+                            getattr(
+                                self.value_layer,
+                                "alpha_online_default",
+                                getattr(self.value_layer, "alpha_default", 0.03),
+                            )
                         )
+                        * max(0.5, min(2.0, float(effective_modulation.get("learning_rate_scale", 1.0)))),
+                        timestamp=float(self.lived_steps),
+                        stability_index=stability_index,
+                        mode="online",
+                        acetylcholine=ach_snapshot_for_step,
+                        acetylcholine_baseline=float(
+                            getattr(self.neuromodulators, "ach_baseline", 0.1)
+                        ),
+                        acc_learning_boost=1.0,
+                        cer_stress_level=float(effective_modulation.get("cer_stress_level", 0.0)),
+                        exploration_baseline=float(effective_modulation.get("exploration_bias", 0.0)),
+                        terminal=transition_terminal,
+                        bootstrap_value=self._successor_bootstrap(
+                            next_context_events=next_context_events,
+                            intensity=float(intensity),
+                            novelty=float(novelty),
+                            conflict=float(conflict),
+                            terminal=transition_terminal,
+                        ),
                     )
-                    * max(0.5, min(2.0, float(effective_modulation.get("learning_rate_scale", 1.0)))),
-                    timestamp=float(self.lived_steps),
-                    stability_index=stability_index,
-                    mode="online",
-                    acetylcholine=ach_snapshot_for_step,
-                    acetylcholine_baseline=float(
-                        getattr(self.neuromodulators, "ach_baseline", 0.1)
-                    ),
-                    acc_learning_boost=1.0,
-                    cer_stress_level=float(effective_modulation.get("cer_stress_level", 0.0)),
-                    exploration_baseline=float(effective_modulation.get("exploration_bias", 0.0)),
-                )
+                    if stored_experience is not None:
+                        stored_experience.td_outcome_committed = True
+                        stored_experience.td_committed_reward = float(reward)
+                        stored_experience.td_prior_value = prior_value
+                        stored_experience.value_terminal = transition_terminal
+                        stored_experience.value_next_context_events = list(next_context_events)
         except Exception:
             value_update = None
+
+        if stored_experience is not None and not outcome_known:
+            stored_experience.td_outcome_committed = False
+            stored_experience.value_terminal = bool(getattr(self, "_transition_terminal", False))
+            stored_experience.value_next_context_events = list(next_context_events)
 
         # Save replay metadata for Phase 5.A.1 sleep replay (affect-independent).
         try:
@@ -2912,21 +2953,13 @@ class Agent:
         value_update = None
         try:
             if hasattr(self, "value_layer") and self.value_layer is not None:
-                value_update = self.value_layer.update(
+                value_update = self._apply_feedback_value_update(
+                    exp=exp,
                     state_snapshot=state_snapshot,
-                    reward=reward_signal,
-                    next_state_snapshot=next_snapshot,
-                    gamma=getattr(self.value_layer, "gamma_default", 0.95),
-                    alpha=getattr(
-                        self.value_layer,
-                        "alpha_online_default",
-                        getattr(self.value_layer, "alpha_default", 0.03),
-                    ),
-                    timestamp=time.time(),
+                    next_snapshot=next_snapshot,
+                    reward_signal=reward_signal,
                     stability_index=stability_index,
-                    mode="online",
-                    acetylcholine=float(getattr(self.neuromodulators, "acetylcholine", 0.0)),
-                    acetylcholine_baseline=float(getattr(self.neuromodulators, "ach_baseline", 0.1)),
+                    context_events=list(context_events or []),
                 )
         except Exception:
             value_update = None
@@ -3197,6 +3230,152 @@ class Agent:
         experience.td_sign_snapshot = int(1 if td_value > 1e-12 else (-1 if td_value < -1e-12 else 0))
         experience.td_mean_snapshot = float(mean_v)
         experience.td_variance_snapshot = float(max(0.0, variance_v))
+
+    def _successor_bootstrap(
+        self,
+        next_context_events,
+        intensity: float,
+        novelty: float,
+        conflict: float,
+        terminal: bool,
+    ) -> float:
+        """max_a Q(s', a) for the real next context. Terminal transitions bootstrap at 0."""
+        if terminal or getattr(self, "value_layer", None) is None:
+            return 0.0
+        try:
+            actions = [str(action) for action in list(getattr(self.selector, "actions", []) or [])]
+        except Exception:
+            actions = []
+        best = None
+        for action in actions:
+            snapshot = self._build_value_state_snapshot(
+                context_events=list(next_context_events or []),
+                action=action,
+                consequence=None,
+                intensity=float(intensity),
+                novelty=float(novelty),
+                conflict=float(conflict),
+            )
+            try:
+                value = float(self.value_layer.get_value(snapshot))
+            except Exception:
+                continue
+            if best is None or value > best:
+                best = value
+        return 0.0 if best is None else float(best)
+
+    def _blend_learned_action_values(
+        self,
+        pressure_vector,
+        context_events,
+        intensity: float,
+        novelty: float,
+        conflict: float,
+    ) -> dict:
+        """Use Q(s, a) as the primary score once any action has been valued."""
+        pressures = dict(pressure_vector or {})
+        value_layer = getattr(self, "value_layer", None)
+        if not pressures or value_layer is None:
+            return pressures
+        q_values = {}
+        for action in pressures:
+            snapshot = self._build_value_state_snapshot(
+                context_events=list(context_events or []),
+                action=str(action),
+                consequence=None,
+                intensity=float(intensity),
+                novelty=float(novelty),
+                conflict=float(conflict),
+            )
+            try:
+                q_values[action] = float(value_layer.get_value(snapshot))
+            except Exception:
+                q_values[action] = 0.0
+        if all(abs(value) <= 1e-8 for value in q_values.values()):
+            return pressures
+        blended = {}
+        for action, pressure in pressures.items():
+            mixed = (0.8 * q_values.get(action, 0.0)) + (0.2 * float(pressure))
+            if not math.isfinite(mixed):
+                mixed = 0.0
+            blended[action] = max(-1.0, min(1.0, mixed))
+        return blended
+
+    def _apply_feedback_value_update(
+        self,
+        exp,
+        state_snapshot,
+        next_snapshot,
+        reward_signal: float,
+        stability_index,
+        context_events,
+    ):
+        """One TD backup per transition. A later rating revises that backup."""
+        committed = bool(getattr(exp, "td_outcome_committed", False))
+        committed_reward = getattr(exp, "td_committed_reward", None)
+        same_reward = (
+            committed
+            and committed_reward is not None
+            and abs(float(committed_reward) - float(reward_signal)) <= 1e-9
+        )
+        if same_reward:
+            return {
+                "td_error": float(getattr(exp, "td_error_snapshot", 0.0)),
+                "state_key": str(getattr(exp, "value_state_key", "")),
+                "replay_priority": float(getattr(exp, "replay_priority", 0.0)),
+                "consolidation_weight": float(getattr(exp, "consolidation_weight", 0.0)),
+                "confidence_score": float(getattr(exp, "expectation_confidence_score", 0.0)),
+                "stability_score": float(getattr(exp, "expectation_stability_score", 0.0)),
+                "prediction_shock": bool(getattr(exp, "prediction_shock_flag", False)),
+                "expected_reward_mean": float(getattr(exp, "expected_reward_mean", 0.0)),
+                "expected_reward_var": float(getattr(exp, "expected_reward_var", 0.0)),
+                "confirmation_count": float(getattr(exp, "confirmation_count", 0.0)),
+                "prediction_shock_score": float(getattr(exp, "prediction_shock_score", 0.0)),
+                "error_likelihood": float(getattr(exp, "error_likelihood", 0.0)),
+                "shock_replay_boost": float(getattr(exp, "shock_replay_boost", 1.0)),
+            }
+
+        terminal = bool(getattr(exp, "value_terminal", getattr(self, "_transition_terminal", False)))
+        next_context = getattr(exp, "value_next_context_events", None)
+        if not isinstance(next_context, list):
+            next_context = list(context_events or [])
+        intensity = float(dict(state_snapshot or {}).get("intensity", getattr(exp, "intensity", 1.0)))
+        novelty = float(dict(state_snapshot or {}).get("novelty", 0.0))
+        conflict = float(dict(state_snapshot or {}).get("conflict", 0.0))
+        prior = getattr(exp, "td_prior_value", None) if committed else None
+        if not committed:
+            exp.td_prior_value = float(self.value_layer.get_value(state_snapshot))
+        self._feedback_clock = int(getattr(self, "_feedback_clock", 0)) + 1
+        timestamp = float(getattr(self, "lived_steps", 0)) + (self._feedback_clock * 0.001)
+        update = self.value_layer.update(
+            state_snapshot=state_snapshot,
+            reward=float(reward_signal),
+            next_state_snapshot=next_snapshot,
+            gamma=getattr(self.value_layer, "gamma_default", 0.95),
+            alpha=getattr(
+                self.value_layer,
+                "alpha_online_default",
+                getattr(self.value_layer, "alpha_default", 0.03),
+            ),
+            timestamp=timestamp,
+            stability_index=stability_index,
+            mode="online",
+            acetylcholine=float(getattr(self.neuromodulators, "acetylcholine", 0.0)),
+            acetylcholine_baseline=float(getattr(self.neuromodulators, "ach_baseline", 0.1)),
+            terminal=terminal,
+            bootstrap_value=self._successor_bootstrap(
+                next_context_events=next_context,
+                intensity=intensity,
+                novelty=novelty,
+                conflict=conflict,
+                terminal=terminal,
+            ),
+            prior_value=None if prior is None else float(prior),
+        )
+        exp.td_outcome_committed = True
+        exp.td_committed_reward = float(reward_signal)
+        exp.value_terminal = terminal
+        return update
 
     def _build_value_state_snapshot(
         self,

@@ -87,7 +87,7 @@ def run_contextual_bandit(case: dict, seed: int = 0, train_trials: int = 240, ev
     agent = _build_agent(actions, seed)
 
     def _episode(context: str) -> bool:
-        action = agent.step([context])
+        action = agent.step([context], terminal=True)
         correct = action == best[context]
         rating = 2 if correct else -2
         agent.apply_feedback_to_last_experience(

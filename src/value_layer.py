@@ -672,6 +672,9 @@ class ValueLayer:
         cer_stress_level: Optional[float] = None,
         exploration_baseline: Optional[float] = None,
         reward_scale: Optional[float] = None,
+        terminal: bool = False,
+        bootstrap_value: Optional[float] = None,
+        prior_value: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Update V(s) using TD error.
@@ -748,7 +751,16 @@ class ValueLayer:
         state_vector = self._state_vector_from_snapshot(state_snapshot)
 
         current_value = self._get_value(state_key)
+        if prior_value is not None:
+            # Revision of the same transition: TD starts from the value
+            # before the provisional update, so the reward is applied once.
+            current_value = _clamp(_safe_float(prior_value), -1.0, 1.0)
         next_value = self._get_value(next_state_key)
+        if bool(terminal):
+            next_value = 0.0
+        elif bootstrap_value is not None:
+            # max_a Q(s', a) for the real successor, not the unread action="" key.
+            next_value = _clamp(_safe_float(bootstrap_value), -1.0, 1.0)
 
         td_clip = min(1.0, float(self.td_clip_online)) if mode_v == "online" else 1.0
         td_profile = self.td_layer.compute_td_error(
