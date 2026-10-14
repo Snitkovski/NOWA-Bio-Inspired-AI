@@ -64,6 +64,8 @@ class NOWAHippocampus:
 
         self._recent_event_window: List[str] = []
         self._novelty_history: List[float] = []
+        self._episode_seq = 0
+        self._episodes_by_id: Dict[str, Experience] = {}
 
     @staticmethod
     def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:
@@ -386,8 +388,42 @@ class NOWAHippocampus:
 
         self.experiences = keep_exps
         self.signatures = keep_sigs
+        self._sync_episode_index()
 
-    def _enforce_capacity(self) -> None:
+    def _assign_episode_id(self, exp: Experience) -> str:
+        """Give an experience a stable id that does not depend on list order."""
+        existing = getattr(exp, "episode_id", None)
+        if existing:
+            episode_id = str(existing)
+        else:
+            self._episode_seq += 1
+            episode_id = f"ep-{self._episode_seq}"
+            exp.episode_id = episode_id
+        self._episodes_by_id[episode_id] = exp
+        return episode_id
+
+    def _sync_episode_index(self) -> None:
+        """Rebuild the id index from the episodes that are still stored."""
+        index: Dict[str, Experience] = {}
+        for exp in self.experiences:
+            episode_id = getattr(exp, "episode_id", None)
+            if not episode_id:
+                continue
+            index[str(episode_id)] = exp
+        self._episodes_by_id = index
+
+    def get_experience(self, episode_id: str):
+        """Return the stored episode with this id, regardless of list position."""
+        if episode_id is None:
+            return None
+        key = str(episode_id)
+        resident = self._episodes_by_id.get(key)
+        if resident is not None and any(item is resident for item in self.experiences):
+            return resident
+        self._sync_episode_index()
+        return self._episodes_by_id.get(key)
+
+    def _enforce_capacity(self, protect_id: Optional[str] = None) -> None:
         if len(self.experiences) <= self.max_experiences:
             return
 
@@ -406,9 +442,22 @@ class NOWAHippocampus:
             scored.append((score, exp, sig))
 
         scored.sort(key=lambda item: item[0], reverse=True)
-        kept = scored[: self.max_experiences]
+        protected = str(protect_id) if protect_id else ""
+        kept = []
+        overflow = []
+        if protected:
+            for item in scored:
+                if str(getattr(item[1], "episode_id", "")) == protected:
+                    kept.append(item)
+                else:
+                    overflow.append(item)
+            room = max(0, self.max_experiences - len(kept))
+            kept.extend(overflow[:room])
+        else:
+            kept = scored[: self.max_experiences]
         self.experiences = [item[1] for item in kept]
         self.signatures = [item[2] for item in kept]
+        self._sync_episode_index()
 
     def _build_query_signature(
         self, current_signature, consequence=None, intensity: float = 1.0
@@ -505,6 +554,7 @@ class NOWAHippocampus:
             exp.first_seen = ts
             exp.last_activated = ts
 
+        self._assign_episode_id(exp)
         self.experiences.append(exp)
         sig = SignatureTrace(
             feature_set=features,
@@ -520,7 +570,7 @@ class NOWAHippocampus:
         )
         self.signatures.append(sig)
         self._append_recent_events(path_obj.signature())
-        self._enforce_capacity()
+        self._enforce_capacity(protect_id=str(getattr(exp, "episode_id", "") or ""))
         return exp
     def reinforce(self, path, consequence=None, intensity: float = 1.0):
         self._ensure_signature_store()

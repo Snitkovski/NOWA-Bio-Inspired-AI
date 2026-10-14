@@ -167,6 +167,9 @@ class Agent:
         # Last action chosen by the decision pipeline, for diagnostics and for
         # hosts that call step(decision_only=True) and read the choice back.
         self.last_action: str = ""
+        # Id of the episode stored by the latest step(). Feedback addresses
+        # this id; hippocampal list order is not episode identity.
+        self.last_episode_id: Optional[str] = None
         # Creation timestamp for lifetime reporting
         self.created_ts = time.time()
         # Lifetime progress for background dynamics (steps-based)
@@ -942,6 +945,8 @@ class Agent:
                 stored_experience.encoding_strength = float(encoding_strength)
         except Exception:
             pass
+        if stored_experience is not None:
+            self.last_episode_id = getattr(stored_experience, "episode_id", None)
         try:
             if stored_experience is not None and hasattr(self, "affective_space") and self.affective_space is not None:
                 create_trace = getattr(self.affective_space, "create_trace", None)
@@ -2773,7 +2778,30 @@ class Agent:
             self.neuromodulators.serotonin
         ))
 
-    def apply_feedback_to_last_experience(self, feedback_rating: int, context_events=None, action_id: str = None) -> dict:
+    def _resolve_feedback_experience(self, episode_id: str = None):
+        """Find the episode that just acted.
+
+        List order is not identity: capacity eviction re-sorts experiences,
+        so ``experiences[-1]`` can be a different survivor. Address by id.
+        """
+        target_id = episode_id or getattr(self, "last_episode_id", None)
+        if not target_id:
+            return None
+        getter = getattr(self.hippocampus, "get_experience", None)
+        if not callable(getter):
+            return None
+        try:
+            return getter(target_id)
+        except Exception:
+            return None
+
+    def apply_feedback_to_last_experience(
+        self,
+        feedback_rating: int,
+        context_events=None,
+        action_id: str = None,
+        episode_id: str = None,
+    ) -> dict:
         """
         Attach explicit user feedback to the latest experience and replay metadata.
 
@@ -2795,11 +2823,9 @@ class Agent:
             "importance": 0.0,
         }
 
-        experiences = getattr(self.hippocampus, "experiences", [])
-        if not experiences:
+        exp = self._resolve_feedback_experience(episode_id)
+        if exp is None:
             return result
-
-        exp = experiences[-1]
         try:
             exp.reward = reward_signal
         except Exception:
