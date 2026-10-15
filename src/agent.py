@@ -1047,6 +1047,12 @@ class Agent:
         except Exception:
             value_update = None
 
+        if outcome_known:
+            self._record_known_outcome(
+                context_events=list(context_events or []),
+                action_id=str(getattr(self, "last_action", "") or ""),
+                outcome=float(reward),
+            )
         if stored_experience is not None and not outcome_known:
             stored_experience.td_outcome_committed = False
             stored_experience.value_terminal = bool(getattr(self, "_transition_terminal", False))
@@ -2836,6 +2842,24 @@ class Agent:
             self.neuromodulators.serotonin
         ))
 
+    def _record_known_outcome(self, context_events, action_id: str, outcome: float) -> None:
+        """Apply one known outcome to the habit, the BG channel, and the sleep log.
+
+        ``step(reward=...)`` and ``apply_feedback_to_last_experience`` both
+        call this so a known reward is not TD-only.
+        """
+        self._apply_outcome_to_habits(
+            context_events=list(context_events or []),
+            action_id=str(action_id or ""),
+            outcome=float(outcome),
+        )
+        self._apply_outcome_to_channel(str(action_id or ""), float(outcome))
+        if action_id and str(action_id) != NO_ACTION:
+            try:
+                self.record_action_outcome(str(action_id), float(outcome))
+            except Exception:
+                pass
+
     def _apply_outcome_to_channel(self, action_id: str, outcome: float) -> None:
         """Move this action's learned Go/NoGo. Other actions are left alone."""
         if not action_id or action_id == NO_ACTION:
@@ -2982,12 +3006,11 @@ class Agent:
         except Exception:
             pass
         resolved_action = str(action_id or getattr(exp, "replay_action_id", "") or "")
-        self._apply_outcome_to_habits(
+        self._record_known_outcome(
             context_events=list(context_events or []),
             action_id=resolved_action,
             outcome=reward_signal,
         )
-        self._apply_outcome_to_channel(resolved_action, reward_signal)
 
         state_snapshot = getattr(exp, "value_state_snapshot", None)
         if not isinstance(state_snapshot, dict):
@@ -3121,11 +3144,6 @@ class Agent:
         except Exception:
             pass
 
-        if action_id:
-            try:
-                self.record_action_outcome(str(action_id), reward_signal)
-            except Exception:
-                pass
         if prediction_shock and hasattr(self, "neuromodulators") and self.neuromodulators is not None:
             try:
                 stress_delta = max(0.0, min(0.25, confidence_score * 0.08))
