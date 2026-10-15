@@ -173,6 +173,10 @@ class Agent:
         # this id; hippocampal list order is not episode identity.
         self.last_episode_id: Optional[str] = None
         # Seeded RNG for tie-breaks. Independent of PYTHONHASHSEED.
+        # An explicit rng_seed also drives the thalamic softmax. Without one,
+        # the gate keeps using the global random module so random.seed()
+        # still reproduces older callers.
+        self._rng_controls_thalamic = rng_seed is not None
         self._rng = random.Random(rng_seed) if rng_seed is not None else random.Random()
         self._action_visit_counts: dict = {}
         # Creation timestamp for lifetime reporting
@@ -2681,6 +2685,7 @@ class Agent:
             norepinephrine_level=float(getattr(self.neuromodulators, "norepinephrine", 0.0)),
             exploration_bias=exploration_bias,
             stability=float((getattr(self.affective_space, "axes", {}) or {}).get("stability", 1.0)),
+            rng=self._rng if getattr(self, "_rng_controls_thalamic", False) else None,
         )
         self.basal_ganglia.selection_history.append(
             (selected_action, self.basal_ganglia.last_nets.get(selected_action, 0.0))

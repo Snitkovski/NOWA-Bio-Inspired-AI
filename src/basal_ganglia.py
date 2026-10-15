@@ -138,6 +138,7 @@ class ThalamicGate:
         norepinephrine_level: float,
         exploration_bias: float = 0.0,
         stability: float = 1.0,
+        rng: Optional["random.Random"] = None,
     ) -> str:
         scores: Dict[str, float] = {}
         stability_v = max(0.0, min(1.0, _safe_finite_float(stability, 1.0)))
@@ -174,8 +175,9 @@ class ThalamicGate:
         self.last_probabilities = dict(probabilities)
         actions = list(probabilities.keys())
         weights = [probabilities[a] for a in actions]
+        chooser = rng if rng is not None else random
         try:
-            return random.choices(actions, weights=weights, k=1)[0]
+            return chooser.choices(actions, weights=weights, k=1)[0]
         except ValueError:
             return max(scores, key=scores.get)
 
