@@ -910,6 +910,7 @@ class ValueLayer:
         self.last_tonic_level = tonic_level
         self.last_exploration_delta = float(exploration_delta)
         self.last_value = new_value
+        self.last_applied_delta = float(applied_delta)
         self.last_dopamine_delta = self.compute_dopamine_delta(td_error=td_error)
         self.last_prediction_shock = bool(prediction_shock)
         self.last_prediction_shock_score = float(prediction_shock_score)
@@ -923,7 +924,6 @@ class ValueLayer:
         return {
             "value": new_value,
             "td_error": td_error,
-            "applied_delta": float(applied_delta),
             "reward_raw": reward_raw,
             "reward_scaled": reward_v,
             "delta": td_raw,

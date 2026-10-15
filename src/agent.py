@@ -1051,8 +1051,8 @@ class Agent:
                         stored_experience.td_committed_reward = float(reward)
                         stored_experience.td_prior_value = prior_value
                         stored_experience.td_applied_delta = float(
-                            value_update.get("applied_delta", 0.0)
-                        ) if isinstance(value_update, dict) else 0.0
+                            getattr(self.value_layer, "last_applied_delta", 0.0)
+                        )
                         stored_experience.value_terminal = transition_terminal
                         stored_experience.value_next_context_events = list(next_context_events)
         except Exception:
@@ -3479,7 +3479,7 @@ class Agent:
         )
         exp.td_outcome_committed = True
         exp.td_committed_reward = float(reward_signal)
-        exp.td_applied_delta = float(update.get("applied_delta", 0.0)) if isinstance(update, dict) else 0.0
+        exp.td_applied_delta = float(getattr(self.value_layer, "last_applied_delta", 0.0))
         exp.value_terminal = terminal
         return update
 
