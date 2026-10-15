@@ -35,7 +35,7 @@ from gui_i18n import action_label, axis_label, resolve_lang, set_language, tr  #
 EPISODES = (
     (["context:forage", "event:found_hay"], 0.85, 0.15, 0.0),
     (["context:forage", "event:ate"], 0.70, 0.05, 0.0),
-    (["context:shadow", "event:predator"], -0.80, 0.40, 0.75),
+    (["context:shadow", "event:alarm_call"], -0.80, 0.40, 0.75),
     (["context:safe", "event:groom"], 0.45, 0.10, 0.05),
     (["context:novel", "event:object"], 0.15, 0.90, 0.10),
 )
