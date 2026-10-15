@@ -399,26 +399,74 @@ class NOWAHippocampus:
         self.signatures = keep_sigs
         self._sync_episode_index()
 
+    def _ids_in_use(self) -> Set[str]:
+        used: Set[str] = set()
+        for exp in self.experiences:
+            episode_id = getattr(exp, "episode_id", None)
+            if episode_id:
+                used.add(str(episode_id))
+        for episode_id in self._episodes_by_id.keys():
+            used.add(str(episode_id))
+        return used
+
+    def _highest_episode_seq(self) -> int:
+        highest = 0
+        for episode_id in self._ids_in_use():
+            if not str(episode_id).startswith("ep-"):
+                continue
+            try:
+                highest = max(highest, int(str(episode_id)[3:]))
+            except ValueError:
+                continue
+        return highest
+
     def _assign_episode_id(self, exp: Experience) -> str:
-        """Give an experience a stable id that does not depend on list order."""
+        """Give an experience a stable id that does not depend on list order.
+
+        Never reuse an id that already belongs to a stored episode, even if
+        the counter was reset by a reload.
+        """
         existing = getattr(exp, "episode_id", None)
         if existing:
-            episode_id = str(existing)
-        else:
+            key = str(existing)
+            owner = None
+            for resident in self.experiences:
+                if str(getattr(resident, "episode_id", "")) == key:
+                    owner = resident
+                    break
+            if owner is None or owner is exp:
+                self._episodes_by_id[key] = exp
+                return key
+        used = self._ids_in_use()
+        self._episode_seq = max(int(self._episode_seq), self._highest_episode_seq())
+        episode_id = ""
+        for _ in range(max(1, len(used) + 2)):
+            self._episode_seq += 1
+            candidate = f"ep-{self._episode_seq}"
+            if candidate not in used:
+                episode_id = candidate
+                break
+        if not episode_id:
             self._episode_seq += 1
             episode_id = f"ep-{self._episode_seq}"
-            exp.episode_id = episode_id
+        exp.episode_id = episode_id
         self._episodes_by_id[episode_id] = exp
         return episode_id
 
     def _sync_episode_index(self) -> None:
-        """Rebuild the id index from the episodes that are still stored."""
+        """Rebuild the id index from the episodes that are still stored.
+
+        The first resident with an id keeps it. A later duplicate does not
+        steal the identity of the earlier episode.
+        """
         index: Dict[str, Experience] = {}
         for exp in self.experiences:
             episode_id = getattr(exp, "episode_id", None)
             if not episode_id:
                 continue
-            index[str(episode_id)] = exp
+            key = str(episode_id)
+            if key not in index:
+                index[key] = exp
         self._episodes_by_id = index
 
     def get_experience(self, episode_id: str):
