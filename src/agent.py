@@ -2964,6 +2964,19 @@ class Agent:
         exp = self._resolve_feedback_experience(episode_id)
         if exp is None:
             return result
+        committed_reward = getattr(exp, "td_committed_reward", None)
+        if (
+            bool(getattr(exp, "td_outcome_committed", False))
+            and committed_reward is not None
+            and abs(float(committed_reward) - float(reward_signal)) <= 1e-9
+        ):
+            # Same rating on an already committed transition is a no-op.
+            # Habits, Go/NoGo and the sleep-outcome log must not move again.
+            result["updated"] = True
+            result["td_error"] = float(getattr(exp, "td_error_snapshot", 0.0))
+            result["salience"] = float(getattr(exp, "replay_salience", 0.0))
+            result["importance"] = float(getattr(exp, "replay_importance", 0.0))
+            return result
         try:
             exp.reward = reward_signal
         except Exception:
