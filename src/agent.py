@@ -8,8 +8,9 @@ Behavior emerges from:
 4. Affective regulators - operational parameters for adaptation
 5. Conflict resolution (selector) - confidence-based choice
 
-Learning happens ONLY during sleep consolidation.
-No learning during waking behavior.
+While awake, a known reward updates the value of the transition,
+the outcome-gated habit, and that action's Go/NoGo channel.
+Sleep consolidates episodes; it is not the only learning step.
 """
 
 import hashlib
@@ -63,13 +64,15 @@ except Exception:
 
 class Agent:
     """
-    NOWA Agent - Non-learning behavioral system.
-    
+    NOWA Agent.
+
     During waking:
-    - Experiences are stored (immutable)
-    - Behavior emerges from memory activation
-    - NO learning occurs
-    
+    - Experiences are stored and addressed by episode id
+    - Behavior emerges from memory, habits, and learned action values
+    - A known reward applies one TD update, an outcome-gated habit
+      update, and a Go/NoGo update for the chosen channel
+    - An unknown reward waits for apply_feedback_to_last_experience
+
     During sleep:
     - Experiences are consolidated to patterns
     - Memories are organized and abstracted
@@ -279,9 +282,12 @@ class Agent:
              decision_only: bool = False, terminal: bool = False) -> str:
         """
         Execute one behavioral step.
-        
-        ONLY stores experience and returns action.
-        NO learning happens here, but affective state is updated.
+
+        Stores the episode and returns the action. When ``reward`` is known,
+        this step also applies one TD backup and the outcome updates for the
+        habit and the basal-ganglia channel. ``reward=None`` leaves that
+        learning to apply_feedback_to_last_experience. Affect is updated
+        either way.
         
         Decision pipeline:
         1. Check intent_memory for habits (preferred actions for context)
@@ -2977,10 +2983,11 @@ class Agent:
         episode_id: str = None,
     ) -> dict:
         """
-        Attach explicit user feedback to the latest experience and replay metadata.
+        Attach explicit user feedback to the episode from this step.
 
-        This keeps waking behavior non-learning while preserving a TD snapshot
-        for replay-driven sleep consolidation.
+        A new rating commits one TD backup and the shared outcome update.
+        The same rating again is a no-op. A changed rating revises that
+        one backup inside the current Q instead of rewriting the cell.
         """
         try:
             rating = int(feedback_rating)

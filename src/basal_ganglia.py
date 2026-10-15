@@ -295,10 +295,14 @@ class BasalGangliaGate:
           fold ``novelty_seek`` into it.
 
         Formula:
-        Go   = pressure * (1 + alpha * dopamine) + beta * habit * habit_gain_scale
-        NoGo = |pressure| * (gamma * cortisol + delta * aversive_signal)
+        Go   = (pressure * (1 + alpha * dopamine) + beta * habit * habit_gain_scale
+                + uncertainty_bonus) * go_weight
+        NoGo = nogo_weight * (0.05 + 0.12 * (gamma * cortisol + delta * aversive_signal))
         Net  = Go - NoGo
         gated_score = max(Net - threshold, 0)
+        Stress scales this channel's NoGo weight. It does not multiply |pressure|
+        for every action. If the shared threshold zeroes every score while some
+        net is still positive, those positive nets stay selectable.
         """
         cer_exploration = max(0.0, min(1.5, _safe_finite_float(exploration_bias, 0.0)))
         cer_threshold_shift = max(-0.5, min(0.8, _safe_finite_float(decision_threshold_shift, 0.0)))
