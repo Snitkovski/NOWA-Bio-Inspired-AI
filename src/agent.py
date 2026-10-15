@@ -1039,6 +1039,9 @@ class Agent:
                         stored_experience.td_outcome_committed = True
                         stored_experience.td_committed_reward = float(reward)
                         stored_experience.td_prior_value = prior_value
+                        stored_experience.td_applied_delta = float(
+                            value_update.get("applied_delta", 0.0)
+                        ) if isinstance(value_update, dict) else 0.0
                         stored_experience.value_terminal = transition_terminal
                         stored_experience.value_next_context_events = list(next_context_events)
         except Exception:
@@ -3400,6 +3403,7 @@ class Agent:
         novelty = float(dict(state_snapshot or {}).get("novelty", 0.0))
         conflict = float(dict(state_snapshot or {}).get("conflict", 0.0))
         prior = getattr(exp, "td_prior_value", None) if committed else None
+        replaced_reward = getattr(exp, "td_committed_reward", None) if committed else None
         if not committed:
             exp.td_prior_value = float(self.value_layer.get_value(state_snapshot))
         self._feedback_clock = int(getattr(self, "_feedback_clock", 0)) + 1
@@ -3428,9 +3432,11 @@ class Agent:
                 terminal=terminal,
             ),
             prior_value=None if prior is None else float(prior),
+            replaced_reward=None if replaced_reward is None else float(replaced_reward),
         )
         exp.td_outcome_committed = True
         exp.td_committed_reward = float(reward_signal)
+        exp.td_applied_delta = float(update.get("applied_delta", 0.0)) if isinstance(update, dict) else 0.0
         exp.value_terminal = terminal
         return update
 
