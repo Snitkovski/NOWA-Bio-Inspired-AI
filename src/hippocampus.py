@@ -196,8 +196,17 @@ class NOWAHippocampus:
         return tuple(tokens)
 
     def _discretize_drive(self, drive_vector: Tuple[float, float, float]) -> float:
-        mean_drive = sum(abs(self._safe_float(v, 0.0)) for v in drive_vector) / 3.0
-        return float(min(9, max(0, int(round(mean_drive * 3.0)))))
+        total = 0.0
+        for value in drive_vector:
+            parsed = self._safe_float(value, 0.0)
+            if not math.isfinite(parsed):
+                parsed = 0.0
+            total += abs(parsed)
+        mean_drive = total / 3.0
+        if not math.isfinite(mean_drive):
+            mean_drive = 0.0
+        bucket = int(round(mean_drive * 3.0))
+        return float(min(9, max(0, bucket)))
 
     def _encode_context_vector(
         self,

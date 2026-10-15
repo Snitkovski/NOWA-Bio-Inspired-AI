@@ -318,6 +318,13 @@ class Agent:
             except (TypeError, ValueError):
                 reward = 0.0
                 outcome_known = False
+            else:
+                # NaN is an unknown outcome. ±inf is a saturated finite reward.
+                if math.isnan(reward):
+                    reward = 0.0
+                    outcome_known = False
+                elif not math.isfinite(reward):
+                    reward = 1.0 if reward > 0.0 else -1.0
         self._transition_terminal = bool(terminal)
         self.lived_steps += 1
         try:
