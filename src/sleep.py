@@ -1187,9 +1187,14 @@ class SleepManager:
             ach_snapshot = max(0.0, min(1.0, float(getattr(exp, "acetylcholine_snapshot", 0.0))))
         except Exception:
             ach_snapshot = 0.0
-        ach_baseline = float(getattr(getattr(self, "neuromodulators", None), "ach_baseline", 0.1))
-        ach_baseline = max(0.0, min(1.0, ach_baseline))
-        return max(0.0, min(1.0, ach_snapshot - ach_baseline))
+        reference = getattr(exp, "acetylcholine_mean_snapshot", None)
+        if reference is None:
+            reference = getattr(getattr(self, "neuromodulators", None), "ach_baseline", 0.1)
+        try:
+            ach_reference = max(0.0, min(1.0, float(reference)))
+        except (TypeError, ValueError):
+            ach_reference = 0.1
+        return max(0.0, min(1.0, ach_snapshot - ach_reference))
 
     def _episode_encoding_strength(self, exp) -> float:
         try:

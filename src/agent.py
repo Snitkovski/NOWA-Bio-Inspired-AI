@@ -1048,9 +1048,7 @@ class Agent:
                         stability_index=stability_index,
                         mode="online",
                         acetylcholine=ach_snapshot_for_step,
-                        acetylcholine_baseline=float(
-                            getattr(self.neuromodulators, "ach_baseline", 0.1)
-                        ),
+                        acetylcholine_baseline=self._acetylcholine_gate_reference(),
                         acc_learning_boost=1.0,
                         cer_stress_level=float(effective_modulation.get("cer_stress_level", 0.0)),
                         exploration_baseline=float(effective_modulation.get("exploration_bias", 0.0)),
@@ -1134,6 +1132,7 @@ class Agent:
                 stored_experience.replay_action_id = str(action)
                 stored_experience.replay_count_sleep = 0
                 stored_experience.acetylcholine_snapshot = float(ach_snapshot_for_step)
+                stored_experience.acetylcholine_mean_snapshot = self._acetylcholine_gate_reference()
                 stored_experience.expected_reward_mean = (
                     float(value_update.get("expected_reward_mean", 0.0)) if value_update is not None else 0.0
                 )
@@ -1171,10 +1170,10 @@ class Agent:
         except Exception:
             pass
         
-        # Complete neuromodulator update with TD-driven dopamine and wakefulness deltas.
+        # TD dopamine and wakefulness share one bounded impulse into the field.
         try:
             if hasattr(self, "neuromodulators") and self.neuromodulators is not None:
-                # Phase 5: dopamine encodes TD error, not raw reward.
+                impulses = {}
                 if value_update is not None:
                     td_error = float(value_update.get("td_error", 0.0))
                     dopamine_delta = float(
@@ -1182,36 +1181,21 @@ class Agent:
                         if hasattr(self, "value_layer") and self.value_layer is not None
                         else 0.0
                     )
-                    if hasattr(self.neuromodulators, "apply_dopamine_delta"):
-                        self.neuromodulators.apply_dopamine_delta(dopamine_delta)
-                    else:
-                        self.neuromodulators.dopamine = self.neuromodulators._clamp(
-                            self.neuromodulators.dopamine + dopamine_delta
-                        )
+                    impulses["dopamine"] = dopamine_delta
                     if bool(value_update.get("prediction_shock", False)):
-                        stress_delta = max(
+                        impulses["cortisol"] = max(
                             0.0,
                             min(
                                 0.25,
-                                float(
-                                    value_update.get(
-                                        "confidence_score",
-                                        0.0,
-                                    )
-                                )
-                                * 0.08,
+                                float(value_update.get("confidence_score", 0.0)) * 0.08,
                             ),
                         )
-                        self.neuromodulators.cortisol = self.neuromodulators._clamp(
-                            self.neuromodulators.cortisol + stress_delta
-                        )
-                # Apply wakefulness modulation to neuromodulators
-                if hasattr(self, 'wakefulness'):
+                if hasattr(self, "wakefulness"):
                     deltas = self.wakefulness.get_neuromodulator_deltas()
-                    self.neuromodulators.dopamine = self.neuromodulators._clamp(self.neuromodulators.dopamine + deltas.get('dopamine', 0.0))
-                    self.neuromodulators.cortisol = self.neuromodulators._clamp(self.neuromodulators.cortisol + deltas.get('cortisol', 0.0))
-                    self.neuromodulators.norepinephrine = self.neuromodulators._clamp(self.neuromodulators.norepinephrine + deltas.get('norepinephrine', 0.0))
-                    self.neuromodulators.serotonin = self.neuromodulators._clamp(self.neuromodulators.serotonin + deltas.get('serotonin', 0.0))
+                    for key in ("dopamine", "cortisol", "norepinephrine", "serotonin"):
+                        impulses[key] = float(impulses.get(key, 0.0)) + float(deltas.get(key, 0.0))
+                if impulses and hasattr(self.neuromodulators, "apply_impulses"):
+                    self.neuromodulators.apply_impulses(impulses)
         except Exception:
             pass
 
@@ -3143,6 +3127,7 @@ class Agent:
                 exp.replay_action_id = str(action_id)
             exp.replay_count_sleep = int(getattr(exp, "replay_count_sleep", 0))
             exp.acetylcholine_snapshot = float(getattr(self.neuromodulators, "acetylcholine", 0.0))
+            exp.acetylcholine_mean_snapshot = self._acetylcholine_gate_reference()
             exp.expected_reward_mean = float(value_update.get("expected_reward_mean", 0.0)) if value_update is not None else 0.0
             exp.expected_reward_var = float(value_update.get("expected_reward_var", 0.0)) if value_update is not None else 0.0
             exp.confirmation_count = float(value_update.get("confirmation_count", 0.0)) if value_update is not None else 0.0
@@ -3353,6 +3338,20 @@ class Agent:
         experience.td_mean_snapshot = float(mean_v)
         experience.td_variance_snapshot = float(max(0.0, variance_v))
 
+    def _acetylcholine_gate_reference(self) -> float:
+        neuromodulators = getattr(self, "neuromodulators", None)
+        if neuromodulators is None:
+            return 0.1
+        if hasattr(neuromodulators, "acetylcholine_reference"):
+            try:
+                return float(neuromodulators.acetylcholine_reference())
+            except (TypeError, ValueError):
+                pass
+        try:
+            return float(getattr(neuromodulators, "ach_baseline", 0.1))
+        except (TypeError, ValueError):
+            return 0.1
+
     def _mark_transition_trajectory(self, experience, terminal: bool) -> None:
         """Record real episode order so sleep credit is not the sample index."""
         if experience is None:
@@ -3499,7 +3498,7 @@ class Agent:
             stability_index=stability_index,
             mode="online",
             acetylcholine=float(getattr(self.neuromodulators, "acetylcholine", 0.0)),
-            acetylcholine_baseline=float(getattr(self.neuromodulators, "ach_baseline", 0.1)),
+            acetylcholine_baseline=self._acetylcholine_gate_reference(),
             terminal=terminal,
             bootstrap_value=self._successor_bootstrap(
                 next_context_events=next_context,

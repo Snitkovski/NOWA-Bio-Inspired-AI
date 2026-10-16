@@ -331,11 +331,15 @@ class EmotionalRegulationLayer:
         if neuromodulators is None:
             return applied
 
-        for key, delta in g.items():
+        scaled = {key: float(delta) * gain_v for key, delta in g.items()}
+        if hasattr(neuromodulators, "apply_impulses"):
+            return neuromodulators.apply_impulses(scaled)
+
+        for key, delta in scaled.items():
             if not hasattr(neuromodulators, key):
                 continue
             current = _safe_float(getattr(neuromodulators, key, 0.0), 0.0)
-            candidate = current + (delta * gain_v)
+            candidate = current + delta
             if hasattr(neuromodulators, "_clamp"):
                 candidate = float(neuromodulators._clamp(candidate))
             else:
