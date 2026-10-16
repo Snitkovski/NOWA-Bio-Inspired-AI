@@ -143,6 +143,69 @@ def test_thalamic_gate_ignores_non_finite_weights():
     assert action == "ok"
 
 
+def test_stress_does_not_close_every_action_with_a_positive_surplus():
+    """C09: a shared stress term must not veto the better action."""
+    bg = BasalGangliaGate(threshold=0.5)
+    gated = bg.process(
+        pressure_vector={"best": 0.40, "worse": 0.05},
+        dopamine_level=0.0,
+        cortisol_level=1.0,
+        norepinephrine_level=0.1,
+        habit_strengths={"best": 0.0, "worse": 0.0},
+        aversive_signal=0.8,
+    )
+
+    assert gated["best"] > 0.0
+    assert gated["best"] > gated["worse"]
+    assert abs(bg.last_nogo["best"] - bg.last_nogo["worse"]) < 1e-9
+
+
+def test_untried_action_receives_a_larger_exploration_bonus():
+    bg = BasalGangliaGate()
+    bg.process(
+        pressure_vector={"new": 0.0, "old": 0.0},
+        dopamine_level=0.2,
+        cortisol_level=0.1,
+        norepinephrine_level=0.1,
+        habit_strengths={"new": 0.0, "old": 0.0},
+        aversive_signal=0.0,
+        exploration_bias=0.2,
+        visit_counts={"new": 0, "old": 6},
+    )
+
+    assert bg.last_uncertainty_bonus["new"] > bg.last_uncertainty_bonus["old"]
+    assert bg.last_uncertainty_bonus["new"] <= bg.cer_bonus_cap_abs + 1e-9
+    assert bg.last_gated["new"] > 0.0
+
+
+def test_agent_keeps_no_action_when_the_gate_is_closed():
+    from agent import Agent
+    from cortex import CortexMemory
+    from hippocampus import NOWAHippocampus
+    from intent_memory import IntentMemory
+    from selector import ActionSelector
+    from sleep import SleepManager
+
+    hippocampus = NOWAHippocampus()
+    cortex = CortexMemory()
+    intent_memory = IntentMemory()
+    selector = ActionSelector(actions=["red", "green", "blue"])
+    agent = Agent(
+        hippocampus,
+        cortex,
+        selector,
+        SleepManager(hippocampus, cortex, intent_memory),
+        intent_memory,
+    )
+
+    def _closed(**_kwargs):
+        return {action: 0.0 for action in selector.actions}
+
+    agent.basal_ganglia.process = _closed
+    action = agent.step(["ctx"], decision_only=True)
+    assert action == NO_ACTION
+
+
 def test_basal_ganglia_process_returns_finite_non_negative_scores():
     bg = BasalGangliaGate()
     gated = bg.process(

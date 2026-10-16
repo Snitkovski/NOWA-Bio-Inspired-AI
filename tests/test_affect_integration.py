@@ -256,6 +256,7 @@ class TestSelectorAffectiveModulation:
         mock_exp = Mock()
         mock_exp.intensity = 1.0
         mock_exp.activation_energy = 1.0
+        mock_exp.reward = 1.0
         mock_event = Mock()
         mock_event.event_type.value = "action"
         mock_event.name = "action1"

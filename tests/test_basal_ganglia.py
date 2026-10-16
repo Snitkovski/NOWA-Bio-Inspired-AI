@@ -196,7 +196,12 @@ class TestBasalGangliaGate:
         assert freq_a > 0.2
     
     def test_threat_effect_inhibition(self, bg_gate, channels, affect_state, neuromodulators, wakefulness):
-        """Высокая угроза должна усилить выбор NoGo действий."""
+        """Threat scales per-action NoGo and must not hand the choice to it.
+
+        The old |pressure|·stress term suppressed the strongest Go channel
+        and made the high-NoGo channel look popular. Stress should keep the
+        high-Go channel ahead of the high-NoGo one.
+        """
         random.seed(0)
         affect_state.threat = 0.8  # Опасно
         
@@ -205,9 +210,10 @@ class TestBasalGangliaGate:
             choice = bg_gate.choose(channels, affect_state, neuromodulators, wakefulness)
             choices.append(choice)
         
-        # NoGo каналы должны быть более популярны при угрозе
+        freq_a = choices.count("action_a") / len(choices)
         freq_c = choices.count("action_c") / len(choices)
-        assert freq_c > 0.2
+        assert freq_a > freq_c
+        assert any(choice != "NO_ACTION" for choice in choices)
     
     def test_fatigue_reduces_pfc_pressure(self, bg_gate, channels, affect_state, neuromodulators, wakefulness):
         """TC4: Усталость должна ослабить PFC давление."""

@@ -78,12 +78,21 @@ class TestIntentMemoryIntegration:
         agent.basal_ganglia.temperature = 0.05
 
         context = ["user:кто ты"]
-        for _ in range(8):
-            agent.step(context)
+        target = selector.actions[0]
+        for _ in range(16):
+            action = agent.step(context)
+            # Only the rewarded action becomes a habit. Repeating a punished
+            # action must not count as one.
+            rating = 2 if action == target else -2
+            agent.apply_feedback_to_last_experience(
+                rating,
+                context_events=context,
+                action_id=action,
+            )
 
         intent, confidence = intent_memory.get_dominant_intent(context)
-        assert intent is not None
-        assert confidence > 0.5  # Should have some habit
+        assert intent == target
+        assert confidence > 0.5
     
     def test_selector_uses_intent_pressure(self):
         """Selector использует intent_pressure от intent_memory"""
@@ -164,13 +173,15 @@ class TestIntentMemoryIntegration:
         
         context = ["user:кто ты"]
         
-        # Step 1: Initial step - creates random trace
+        # Step 1: Initial step - creates a trace without treating it as success.
         action1 = agent.step(context)
         traces1 = len(intent_memory.traces)
+        agent.apply_feedback_to_last_experience(2, context_events=context, action_id=action1)
         
-        # Step 2-5: Repeat same context to build habit
+        # Step 2-5: Repeat same context. Reward, not repetition, builds the habit.
         for _ in range(4):
-            agent.step(context)
+            action = agent.step(context)
+            agent.apply_feedback_to_last_experience(2, context_events=context, action_id=action)
         
         traces2 = len(intent_memory.traces)
         
@@ -198,26 +209,34 @@ class TestIntentMemoryIntegration:
         agent = Agent(hippocampus, cortex, selector, sleep_manager, intent_memory)
         
         context = ["user:кто ты"]
+        random.seed(0)
+        agent.deliberative_planning_enabled = False
+        agent.imagination_enabled = False
+        agent.thalamic_gate.base_temperature = 0.03
+        agent.thalamic_gate.min_temperature = 0.03
         
-        # Build strong habit
-        for _ in range(10):
-            agent.step(context)
+        # One action is rewarded. The others are punished, so repetition alone
+        # cannot make them the habit.
+        target = selector.actions[0]
+        for _ in range(16):
+            action = agent.step(context)
+            rating = 2 if action == target else -2
+            agent.apply_feedback_to_last_experience(rating, context_events=context, action_id=action)
         
         # Get the dominant intent
         dominant_intent, confidence = intent_memory.get_dominant_intent(context)
         
         # Now when selector chooses with this intent_pressure
         intent_pressure = intent_memory.activate_by_context(context)
-        
-        # Multiple choices should tend toward dominant_intent
-        choices = []
-        for _ in range(10):
-            action = selector.choose([], [], intent_pressure=intent_pressure)
-            choices.append(action)
-        
-        # Most choices should be the dominant intent
-        dominant_count = sum(1 for a in choices if a == dominant_intent)
-        assert dominant_count >= 6  # At least 60%
+        assert dominant_intent is not None
+        assert confidence > 0.5
+        # Bounded habit traces no longer produce a near-one-hot count, but the
+        # rewarded action must still be the unique top of the pressure vector.
+        pressures = selector.compute_pressures([], [], intent_pressure=intent_pressure)
+        assert max(pressures, key=pressures.get) == dominant_intent
+        assert pressures[dominant_intent] > max(
+            value for action, value in pressures.items() if action != dominant_intent
+        )
 
 
 class TestIntentMemoryWithSelector:

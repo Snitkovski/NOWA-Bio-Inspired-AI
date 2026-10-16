@@ -77,7 +77,7 @@ class TestAgentBehaviorEmergence(unittest.TestCase):
         path = path.add_event(Event("safe_area", EventType.CONTEXT))
         path = path.add_event(Event("action:go", EventType.ACTION))
         
-        self.hippocampus.store(path, intensity=2.0)  # High intensity
+        self.hippocampus.store(path, intensity=2.0, reward=1.0)
         
         # Multiple agent steps in same context
         choices = []

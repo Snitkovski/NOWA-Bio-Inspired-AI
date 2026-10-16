@@ -27,6 +27,7 @@ class AgentStorage:
         # Сохранить все данные через pickle
         agent_state = {
             "hippocampus_experiences": hippocampus.experiences,
+            "hippocampus_episode_seq": int(getattr(hippocampus, "_episode_seq", 0)),
             "cortex_patterns": cortex.patterns,
             "selector_actions": selector.actions,
             "selector_confidence_threshold": selector.confidence_threshold,
@@ -303,6 +304,18 @@ class AgentStorage:
                     "lived_steps": getattr(agent, "lived_steps", 0),
                     "expected_lifetime_steps": getattr(agent, "expected_lifetime_steps", None),
                 }
+                agent_state["last_episode_id"] = getattr(agent, "last_episode_id", None)
+                visit_counts = getattr(agent, "_action_visit_counts", None)
+                if isinstance(visit_counts, dict):
+                    portable_visits = {}
+                    for key, count in visit_counts.items():
+                        if not isinstance(key, tuple) or len(key) != 2:
+                            continue
+                        try:
+                            portable_visits[(str(key[0]), str(key[1]))] = int(count)
+                        except (TypeError, ValueError):
+                            continue
+                    agent_state["action_visit_counts"] = portable_visits
 
                 # Save runtime counters for demo persistence
                 agent_state["agent_runtime"] = {
@@ -358,6 +371,24 @@ class AgentStorage:
         
         # Восстановить данные
         hippocampus.experiences = agent_state["hippocampus_experiences"]
+        if hasattr(hippocampus, "_sync_episode_index"):
+            try:
+                hippocampus._sync_episode_index()
+            except Exception:
+                pass
+        saved_seq = agent_state.get("hippocampus_episode_seq", 0)
+        try:
+            saved_seq = int(saved_seq)
+        except (TypeError, ValueError):
+            saved_seq = 0
+        highest = 0
+        if hasattr(hippocampus, "_highest_episode_seq"):
+            try:
+                highest = int(hippocampus._highest_episode_seq())
+            except Exception:
+                highest = 0
+        if hasattr(hippocampus, "_episode_seq"):
+            hippocampus._episode_seq = max(saved_seq, highest, int(getattr(hippocampus, "_episode_seq", 0)))
         cortex.patterns = agent_state["cortex_patterns"]
         # Селектор действий не имеет весов - это non-learnable компонент
         # Восстанавливаем только конфигурацию
@@ -988,6 +1019,15 @@ class AgentStorage:
                     agent.expected_lifetime_steps = int(life.get("expected_lifetime_steps"))
             except Exception:
                 pass
+
+        if agent is not None and "last_episode_id" in agent_state:
+            agent.last_episode_id = agent_state.get("last_episode_id")
+        if agent is not None and isinstance(agent_state.get("action_visit_counts"), dict):
+            restored_visits = {}
+            for key, count in agent_state.get("action_visit_counts", {}).items():
+                if isinstance(key, tuple) and len(key) == 2:
+                    restored_visits[(str(key[0]), str(key[1]))] = int(count)
+            agent._action_visit_counts = restored_visits
 
         # Restore runtime counters if provided
         if agent is not None and "agent_runtime" in agent_state:

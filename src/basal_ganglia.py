@@ -138,13 +138,16 @@ class ThalamicGate:
         norepinephrine_level: float,
         exploration_bias: float = 0.0,
         stability: float = 1.0,
+        rng: Optional["random.Random"] = None,
     ) -> str:
         scores: Dict[str, float] = {}
         stability_v = max(0.0, min(1.0, _safe_finite_float(stability, 1.0)))
         impulse_scale = 0.55 + 0.45 * stability_v  # low stability → harder impulsive Go
         for action_id, score in dict(gated_scores or {}).items():
             safe_score = max(0.0, _safe_finite_float(score, 0.0)) * impulse_scale
-            scores[str(action_id)] = safe_score
+            # A gated score of 0 is a veto, not a uniform-softmax candidate.
+            if safe_score > 1e-12:
+                scores[str(action_id)] = safe_score
         if not scores or sum(scores.values()) <= 0.0:
             self.last_probabilities = {}
             self.last_temperature = self.temperature_from_ne(
@@ -172,8 +175,9 @@ class ThalamicGate:
         self.last_probabilities = dict(probabilities)
         actions = list(probabilities.keys())
         weights = [probabilities[a] for a in actions]
+        chooser = rng if rng is not None else random
         try:
-            return random.choices(actions, weights=weights, k=1)[0]
+            return chooser.choices(actions, weights=weights, k=1)[0]
         except ValueError:
             return max(scores, key=scores.get)
 
@@ -279,6 +283,7 @@ class BasalGangliaGate:
         habit_gain_scale: float = 1.0,
         response_speed: float = 0.0,
         caution: float = 0.0,
+        visit_counts: Optional[Dict[str, int]] = None,
     ) -> Dict[str, float]:
         """
         Process pressure vector through BG Go/NoGo competition.
@@ -290,10 +295,14 @@ class BasalGangliaGate:
           fold ``novelty_seek`` into it.
 
         Formula:
-        Go   = pressure * (1 + alpha * dopamine) + beta * habit * habit_gain_scale
-        NoGo = |pressure| * (gamma * cortisol + delta * aversive_signal)
+        Go   = (pressure * (1 + alpha * dopamine) + beta * habit * habit_gain_scale
+                + uncertainty_bonus) * go_weight
+        NoGo = nogo_weight * (0.05 + 0.12 * (gamma * cortisol + delta * aversive_signal))
         Net  = Go - NoGo
         gated_score = max(Net - threshold, 0)
+        Stress scales this channel's NoGo weight. It does not multiply |pressure|
+        for every action. If the shared threshold zeroes every score while some
+        net is still positive, those positive nets stay selectable.
         """
         cer_exploration = max(0.0, min(1.5, _safe_finite_float(exploration_bias, 0.0)))
         cer_threshold_shift = max(-0.5, min(0.8, _safe_finite_float(decision_threshold_shift, 0.0)))
@@ -324,6 +333,12 @@ class BasalGangliaGate:
         gated: Dict[str, float] = {}
         uncertainty_bonus_map: Dict[str, float] = {}
         go_cap_map: Dict[str, float] = {}
+        use_visits = visit_counts is not None
+        visits = {
+            str(action_id): max(0, int(_safe_finite_float(count, 0.0)))
+            for action_id, count in dict(visit_counts or {}).items()
+        }
+        total_visits = sum(visits.values())
 
         for action_id in sorted(actions):
             pressure = _safe_finite_float(dict(pressure_vector or {}).get(action_id, 0.0), 0.0)
@@ -332,10 +347,15 @@ class BasalGangliaGate:
             go_weight = max(0.0, _safe_finite_float(action_mod.get("go_weight", 1.0), 1.0))
             nogo_weight = max(0.0, _safe_finite_float(action_mod.get("nogo_weight", 1.0), 1.0))
 
-            # CER exploration bias amplifies uncertain actions, but only when
-            # there is at least minimal evidence for the action.
+            # Optimism is larger for untried actions. Without visit counts,
+            # keep the previous evidence-gated CER bonus.
             uncertainty_bonus = 0.0
-            if abs(pressure) > 1e-12 or habit > 1e-12:
+            n_visits = int(visits.get(action_id, 0))
+            if use_visits:
+                optimism = math.sqrt(math.log(float(total_visits) + 2.0) / (float(n_visits) + 1.0))
+                uncertainty_bonus_raw = optimism * self.cer_bonus_gain * max(0.35, cer_exploration)
+                uncertainty_bonus = min(self.cer_bonus_cap_abs, max(0.0, uncertainty_bonus_raw))
+            elif abs(pressure) > 1e-12 or habit > 1e-12:
                 uncertainty_bonus_raw = cer_exploration * max(0.0, 0.25 - abs(pressure)) * self.cer_bonus_gain
                 uncertainty_bonus = min(self.cer_bonus_cap_abs, uncertainty_bonus_raw)
 
@@ -358,7 +378,11 @@ class BasalGangliaGate:
             if (not math.isfinite(go_cap)) or go_cap < 0.0:
                 go_cap = 0.0
             go_signal = min(go_signal_raw, go_cap) * (1.0 + 0.25 * go_speed)
-            nogo_signal = (abs(pressure) * (self.cortisol_gain_gamma * cort + self.aversion_gain_delta * aversive)) * nogo_weight
+            # NoGo is this channel's learned inhibition. Cortisol and stress
+            # scale that weight; they do not multiply |pressure| for every
+            # action, which used to drive every net negative at once.
+            stress_drive = (self.cortisol_gain_gamma * cort) + (self.aversion_gain_delta * aversive)
+            nogo_signal = nogo_weight * (0.05 + 0.12 * stress_drive)
             nogo_signal *= (1.0 + 0.35 * nogo_caution)
             if not math.isfinite(go_signal):
                 go_signal = 0.0
@@ -370,6 +394,10 @@ class BasalGangliaGate:
                 net_signal = 0.0
             if (not math.isfinite(gated_score)) or gated_score < 0.0:
                 gated_score = 0.0
+            # An untried action stays available. This is not a veto bypass:
+            # once the action has been visited, a non-positive gate stands.
+            if use_visits and n_visits <= 0 and uncertainty_bonus > 0.0:
+                gated_score = max(gated_score, uncertainty_bonus)
 
             go_map[action_id] = go_signal
             nogo_map[action_id] = nogo_signal
@@ -377,6 +405,18 @@ class BasalGangliaGate:
             gated[action_id] = gated_score
             uncertainty_bonus_map[action_id] = uncertainty_bonus
             go_cap_map[action_id] = go_cap
+
+        # A shared threshold may rise under stress, but it must not silence
+        # every channel while at least one action still has a positive surplus.
+        if gated and all(score <= 1e-12 for score in gated.values()):
+            positive_nets = {
+                action_id: net
+                for action_id, net in net_map.items()
+                if math.isfinite(net) and net > 1e-8
+            }
+            if positive_nets:
+                for action_id, net in positive_nets.items():
+                    gated[action_id] = net
 
         self.last_go = go_map
         self.last_nogo = nogo_map

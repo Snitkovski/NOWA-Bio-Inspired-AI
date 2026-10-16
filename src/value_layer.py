@@ -656,6 +656,34 @@ class ValueLayer:
             _safe_float(value, self.last_alpha_effective) for value in self.alpha_effective_trajectory[-self.alpha_trajectory_window :]
         ]
 
+    def _clip_update_delta(self, update_delta: float) -> float:
+        delta = _safe_float(update_delta, 0.0)
+        if not math.isfinite(delta):
+            return 0.0
+        limit = float(self.max_update_l2)
+        if abs(delta) > limit:
+            return math.copysign(limit, delta)
+        return delta
+
+    def _backup_delta(
+        self,
+        reward: float,
+        value_current: float,
+        value_next: float,
+        gamma: float,
+        alpha: float,
+        td_clip: float,
+        cer_stress: float,
+    ) -> float:
+        """Size of one TD backup, without touching tonic or phasic state."""
+        delta = _safe_float(reward, 0.0) + (_safe_float(gamma, 0.0) * _safe_float(value_next, 0.0))
+        delta -= _safe_float(value_current, 0.0)
+        stress = _clamp(_safe_float(cer_stress, 0.0), 0.0, 1.0)
+        if delta < 0.0 and float(self.td_layer.stress_dip_gain) > 0.0:
+            delta = delta * (1.0 + (float(self.td_layer.stress_dip_gain) * stress))
+        clipped = _clamp(delta, -abs(float(td_clip)), abs(float(td_clip)))
+        return self._clip_update_delta(float(alpha) * clipped)
+
     def update(
         self,
         state_snapshot: Mapping[str, Any],
@@ -672,6 +700,10 @@ class ValueLayer:
         cer_stress_level: Optional[float] = None,
         exploration_baseline: Optional[float] = None,
         reward_scale: Optional[float] = None,
+        terminal: bool = False,
+        bootstrap_value: Optional[float] = None,
+        prior_value: Optional[float] = None,
+        replaced_reward: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Update V(s) using TD error.
@@ -747,8 +779,21 @@ class ValueLayer:
         next_state_key = self.encoder.encode(next_state_snapshot or {})
         state_vector = self._state_vector_from_snapshot(state_snapshot)
 
-        current_value = self._get_value(state_key)
+        stored_current = self._get_value(state_key)
+        # A revised rating replaces one backup inside the current Q.
+        # The TD of that backup is still measured from the value that
+        # existed before the backup, but the table is not rewritten from it.
+        revising = prior_value is not None and replaced_reward is not None
+        if revising:
+            current_value = _clamp(_safe_float(prior_value), -1.0, 1.0)
+        else:
+            current_value = stored_current
         next_value = self._get_value(next_state_key)
+        if bool(terminal):
+            next_value = 0.0
+        elif bootstrap_value is not None:
+            # max_a Q(s', a) for the real successor, not the unread action="" key.
+            next_value = _clamp(_safe_float(bootstrap_value), -1.0, 1.0)
 
         td_clip = min(1.0, float(self.td_clip_online)) if mode_v == "online" else 1.0
         td_profile = self.td_layer.compute_td_error(
@@ -830,11 +875,23 @@ class ValueLayer:
             prediction_shock=prediction_shock,
         )
 
-        update_delta = alpha_v * td_error
-        if abs(update_delta) > self.max_update_l2:
-            update_delta = math.copysign(self.max_update_l2, update_delta)
-
-        new_value = _clamp(current_value + update_delta, -1.0, 1.0)
+        update_delta = self._clip_update_delta(alpha_v * td_error)
+        applied_delta = update_delta
+        if revising:
+            old_delta = self._backup_delta(
+                reward=_safe_float(replaced_reward) * reward_scale_v,
+                value_current=current_value,
+                value_next=next_value,
+                gamma=gamma_v,
+                alpha=alpha_v,
+                td_clip=td_clip,
+                cer_stress=cer_stress,
+            )
+            applied_delta = update_delta
+            update_delta = update_delta - old_delta
+            new_value = _clamp(stored_current + update_delta, -1.0, 1.0)
+        else:
+            new_value = _clamp(stored_current + update_delta, -1.0, 1.0)
         self._set_value(state_key, new_value)
 
         self.last_update_ts = ts
@@ -853,6 +910,7 @@ class ValueLayer:
         self.last_tonic_level = tonic_level
         self.last_exploration_delta = float(exploration_delta)
         self.last_value = new_value
+        self.last_applied_delta = float(applied_delta)
         self.last_dopamine_delta = self.compute_dopamine_delta(td_error=td_error)
         self.last_prediction_shock = bool(prediction_shock)
         self.last_prediction_shock_score = float(prediction_shock_score)

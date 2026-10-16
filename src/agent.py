@@ -8,10 +8,12 @@ Behavior emerges from:
 4. Affective regulators - operational parameters for adaptation
 5. Conflict resolution (selector) - confidence-based choice
 
-Learning happens ONLY during sleep consolidation.
-No learning during waking behavior.
+While awake, a known reward updates the value of the transition,
+the outcome-gated habit, and that action's Go/NoGo channel.
+Sleep consolidates episodes; it is not the only learning step.
 """
 
+import hashlib
 import math
 import random
 import time
@@ -62,13 +64,15 @@ except Exception:
 
 class Agent:
     """
-    NOWA Agent - Non-learning behavioral system.
-    
+    NOWA Agent.
+
     During waking:
-    - Experiences are stored (immutable)
-    - Behavior emerges from memory activation
-    - NO learning occurs
-    
+    - Experiences are stored and addressed by episode id
+    - Behavior emerges from memory, habits, and learned action values
+    - A known reward applies one TD update, an outcome-gated habit
+      update, and a Go/NoGo update for the chosen channel
+    - An unknown reward waits for apply_feedback_to_last_experience
+
     During sleep:
     - Experiences are consolidated to patterns
     - Memories are organized and abstracted
@@ -86,6 +90,7 @@ class Agent:
         prediction_layer=None,
         environment_interface=None,
         external_interaction_layer=None,
+        rng_seed: Optional[int] = None,
     ):
         """
         Initialize agent
@@ -167,6 +172,16 @@ class Agent:
         # Last action chosen by the decision pipeline, for diagnostics and for
         # hosts that call step(decision_only=True) and read the choice back.
         self.last_action: str = ""
+        # Id of the episode stored by the latest step(). Feedback addresses
+        # this id; hippocampal list order is not episode identity.
+        self.last_episode_id: Optional[str] = None
+        # Seeded RNG for tie-breaks. Independent of PYTHONHASHSEED.
+        # An explicit rng_seed also drives the thalamic softmax. Without one,
+        # the gate keeps using the global random module so random.seed()
+        # still reproduces older callers.
+        self._rng_controls_thalamic = rng_seed is not None
+        self._rng = random.Random(rng_seed) if rng_seed is not None else random.Random()
+        self._action_visit_counts: dict = {}
         # Creation timestamp for lifetime reporting
         self.created_ts = time.time()
         # Lifetime progress for background dynamics (steps-based)
@@ -262,14 +277,17 @@ class Agent:
         }
     
     def step(self, context_events: list, consequence: Event = None,
-             intensity: float = 1.0, reward: float = 0.0, novelty: float = 0.0,
+             intensity: float = 1.0, reward: Optional[float] = None, novelty: float = 0.0,
              conflict: float = 0.0, affective_inputs: dict = None,
-             decision_only: bool = False) -> str:
+             decision_only: bool = False, terminal: bool = False) -> str:
         """
         Execute one behavioral step.
-        
-        ONLY stores experience and returns action.
-        NO learning happens here, but affective state is updated.
+
+        Stores the episode and returns the action. When ``reward`` is known,
+        this step also applies one TD backup and the outcome updates for the
+        habit and the basal-ganglia channel. ``reward=None`` leaves that
+        learning to apply_feedback_to_last_experience. Affect is updated
+        either way.
         
         Decision pipeline:
         1. Check intent_memory for habits (preferred actions for context)
@@ -282,7 +300,9 @@ class Agent:
             context_events: List of context event names
             consequence: Optional consequence event
             intensity: Emotional intensity of this experience (0-2)
-            reward: Outcome signal (-1.0 to +1.0) for affect update
+            reward: Outcome signal (-1.0 to +1.0). None means the outcome is
+                not known yet; the TD update then waits for feedback.
+            terminal: This transition ends the episode, so the bootstrap is 0.
             novelty: Unexpectedness signal (0.0 to 1.0) for curiosity
             conflict: Conflict detection (0.0 to 1.0) for threat
             affective_inputs: Optional dict of inputs for Phase 4 affective space
@@ -299,6 +319,23 @@ class Agent:
             Action name chosen by selector
         """
         import time
+        outcome_known = reward is not None
+        if reward is None:
+            reward = 0.0
+        else:
+            try:
+                reward = float(reward)
+            except (TypeError, ValueError):
+                reward = 0.0
+                outcome_known = False
+            else:
+                # NaN is an unknown outcome. ±inf is a saturated finite reward.
+                if math.isnan(reward):
+                    reward = 0.0
+                    outcome_known = False
+                elif not math.isfinite(reward):
+                    reward = 1.0 if reward > 0.0 else -1.0
+        self._transition_terminal = bool(terminal)
         self.lived_steps += 1
         try:
             if hasattr(self, "external_interaction_layer") and self.external_interaction_layer is not None:
@@ -440,11 +477,17 @@ class Agent:
             except Exception:
                 action_candidates = []
             if action_candidates:
+                # Equal optimistic prior plus a stable, seeded tie-break.
+                # Built-in hash() is salted per process (PYTHONHASHSEED) and
+                # then locked in by later frequency pressure.
                 key = "|".join(str(x) for x in list(context_events or []))
-                idx = abs(hash(key)) % len(action_candidates)
-                bootstrap_action = str(action_candidates[idx])
-                if bootstrap_action in pressure_vector:
-                    pressure_vector[bootstrap_action] = 0.12
+                ordered = sorted(
+                    str(action_name)
+                    for action_name in action_candidates
+                    if str(action_name) in pressure_vector
+                )
+                for action_name in ordered:
+                    pressure_vector[action_name] = self._stable_bootstrap_prior(key, action_name)
         pressure_vector = self._modulate_pressures_for_organs(pressure_vector)
         effective_modulation = dict(cer_modulation or {})
         acc_output = {}
@@ -819,22 +862,27 @@ class Agent:
             ),
             "planning_temperature_factor": float(planning_temp_factor),
         }
+        pressure_vector = self._blend_learned_action_values(
+            pressure_vector,
+            context_events=context_events,
+            intensity=float(intensity),
+            novelty=float(novelty),
+            conflict=float(conflict),
+        )
+        # Stash counts on self so monkeypatched pipeline wrappers keep their
+        # original signature. The real pipeline reads this attribute.
+        self._pending_visit_counts = self._visit_counts_for(
+            context_events,
+            list(pressure_vector or {}),
+        )
         action = self._select_action_via_basal_ganglia_pipeline(
             pressure_vector,
             cer_modulation_factors=effective_modulation,
         )
-        if action == NO_ACTION and isinstance(pressure_vector, dict) and pressure_vector:
-            try:
-                max_pressure = max(float(v) for v in pressure_vector.values())
-            except Exception:
-                max_pressure = 0.0
-            if max_pressure > 0.0:
-                try:
-                    action = max(pressure_vector, key=pressure_vector.get)
-                except Exception:
-                    pass
+        # NO_ACTION is the gate's answer. Do not replace it with argmax(pressure).
 
         self.last_action = action
+        self._record_action_visit(context_events, action)
         if decision_only:
             return action
 
@@ -858,12 +906,12 @@ class Agent:
         # Record the trace in intent_memory for habit formation
         # Include affective context for habit learning
         if self.intent_memory and action != NO_ACTION:
-            self.intent_memory.record_trace(context_events, action)
-            # Update habits based on affective state
-            # Apply affect modulation as multiplier (not boolean decision)
-            reinforcement_mod = self.affect_state.get_habit_reinforcement_modifier(1.0)
-            if reinforcement_mod > 0.0:
-                self.intent_memory.strengthen_trace(context_events, action, reinforcement_mod)
+            # Selection is not evidence. Strength moves only when the outcome
+            # is known (see apply_feedback_to_last_experience).
+            if hasattr(self.intent_memory, "note_selection"):
+                self.intent_memory.note_selection(context_events, action)
+            else:
+                self.intent_memory.record_trace(context_events, action)
         
         # Add action to path
         path = path.add_event(Event(f"action:{action}", event_type=EventType.ACTION))
@@ -942,6 +990,8 @@ class Agent:
                 stored_experience.encoding_strength = float(encoding_strength)
         except Exception:
             pass
+        if stored_experience is not None:
+            self.last_episode_id = getattr(stored_experience, "episode_id", None)
         try:
             if stored_experience is not None and hasattr(self, "affective_space") and self.affective_space is not None:
                 create_trace = getattr(self.affective_space, "create_trace", None)
@@ -967,32 +1017,63 @@ class Agent:
                 except Exception:
                     stability_index = None
 
-                value_update = self.value_layer.update(
-                    state_snapshot=value_state_snapshot,
-                    reward=reward,
-                    next_state_snapshot=value_next_state_snapshot,
-                    gamma=getattr(self.value_layer, "gamma_default", 0.95),
-                    alpha=float(
-                        getattr(
-                            self.value_layer,
-                            "alpha_online_default",
-                            getattr(self.value_layer, "alpha_default", 0.03),
+                if outcome_known:
+                    transition_terminal = bool(getattr(self, "_transition_terminal", False))
+                    prior_value = float(self.value_layer.get_value(value_state_snapshot))
+                    value_update = self.value_layer.update(
+                        state_snapshot=value_state_snapshot,
+                        reward=reward,
+                        next_state_snapshot=value_next_state_snapshot,
+                        gamma=getattr(self.value_layer, "gamma_default", 0.95),
+                        alpha=float(
+                            getattr(
+                                self.value_layer,
+                                "alpha_online_default",
+                                getattr(self.value_layer, "alpha_default", 0.03),
+                            )
                         )
+                        * max(0.5, min(2.0, float(effective_modulation.get("learning_rate_scale", 1.0)))),
+                        timestamp=float(self.lived_steps),
+                        stability_index=stability_index,
+                        mode="online",
+                        acetylcholine=ach_snapshot_for_step,
+                        acetylcholine_baseline=float(
+                            getattr(self.neuromodulators, "ach_baseline", 0.1)
+                        ),
+                        acc_learning_boost=1.0,
+                        cer_stress_level=float(effective_modulation.get("cer_stress_level", 0.0)),
+                        exploration_baseline=float(effective_modulation.get("exploration_bias", 0.0)),
+                        terminal=transition_terminal,
+                        bootstrap_value=self._successor_bootstrap(
+                            next_context_events=next_context_events,
+                            intensity=float(intensity),
+                            novelty=float(novelty),
+                            conflict=float(conflict),
+                            terminal=transition_terminal,
+                        ),
                     )
-                    * max(0.5, min(2.0, float(effective_modulation.get("learning_rate_scale", 1.0)))),
-                    timestamp=float(self.lived_steps),
-                    stability_index=stability_index,
-                    mode="online",
-                    acetylcholine=ach_snapshot_for_step,
-                    acetylcholine_baseline=float(
-                        getattr(self.neuromodulators, "ach_baseline", 0.1)
-                    ),
-                    acc_learning_boost=1.0,
-                    cer_stress_level=float(effective_modulation.get("cer_stress_level", 0.0)),
-                    exploration_baseline=float(effective_modulation.get("exploration_bias", 0.0)),
-                )
+                    if stored_experience is not None:
+                        stored_experience.td_outcome_committed = True
+                        stored_experience.td_committed_reward = float(reward)
+                        stored_experience.td_prior_value = prior_value
+                        stored_experience.td_applied_delta = float(
+                            getattr(self.value_layer, "last_applied_delta", 0.0)
+                        )
+                        stored_experience.value_terminal = transition_terminal
+                        stored_experience.value_next_context_events = list(next_context_events)
         except Exception:
             value_update = None
+
+        if outcome_known:
+            self._record_known_outcome(
+                context_events=list(context_events or []),
+                action_id=str(getattr(self, "last_action", "") or ""),
+                outcome=float(reward),
+            )
+        if stored_experience is not None and not outcome_known:
+            stored_experience.td_outcome_committed = False
+            stored_experience.value_terminal = bool(getattr(self, "_transition_terminal", False))
+            stored_experience.value_next_context_events = list(next_context_events)
 
         # Save replay metadata for Phase 5.A.1 sleep replay (affect-independent).
         try:
@@ -2534,7 +2615,10 @@ class Agent:
         self,
         pressure_vector: dict,
         cer_modulation_factors: Optional[Mapping[str, Any]] = None,
+        visit_counts: Optional[Mapping[str, int]] = None,
     ) -> str:
+        if visit_counts is None:
+            visit_counts = getattr(self, "_pending_visit_counts", None)
         pressures = dict(pressure_vector or {})
         if not pressures:
             actions_attr = getattr(self.selector, "actions", [])
@@ -2589,6 +2673,7 @@ class Agent:
                 habit_gain_scale=habit_gain_scale,
                 response_speed=response_speed,
                 caution=caution,
+                visit_counts=None if visit_counts is None else dict(visit_counts),
             )
         except TypeError:
             # Backward compatibility for monkeypatched/custom process implementations.
@@ -2606,6 +2691,7 @@ class Agent:
             norepinephrine_level=float(getattr(self.neuromodulators, "norepinephrine", 0.0)),
             exploration_bias=exploration_bias,
             stability=float((getattr(self.affective_space, "axes", {}) or {}).get("stability", 1.0)),
+            rng=self._rng if getattr(self, "_rng_controls_thalamic", False) else None,
         )
         self.basal_ganglia.selection_history.append(
             (selected_action, self.basal_ganglia.last_nets.get(selected_action, 0.0))
@@ -2746,6 +2832,7 @@ class Agent:
         except Exception:
             cer_modulation = {}
 
+        self._pending_visit_counts = None
         return self._select_action_via_basal_ganglia_pipeline(
             pressure_vector,
             cer_modulation_factors=cer_modulation,
@@ -2773,12 +2860,134 @@ class Agent:
             self.neuromodulators.serotonin
         ))
 
-    def apply_feedback_to_last_experience(self, feedback_rating: int, context_events=None, action_id: str = None) -> dict:
-        """
-        Attach explicit user feedback to the latest experience and replay metadata.
+    def _record_known_outcome(self, context_events, action_id: str, outcome: float) -> None:
+        """Apply one known outcome to the habit, the BG channel, and the sleep log.
 
-        This keeps waking behavior non-learning while preserving a TD snapshot
-        for replay-driven sleep consolidation.
+        ``step(reward=...)`` and ``apply_feedback_to_last_experience`` both
+        call this so a known reward is not TD-only.
+        """
+        self._apply_outcome_to_habits(
+            context_events=list(context_events or []),
+            action_id=str(action_id or ""),
+            outcome=float(outcome),
+        )
+        self._apply_outcome_to_channel(str(action_id or ""), float(outcome))
+        if action_id and str(action_id) != NO_ACTION:
+            try:
+                self.record_action_outcome(str(action_id), float(outcome))
+            except Exception:
+                pass
+
+    def _apply_outcome_to_channel(self, action_id: str, outcome: float) -> None:
+        """Move this action's learned Go/NoGo. Other actions are left alone."""
+        if not action_id or action_id == NO_ACTION:
+            return
+        channel = getattr(self, "bg_action_channels", {}).get(str(action_id))
+        if channel is None or not hasattr(channel, "update_weights"):
+            return
+        try:
+            outcome_v = float(outcome)
+        except (TypeError, ValueError):
+            return
+        if not math.isfinite(outcome_v) or abs(outcome_v) < 1e-12:
+            return
+        rate = 0.08
+        if outcome_v > 0.0:
+            channel.update_weights(
+                go_delta=rate * outcome_v,
+                nogo_delta=-0.5 * rate * outcome_v,
+            )
+        else:
+            magnitude = abs(outcome_v)
+            channel.update_weights(
+                go_delta=-0.5 * rate * magnitude,
+                nogo_delta=rate * magnitude,
+            )
+
+    def _apply_outcome_to_habits(self, context_events, action_id: str, outcome: float) -> None:
+        """Outcome-gated habit update. Affect scales the rate only."""
+        if not action_id or action_id == NO_ACTION:
+            return
+        memory = getattr(self, "intent_memory", None)
+        if memory is None or not hasattr(memory, "apply_outcome"):
+            return
+        affect_gain = 1.0
+        try:
+            affect_gain = float(self.affect_state.get_habit_reinforcement_modifier(1.0))
+        except Exception:
+            affect_gain = 1.0
+        try:
+            memory.apply_outcome(
+                list(context_events or []),
+                str(action_id),
+                float(outcome),
+                affect_gain=affect_gain,
+            )
+        except TypeError:
+            memory.apply_outcome(list(context_events or []), str(action_id), float(outcome))
+
+    def _context_visit_key(self, context_events) -> str:
+        return "|".join(str(item) for item in list(context_events or []))
+
+    def _visit_counts_for(self, context_events, actions) -> dict:
+        key = self._context_visit_key(context_events)
+        counts = getattr(self, "_action_visit_counts", None)
+        if not isinstance(counts, dict):
+            counts = {}
+            self._action_visit_counts = counts
+        return {
+            str(action): int(counts.get((key, str(action)), 0))
+            for action in list(actions or [])
+        }
+
+    def _record_action_visit(self, context_events, action: str) -> None:
+        if not action or str(action) == NO_ACTION:
+            return
+        key = self._context_visit_key(context_events)
+        counts = getattr(self, "_action_visit_counts", None)
+        if not isinstance(counts, dict):
+            counts = {}
+            self._action_visit_counts = counts
+        token = (key, str(action))
+        counts[token] = int(counts.get(token, 0)) + 1
+
+    def _stable_bootstrap_prior(self, context_key: str, action_name: str) -> float:
+        """Small cold-start prior that does not use process-salted hash()."""
+        digest = hashlib.sha256(f"{context_key}|{action_name}".encode("utf-8")).digest()
+        stable = (int.from_bytes(digest[:4], "big") % 1000) / 1000.0
+        draw = float(self._rng.random())
+        return 0.12 + ((draw + stable) * 0.01)
+
+    def _resolve_feedback_experience(self, episode_id: str = None):
+        """Find the episode that just acted.
+
+        List order is not identity: capacity eviction re-sorts experiences,
+        so ``experiences[-1]`` can be a different survivor. Address by id.
+        """
+        target_id = episode_id or getattr(self, "last_episode_id", None)
+        if not target_id:
+            return None
+        getter = getattr(self.hippocampus, "get_experience", None)
+        if not callable(getter):
+            return None
+        try:
+            return getter(target_id)
+        except Exception:
+            return None
+
+    def apply_feedback_to_last_experience(
+        self,
+        feedback_rating: int,
+        context_events=None,
+        action_id: str = None,
+        episode_id: str = None,
+    ) -> dict:
+        """
+        Attach explicit user feedback to the episode from this step.
+
+        A new rating commits one TD backup and the shared outcome update.
+        The same rating again is a no-op. A changed rating revises that
+        one backup inside the current Q instead of rewriting the cell.
         """
         try:
             rating = int(feedback_rating)
@@ -2795,15 +3004,32 @@ class Agent:
             "importance": 0.0,
         }
 
-        experiences = getattr(self.hippocampus, "experiences", [])
-        if not experiences:
+        exp = self._resolve_feedback_experience(episode_id)
+        if exp is None:
             return result
-
-        exp = experiences[-1]
+        committed_reward = getattr(exp, "td_committed_reward", None)
+        if (
+            bool(getattr(exp, "td_outcome_committed", False))
+            and committed_reward is not None
+            and abs(float(committed_reward) - float(reward_signal)) <= 1e-9
+        ):
+            # Same rating on an already committed transition is a no-op.
+            # Habits, Go/NoGo and the sleep-outcome log must not move again.
+            result["updated"] = True
+            result["td_error"] = float(getattr(exp, "td_error_snapshot", 0.0))
+            result["salience"] = float(getattr(exp, "replay_salience", 0.0))
+            result["importance"] = float(getattr(exp, "replay_importance", 0.0))
+            return result
         try:
             exp.reward = reward_signal
         except Exception:
             pass
+        resolved_action = str(action_id or getattr(exp, "replay_action_id", "") or "")
+        self._record_known_outcome(
+            context_events=list(context_events or []),
+            action_id=resolved_action,
+            outcome=reward_signal,
+        )
 
         state_snapshot = getattr(exp, "value_state_snapshot", None)
         if not isinstance(state_snapshot, dict):
@@ -2842,21 +3068,13 @@ class Agent:
         value_update = None
         try:
             if hasattr(self, "value_layer") and self.value_layer is not None:
-                value_update = self.value_layer.update(
+                value_update = self._apply_feedback_value_update(
+                    exp=exp,
                     state_snapshot=state_snapshot,
-                    reward=reward_signal,
-                    next_state_snapshot=next_snapshot,
-                    gamma=getattr(self.value_layer, "gamma_default", 0.95),
-                    alpha=getattr(
-                        self.value_layer,
-                        "alpha_online_default",
-                        getattr(self.value_layer, "alpha_default", 0.03),
-                    ),
-                    timestamp=time.time(),
+                    next_snapshot=next_snapshot,
+                    reward_signal=reward_signal,
                     stability_index=stability_index,
-                    mode="online",
-                    acetylcholine=float(getattr(self.neuromodulators, "acetylcholine", 0.0)),
-                    acetylcholine_baseline=float(getattr(self.neuromodulators, "ach_baseline", 0.1)),
+                    context_events=list(context_events or []),
                 )
         except Exception:
             value_update = None
@@ -2945,11 +3163,6 @@ class Agent:
         except Exception:
             pass
 
-        if action_id:
-            try:
-                self.record_action_outcome(str(action_id), reward_signal)
-            except Exception:
-                pass
         if prediction_shock and hasattr(self, "neuromodulators") and self.neuromodulators is not None:
             try:
                 stress_delta = max(0.0, min(0.25, confidence_score * 0.08))
@@ -3127,6 +3340,155 @@ class Agent:
         experience.td_sign_snapshot = int(1 if td_value > 1e-12 else (-1 if td_value < -1e-12 else 0))
         experience.td_mean_snapshot = float(mean_v)
         experience.td_variance_snapshot = float(max(0.0, variance_v))
+
+    def _successor_bootstrap(
+        self,
+        next_context_events,
+        intensity: float,
+        novelty: float,
+        conflict: float,
+        terminal: bool,
+    ) -> float:
+        """max_a Q(s', a) for the real next context. Terminal transitions bootstrap at 0."""
+        if terminal or getattr(self, "value_layer", None) is None:
+            return 0.0
+        try:
+            actions = [str(action) for action in list(getattr(self.selector, "actions", []) or [])]
+        except Exception:
+            actions = []
+        best = None
+        for action in actions:
+            snapshot = self._build_value_state_snapshot(
+                context_events=list(next_context_events or []),
+                action=action,
+                consequence=None,
+                intensity=float(intensity),
+                novelty=float(novelty),
+                conflict=float(conflict),
+            )
+            try:
+                value = float(self.value_layer.get_value(snapshot))
+            except Exception:
+                continue
+            if best is None or value > best:
+                best = value
+        return 0.0 if best is None else float(best)
+
+    def _blend_learned_action_values(
+        self,
+        pressure_vector,
+        context_events,
+        intensity: float,
+        novelty: float,
+        conflict: float,
+    ) -> dict:
+        """Use Q(s, a) as the primary score once any action has been valued."""
+        pressures = dict(pressure_vector or {})
+        value_layer = getattr(self, "value_layer", None)
+        if not pressures or value_layer is None:
+            return pressures
+        q_values = {}
+        for action in pressures:
+            snapshot = self._build_value_state_snapshot(
+                context_events=list(context_events or []),
+                action=str(action),
+                consequence=None,
+                intensity=float(intensity),
+                novelty=float(novelty),
+                conflict=float(conflict),
+            )
+            try:
+                q_values[action] = float(value_layer.get_value(snapshot))
+            except Exception:
+                q_values[action] = 0.0
+        if all(abs(value) <= 1e-8 for value in q_values.values()):
+            return pressures
+        blended = {}
+        for action, pressure in pressures.items():
+            mixed = (0.8 * q_values.get(action, 0.0)) + (0.2 * float(pressure))
+            if not math.isfinite(mixed):
+                mixed = 0.0
+            blended[action] = max(-1.0, min(1.0, mixed))
+        return blended
+
+    def _apply_feedback_value_update(
+        self,
+        exp,
+        state_snapshot,
+        next_snapshot,
+        reward_signal: float,
+        stability_index,
+        context_events,
+    ):
+        """One TD backup per transition. A later rating revises that backup."""
+        committed = bool(getattr(exp, "td_outcome_committed", False))
+        committed_reward = getattr(exp, "td_committed_reward", None)
+        same_reward = (
+            committed
+            and committed_reward is not None
+            and abs(float(committed_reward) - float(reward_signal)) <= 1e-9
+        )
+        if same_reward:
+            return {
+                "td_error": float(getattr(exp, "td_error_snapshot", 0.0)),
+                "state_key": str(getattr(exp, "value_state_key", "")),
+                "replay_priority": float(getattr(exp, "replay_priority", 0.0)),
+                "consolidation_weight": float(getattr(exp, "consolidation_weight", 0.0)),
+                "confidence_score": float(getattr(exp, "expectation_confidence_score", 0.0)),
+                "stability_score": float(getattr(exp, "expectation_stability_score", 0.0)),
+                "prediction_shock": bool(getattr(exp, "prediction_shock_flag", False)),
+                "expected_reward_mean": float(getattr(exp, "expected_reward_mean", 0.0)),
+                "expected_reward_var": float(getattr(exp, "expected_reward_var", 0.0)),
+                "confirmation_count": float(getattr(exp, "confirmation_count", 0.0)),
+                "prediction_shock_score": float(getattr(exp, "prediction_shock_score", 0.0)),
+                "error_likelihood": float(getattr(exp, "error_likelihood", 0.0)),
+                "shock_replay_boost": float(getattr(exp, "shock_replay_boost", 1.0)),
+            }
+
+        terminal = bool(getattr(exp, "value_terminal", getattr(self, "_transition_terminal", False)))
+        next_context = getattr(exp, "value_next_context_events", None)
+        if not isinstance(next_context, list):
+            next_context = list(context_events or [])
+        intensity = float(dict(state_snapshot or {}).get("intensity", getattr(exp, "intensity", 1.0)))
+        novelty = float(dict(state_snapshot or {}).get("novelty", 0.0))
+        conflict = float(dict(state_snapshot or {}).get("conflict", 0.0))
+        prior = getattr(exp, "td_prior_value", None) if committed else None
+        replaced_reward = getattr(exp, "td_committed_reward", None) if committed else None
+        if not committed:
+            exp.td_prior_value = float(self.value_layer.get_value(state_snapshot))
+        self._feedback_clock = int(getattr(self, "_feedback_clock", 0)) + 1
+        timestamp = float(getattr(self, "lived_steps", 0)) + (self._feedback_clock * 0.001)
+        update = self.value_layer.update(
+            state_snapshot=state_snapshot,
+            reward=float(reward_signal),
+            next_state_snapshot=next_snapshot,
+            gamma=getattr(self.value_layer, "gamma_default", 0.95),
+            alpha=getattr(
+                self.value_layer,
+                "alpha_online_default",
+                getattr(self.value_layer, "alpha_default", 0.03),
+            ),
+            timestamp=timestamp,
+            stability_index=stability_index,
+            mode="online",
+            acetylcholine=float(getattr(self.neuromodulators, "acetylcholine", 0.0)),
+            acetylcholine_baseline=float(getattr(self.neuromodulators, "ach_baseline", 0.1)),
+            terminal=terminal,
+            bootstrap_value=self._successor_bootstrap(
+                next_context_events=next_context,
+                intensity=intensity,
+                novelty=novelty,
+                conflict=conflict,
+                terminal=terminal,
+            ),
+            prior_value=None if prior is None else float(prior),
+            replaced_reward=None if replaced_reward is None else float(replaced_reward),
+        )
+        exp.td_outcome_committed = True
+        exp.td_committed_reward = float(reward_signal)
+        exp.td_applied_delta = float(getattr(self.value_layer, "last_applied_delta", 0.0))
+        exp.value_terminal = terminal
+        return update
 
     def _build_value_state_snapshot(
         self,
