@@ -286,10 +286,14 @@ def test_replay_ach_gain_is_damped_when_value_variance_is_high():
     exp.replay_importance = 0.0
     exp.acetylcholine_snapshot = 1.0
 
+    exp.state_estimate_variance = 0.0
     low_variance_priority = sleep._compute_replay_priority(exp, value_variance=0.0)
-    high_variance_priority = sleep._compute_replay_priority(
+    spread_priority = sleep._compute_replay_priority(
         exp, value_variance=sleep.instability_variance_threshold
     )
+    exp.state_estimate_variance = float(sleep.instability_variance_threshold)
+    high_variance_priority = sleep._compute_replay_priority(exp, value_variance=0.0)
+    assert spread_priority == pytest.approx(low_variance_priority)
     assert high_variance_priority < low_variance_priority
 
 

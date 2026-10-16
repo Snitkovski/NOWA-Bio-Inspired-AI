@@ -91,6 +91,7 @@ class AgentStorage:
                     "salience_threshold",
                     "min_reinforcement_for_consolidation",
                     "variance_gate_threshold",
+                    "state_estimate_variance_threshold",
                     "ach_min_for_consolidation",
                     "stability_index_threshold",
                     "consolidation_cap",
@@ -305,6 +306,10 @@ class AgentStorage:
                     "expected_lifetime_steps": getattr(agent, "expected_lifetime_steps", None),
                 }
                 agent_state["last_episode_id"] = getattr(agent, "last_episode_id", None)
+                agent_state["trajectory_seq"] = int(getattr(agent, "_trajectory_seq", 0))
+                agent_state["trajectory_step"] = int(getattr(agent, "_trajectory_step", 0))
+                agent_state["trajectory_id"] = getattr(agent, "_trajectory_id", None)
+                agent_state["trajectory_closed"] = bool(getattr(agent, "_trajectory_closed", True))
                 visit_counts = getattr(agent, "_action_visit_counts", None)
                 if isinstance(visit_counts, dict):
                     portable_visits = {}
@@ -490,6 +495,7 @@ class AgentStorage:
                     "salience_threshold",
                     "min_reinforcement_for_consolidation",
                     "variance_gate_threshold",
+                    "state_estimate_variance_threshold",
                     "ach_min_for_consolidation",
                     "stability_index_threshold",
                     "consolidation_cap",
@@ -1022,6 +1028,15 @@ class AgentStorage:
 
         if agent is not None and "last_episode_id" in agent_state:
             agent.last_episode_id = agent_state.get("last_episode_id")
+        if agent is not None and "trajectory_seq" in agent_state:
+            try:
+                agent._trajectory_seq = int(agent_state.get("trajectory_seq", 0))
+                agent._trajectory_step = int(agent_state.get("trajectory_step", 0))
+                raw_trajectory = agent_state.get("trajectory_id")
+                agent._trajectory_id = None if raw_trajectory in (None, "") else str(raw_trajectory)
+                agent._trajectory_closed = bool(agent_state.get("trajectory_closed", True))
+            except (TypeError, ValueError):
+                pass
         if agent is not None and isinstance(agent_state.get("action_visit_counts"), dict):
             restored_visits = {}
             for key, count in agent_state.get("action_visit_counts", {}).items():

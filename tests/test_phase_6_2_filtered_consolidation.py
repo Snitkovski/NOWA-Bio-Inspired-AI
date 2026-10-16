@@ -70,13 +70,24 @@ def test_repeated_significant_episode_is_consolidated():
     assert stats["consolidation_ratio"] > 0.0
 
 
-def test_high_value_variance_blocks_sleep_consolidation():
+def test_high_value_variance_does_not_block_sleep_consolidation():
+    """Cross-state spread is not a replay gate.
+
+    The previous test required replay to stop once V values were far apart.
+    That blocked well-separated tables. Per-state estimate variance is the
+    gate; see tests/test_issue9_sleep_value_replay.py.
+    """
     agent = _build_agent(actions=("variance",))
     sleep = agent.sleep_manager
     sleep.instability_variance_threshold = 0.1
+    sleep.td_threshold = 0.05
+    sleep.salience_threshold = 0.0
+    sleep.ach_min_for_consolidation = 0.0
 
     for _ in range(4):
         _step(agent, context="ctx_var", reward=0.8, novelty=1.0)
+    for exp in agent.hippocampus.experiences:
+        exp.reinforcement_count = 3
 
     agent.value_layer._set_value("v0", -1.0)
     agent.value_layer._set_value("v1", 1.0)
@@ -84,9 +95,10 @@ def test_high_value_variance_blocks_sleep_consolidation():
     agent.value_layer._set_value("v3", 1.0)
 
     stats = agent.sleep(cycles=1)
-    assert stats["total_replay_blocked"] == 1
-    assert stats["total_replays"] == 0
-    assert stats["rejected_due_to_variance_gate"] >= 1
+    assert float(stats.get("value_variance_ratio", 0.0)) >= 1.0
+    assert stats["total_replay_blocked"] == 0
+    assert stats["total_replays"] >= 1
+    assert int(stats.get("rejected_due_to_variance_gate", 0)) == 0
 
 
 def test_budget_overflow_stops_sleep_updates():
@@ -95,7 +107,9 @@ def test_budget_overflow_stops_sleep_updates():
     sleep.replay_budget_per_sleep = 20
     sleep.max_replay_per_episode = 20
     sleep.per_update_cap = 0.02
-    sleep.global_sleep_update_budget = 0.03
+    # Recomputed TD steps are smaller than the old sign-sized step, so the
+    # budget sits under a few of those steps. The cap itself is unchanged.
+    sleep.global_sleep_update_budget = 0.004
     sleep.max_l2_update_per_cycle = 1.0
 
     for _ in range(6):

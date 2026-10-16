@@ -175,6 +175,13 @@ class Agent:
         # Id of the episode stored by the latest step(). Feedback addresses
         # this id; hippocampal list order is not episode identity.
         self.last_episode_id: Optional[str] = None
+        # Trajectory identity is separate from episode_id. episode_id addresses
+        # one stored transition. A trajectory is the sequence of transitions
+        # between terminal steps, and episode_step is the index inside it.
+        self._trajectory_seq: int = 0
+        self._trajectory_step: int = 0
+        self._trajectory_id: Optional[str] = None
+        self._trajectory_closed: bool = True
         # Seeded RNG for tie-breaks. Independent of PYTHONHASHSEED.
         # An explicit rng_seed also drives the thalamic softmax. Without one,
         # the gate keeps using the global random module so random.seed()
@@ -992,6 +999,10 @@ class Agent:
             pass
         if stored_experience is not None:
             self.last_episode_id = getattr(stored_experience, "episode_id", None)
+            self._mark_transition_trajectory(
+                stored_experience,
+                terminal=bool(getattr(self, "_transition_terminal", False)),
+            )
         try:
             if stored_experience is not None and hasattr(self, "affective_space") and self.affective_space is not None:
                 create_trace = getattr(self.affective_space, "create_trace", None)
@@ -3340,6 +3351,21 @@ class Agent:
         experience.td_sign_snapshot = int(1 if td_value > 1e-12 else (-1 if td_value < -1e-12 else 0))
         experience.td_mean_snapshot = float(mean_v)
         experience.td_variance_snapshot = float(max(0.0, variance_v))
+
+    def _mark_transition_trajectory(self, experience, terminal: bool) -> None:
+        """Record real episode order so sleep credit is not the sample index."""
+        if experience is None:
+            return
+        if getattr(self, "_trajectory_id", None) is None or bool(getattr(self, "_trajectory_closed", True)):
+            self._trajectory_seq = int(getattr(self, "_trajectory_seq", 0)) + 1
+            self._trajectory_id = f"traj-{int(self._trajectory_seq)}"
+            self._trajectory_step = 0
+            self._trajectory_closed = False
+        experience.trajectory_id = str(self._trajectory_id)
+        experience.episode_step = int(getattr(self, "_trajectory_step", 0))
+        self._trajectory_step = int(experience.episode_step) + 1
+        if bool(terminal):
+            self._trajectory_closed = True
 
     def _successor_bootstrap(
         self,

@@ -125,25 +125,32 @@ def test_runaway_protection_caps_and_normalization():
 
 
 def test_instability_blocks_replay_and_reinforcement():
+    """A high per-state estimate variance blocks that state's replay.
+
+    Spreading unrelated table entries used to trip the same flag. That spread
+    is no longer the gate; the estimate variance on the replayed state is.
+    """
     agent = _build_agent(actions=("stable",))
     sleep = agent.sleep_manager
     sleep.decay_rate_sleep = 0.0
     sleep.weight_norm_cap = 10.0
-    sleep.instability_variance_threshold = 0.1
+    sleep.td_threshold = 0.05
+    sleep.salience_threshold = 0.0
+    sleep.ach_min_for_consolidation = 0.0
 
     for _ in range(4):
         _step(agent, context="ctx_block", reward=0.7, consequence_name="feedback:1")
-
-    agent.value_layer._set_value("v0", -1.0)
-    agent.value_layer._set_value("v1", 1.0)
-    agent.value_layer._set_value("v2", -1.0)
-    agent.value_layer._set_value("v3", 1.0)
+    for exp in agent.hippocampus.experiences:
+        exp.reinforcement_count = 3
+        state_key = str(getattr(exp, "value_state_key", "") or "")
+        if state_key:
+            agent.value_layer.expectation_memory[state_key] = {"expected_reward_var": 1.0}
 
     before = agent.bg_action_channels["stable"].go_weight
     stats = agent.sleep(cycles=1)
     after = agent.bg_action_channels["stable"].go_weight
 
-    assert stats["total_replay_blocked"] == 1
+    assert stats["rejected_due_to_variance_gate"] >= 1
     assert stats["total_replays"] == 0
     assert after == pytest.approx(before)
 
@@ -253,28 +260,36 @@ def test_replay_temperature_decay_reduces_selection_horizon():
     assert len(sample) == 3
 
 
-def test_sleep_value_delta_follows_filtered_consolidation_td_sign():
+def test_sleep_value_delta_follows_recomputed_td_not_stale_sign():
     agent = _build_agent(actions=("sync",))
     sleep = agent.sleep_manager
     sleep.replay_budget_per_sleep = 1
     sleep.max_replay_per_episode = 1
     sleep.decay_rate_sleep = 0.0
     sleep.weight_norm_cap = 10.0
+    sleep.td_threshold = 0.05
+    sleep.salience_threshold = 0.0
+    sleep.ach_min_for_consolidation = 0.0
 
     _step(agent, context="ctx_sync", reward=0.0, consequence_name="feedback:0")
     exp = agent.hippocampus.experiences[-1]
-    before_value = agent.value_layer.get_value(exp.value_state_snapshot)
-
-    # Force high TD snapshot for filtered consolidation while reward transition is neutral.
+    exp.reinforcement_count = 3
+    # Stale snapshot is positive. The table is already above the target, so
+    # the recomputed TD is negative and replay must move V down.
     exp.td_error_snapshot = 1.0
+    exp.td_mean_snapshot = 1.0
     exp.replay_salience = 1.0
     exp.replay_importance = 1.0
     exp.reward = 0.0
+    exp.td_committed_reward = 0.0
+    exp.value_terminal = True
+    agent.value_layer._set_value(str(exp.value_state_key), 0.45)
+    before_value = agent.value_layer.get_value(exp.value_state_snapshot)
 
     stats = agent.sleep(cycles=1)
     after_value = agent.value_layer.get_value(exp.value_state_snapshot)
 
     assert stats["total_replays"] == 1
-    assert after_value > before_value
+    assert after_value < before_value
     assert stats["total_value_delta_sleep"] > 0.0
     assert stats["total_value_delta_sleep"] <= sleep.per_update_cap + 1e-9

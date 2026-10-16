@@ -155,6 +155,9 @@ class SleepManager:
         self.replay_priority_min: float = 1e-6
         self.replay_temperature_decay: float = 0.95
         self.instability_variance_threshold: float = 0.25
+        # Uncertainty of one state's reward estimate. This is not the spread
+        # of V across states (instability_variance_threshold).
+        self.state_estimate_variance_threshold: float = 0.5
         self.td_clip_sleep: float = 1.0
         # Spec-011A: credit assignment stabilization.
         self.credit_window: int = 6
@@ -356,82 +359,81 @@ class SleepManager:
         filtered_candidates: List = []
 
         if candidates:
-            if value_variance_ratio >= 1.0:
-                stats["replay_blocked"] = True
-                stats["rejected_due_to_variance_gate"] = len(candidates)
-            else:
-                filtered_candidates, rejection_counts = self._filter_candidates_for_consolidation(
-                    candidates=candidates,
-                    value_variance_ratio=value_variance_ratio,
-                )
-                for key, value in rejection_counts.items():
-                    if key in stats:
-                        stats[key] += int(value)
+            # value_variance_ratio is the spread of V across states. It stays
+            # in the stats, and it does not gate replay: a well-separated
+            # table still replays. Per-state estimate variance gates below.
+            filtered_candidates, rejection_counts = self._filter_candidates_for_consolidation(
+                candidates=candidates,
+                value_variance_ratio=value_variance_ratio,
+            )
+            for key, value in rejection_counts.items():
+                if key in stats:
+                    stats[key] += int(value)
 
-                replay_sample = self._select_replay_sample(
-                    filtered_candidates,
-                    value_variance=value_variance,
-                )
-                stats["replay_selected"] = len(replay_sample)
-                if replay_sample:
-                    unique_episodes = len({id(exp) for exp in replay_sample})
-                    stats["replay_diversity_index"] = float(unique_episodes) / float(len(replay_sample))
-                    shock_replays = sum(1 for exp in replay_sample if self._episode_prediction_shock_flag(exp))
-                    stats["shock_replays"] = int(shock_replays)
-                    stats["shock_frequency"] = float(shock_replays) / float(len(replay_sample))
-                    confidence_values = [self._episode_confidence_score(exp) for exp in replay_sample]
-                    stability_values = [self._episode_expectation_stability(exp) for exp in replay_sample]
-                    if confidence_values:
-                        stats["replay_confidence_mean"] = float(sum(confidence_values) / float(len(confidence_values)))
-                    if stability_values:
-                        stats["replay_stability_mean"] = float(sum(stability_values) / float(len(stability_values)))
-                replay_stats = self._apply_replay_td_bg(
-                    replay_sample,
-                    value_variance=value_variance,
-                )
-                replay_applied = int(replay_stats.get("replays_applied", 0))
-                stats["replays"] = replay_applied
-                stats["total_episodes_consolidated"] = replay_applied
-                if replay_applied > 0:
-                    self._replay_experiences(replay_sample[:replay_applied])
-                stats["value_delta_total"] = float(replay_stats.get("value_delta_total", 0.0))
-                stats["weight_delta_total"] = float(replay_stats.get("weight_delta_total", 0.0))
-                stats["total_value_delta_sleep"] = float(replay_stats.get("total_value_delta_sleep", 0.0))
-                stats["total_bg_delta_sleep"] = float(replay_stats.get("total_bg_delta_sleep", 0.0))
-                stats["sleep_update_count"] = int(replay_stats.get("sleep_update_count", 0))
-                stats["sleep_update_l2_total"] = float(replay_stats.get("sleep_update_l2_total", 0.0))
-                stats["mean_consolidation_score"] = float(replay_stats.get("mean_consolidation_score", 0.0))
-                stats["eligibility_trace_mean"] = float(
-                    replay_stats.get("eligibility_trace_mean", 0.0)
-                )
-                stats["credit_window_usage"] = float(
-                    replay_stats.get("credit_window_usage", 0.0)
-                )
-                stats["replay_causality_mean"] = float(
-                    replay_stats.get("replay_causality_mean", 0.0)
-                )
-                stats["replay_blocked"] = bool(
-                    stats.get("replay_blocked", False) or replay_stats.get("replay_blocked", False)
-                )
-                sac_stats = self._apply_semantic_action_consolidation(
-                    replay_sample,
-                    sleep_state=True,
-                )
-                for key, value in sac_stats.items():
-                    if key in stats:
-                        stats[key] = value
-                sync_stats = self._sync_edpc_sac(
-                    replay_sample,
-                    sleep_phase=str(stats.get("sac_phase", "TRANSITIONAL")),
-                    sleep_state=True,
-                    sleep_timestamp=sleep_timestamp,
-                )
-                for key, value in sync_stats.items():
+            replay_sample = self._select_replay_sample(
+                filtered_candidates,
+                value_variance=value_variance,
+            )
+            stats["replay_selected"] = len(replay_sample)
+            if replay_sample:
+                unique_episodes = len({id(exp) for exp in replay_sample})
+                stats["replay_diversity_index"] = float(unique_episodes) / float(len(replay_sample))
+                shock_replays = sum(1 for exp in replay_sample if self._episode_prediction_shock_flag(exp))
+                stats["shock_replays"] = int(shock_replays)
+                stats["shock_frequency"] = float(shock_replays) / float(len(replay_sample))
+                confidence_values = [self._episode_confidence_score(exp) for exp in replay_sample]
+                stability_values = [self._episode_expectation_stability(exp) for exp in replay_sample]
+                if confidence_values:
+                    stats["replay_confidence_mean"] = float(sum(confidence_values) / float(len(confidence_values)))
+                if stability_values:
+                    stats["replay_stability_mean"] = float(sum(stability_values) / float(len(stability_values)))
+            replay_stats = self._apply_replay_td_bg(
+                replay_sample,
+                value_variance=value_variance,
+            )
+            replay_applied = int(replay_stats.get("replays_applied", 0))
+            stats["replays"] = replay_applied
+            stats["total_episodes_consolidated"] = replay_applied
+            if replay_applied > 0:
+                self._replay_experiences(replay_sample[:replay_applied])
+            stats["value_delta_total"] = float(replay_stats.get("value_delta_total", 0.0))
+            stats["weight_delta_total"] = float(replay_stats.get("weight_delta_total", 0.0))
+            stats["total_value_delta_sleep"] = float(replay_stats.get("total_value_delta_sleep", 0.0))
+            stats["total_bg_delta_sleep"] = float(replay_stats.get("total_bg_delta_sleep", 0.0))
+            stats["sleep_update_count"] = int(replay_stats.get("sleep_update_count", 0))
+            stats["sleep_update_l2_total"] = float(replay_stats.get("sleep_update_l2_total", 0.0))
+            stats["mean_consolidation_score"] = float(replay_stats.get("mean_consolidation_score", 0.0))
+            stats["eligibility_trace_mean"] = float(
+                replay_stats.get("eligibility_trace_mean", 0.0)
+            )
+            stats["credit_window_usage"] = float(
+                replay_stats.get("credit_window_usage", 0.0)
+            )
+            stats["replay_causality_mean"] = float(
+                replay_stats.get("replay_causality_mean", 0.0)
+            )
+            stats["replay_blocked"] = bool(
+                stats.get("replay_blocked", False) or replay_stats.get("replay_blocked", False)
+            )
+            sac_stats = self._apply_semantic_action_consolidation(
+                replay_sample,
+                sleep_state=True,
+            )
+            for key, value in sac_stats.items():
+                if key in stats:
                     stats[key] = value
-                if stats["total_episodes_examined"] > 0:
-                    stats["consolidation_ratio"] = (
-                        float(stats["total_episodes_consolidated"]) / float(stats["total_episodes_examined"])
-                    )
+            sync_stats = self._sync_edpc_sac(
+                replay_sample,
+                sleep_phase=str(stats.get("sac_phase", "TRANSITIONAL")),
+                sleep_state=True,
+                sleep_timestamp=sleep_timestamp,
+            )
+            for key, value in sync_stats.items():
+                stats[key] = value
+            if stats["total_episodes_examined"] > 0:
+                stats["consolidation_ratio"] = (
+                    float(stats["total_episodes_consolidated"]) / float(stats["total_episodes_examined"])
+                )
 
         # 3. Mandatory anti-runaway post-processing for BG weights.
         stats["decay_applied"] = self._apply_bg_decay()
@@ -748,6 +750,75 @@ class SleepManager:
             return td_error_snapshot
         return 0.0
 
+    def _replay_signed_td(self, exp) -> float:
+        """TD error against the current table. Stored snapshots are not the update."""
+        if getattr(self, "value_layer", None) is not None:
+            try:
+                return float(self._compute_offline_td_error(exp))
+            except Exception:
+                pass
+        return float(self._episode_td_mean(exp))
+
+    def _state_estimate_variance(self, exp) -> float:
+        """Variance of the value estimate for this state, not the spread across states."""
+        override = getattr(exp, "state_estimate_variance", None)
+        if override is not None:
+            try:
+                return max(0.0, float(override))
+            except (TypeError, ValueError):
+                pass
+        value_layer = getattr(self, "value_layer", None)
+        if value_layer is None:
+            return 0.0
+        state_key = str(getattr(exp, "value_state_key", "") or "").strip()
+        snapshot = getattr(exp, "value_state_snapshot", None)
+        if not state_key and isinstance(snapshot, dict):
+            try:
+                state_key = str(value_layer.encoder.encode(snapshot))
+            except Exception:
+                state_key = ""
+        memory = getattr(value_layer, "expectation_memory", None)
+        if state_key and isinstance(memory, dict):
+            profile = memory.get(state_key)
+            if isinstance(profile, dict):
+                try:
+                    return max(0.0, float(profile.get("expected_reward_var", 0.0)))
+                except (TypeError, ValueError):
+                    return 0.0
+        return 0.0
+
+    def _per_state_variance_gate(self, exp) -> float:
+        variance = self._state_estimate_variance(exp)
+        threshold = max(1e-9, float(getattr(self, "state_estimate_variance_threshold", 0.5)))
+        if variance >= threshold:
+            return 0.0
+        return max(0.0, min(1.0, 1.0 - (variance / threshold)))
+
+    def _trajectory_group_key(self, exp) -> str:
+        raw = getattr(exp, "trajectory_id", None)
+        if raw:
+            return str(raw)
+        return ""
+
+    def _trajectory_position(self, exp, ordinal: int) -> float:
+        for name in ("episode_step", "step_index", "trajectory_step"):
+            raw = getattr(exp, name, None)
+            if raw is None:
+                continue
+            try:
+                return float(raw)
+            except (TypeError, ValueError):
+                continue
+        try:
+            timestamp = float(getattr(exp, "timestamp", ordinal))
+        except (TypeError, ValueError):
+            return float(ordinal)
+        # Fixture sequences store the step in timestamp (0, 1, 2, ...).
+        # Wall-clock timestamps are not step distances.
+        if math.isfinite(timestamp) and 0.0 <= timestamp <= 100_000.0 and abs(timestamp - round(timestamp)) <= 1e-6:
+            return float(round(timestamp))
+        return float(ordinal)
+
     def _episode_td_variance(self, exp) -> float:
         history = getattr(exp, "td_history_snapshot", None)
         if isinstance(history, list) and len(history) > 1:
@@ -907,6 +978,12 @@ class SleepManager:
         replay_sequence: List,
         credit_window: int,
     ) -> Dict[int, int]:
+        """Eligibility depth is the step distance inside one trajectory.
+
+        Sample index is not a substitute: a replay subsample can skip steps
+        and can mix trajectories. Within a trajectory the anchor is still the
+        strongest reward, then the strongest stored TD or shock.
+        """
         if not replay_sequence:
             return {}
 
@@ -915,37 +992,47 @@ class SleepManager:
             0.0,
             float(getattr(self, "td_anchor_threshold", getattr(self, "td_threshold", 0.12))),
         )
-        reward_anchor_index = -1
-        explicit_reward_anchor = -1
-        explicit_reward_mag = 0.0
-        td_anchor_index = -1
-        td_anchor_mag = 0.0
+        window = max(0, int(credit_window))
+        groups: Dict[str, List[Tuple[int, object]]] = {}
         for idx, exp in enumerate(replay_sequence):
-            reward_mag = abs(float(getattr(exp, "reward", 0.0)))
-            if reward_mag >= reward_threshold:
-                if reward_mag >= explicit_reward_mag:
-                    explicit_reward_mag = reward_mag
-                    explicit_reward_anchor = idx
-                continue
-            td_mag = abs(float(self._episode_td_mean(exp)))
-            shock_flag = bool(self._episode_prediction_shock_flag(exp))
-            if td_mag >= td_threshold or shock_flag:
-                anchor_mag = max(td_mag, 1.0 if shock_flag else 0.0)
-                if anchor_mag >= td_anchor_mag:
-                    td_anchor_mag = anchor_mag
-                    td_anchor_index = idx
-
-        if explicit_reward_anchor >= 0:
-            reward_anchor_index = explicit_reward_anchor
-        elif td_anchor_index >= 0:
-            reward_anchor_index = td_anchor_index
-        else:
-            reward_anchor_index = len(replay_sequence) // 2
+            groups.setdefault(self._trajectory_group_key(exp), []).append((idx, exp))
 
         depth_by_exp: Dict[int, int] = {}
-        for idx, exp in enumerate(replay_sequence):
-            temporal_distance = abs(int(reward_anchor_index) - int(idx))
-            depth_by_exp[id(exp)] = int(min(max(0, temporal_distance), credit_window))
+        for members in groups.values():
+            positioned = [
+                (self._trajectory_position(exp, idx), idx, exp) for idx, exp in members
+            ]
+            positioned.sort(key=lambda item: (item[0], item[1]))
+            explicit_reward_anchor = None
+            explicit_reward_mag = -1.0
+            td_anchor_pos = None
+            td_anchor_mag = -1.0
+            for pos, _idx, exp in positioned:
+                reward_mag = abs(float(getattr(exp, "reward", 0.0)))
+                if reward_mag >= reward_threshold:
+                    if reward_mag >= explicit_reward_mag:
+                        explicit_reward_mag = reward_mag
+                        explicit_reward_anchor = pos
+                    continue
+                td_mag = abs(float(self._episode_td_mean(exp)))
+                shock_flag = bool(self._episode_prediction_shock_flag(exp))
+                if td_mag >= td_threshold or shock_flag:
+                    anchor_mag = max(td_mag, 1.0 if shock_flag else 0.0)
+                    if anchor_mag >= td_anchor_mag:
+                        td_anchor_mag = anchor_mag
+                        td_anchor_pos = pos
+
+            if explicit_reward_anchor is not None:
+                reward_anchor_pos = explicit_reward_anchor
+            elif td_anchor_pos is not None:
+                reward_anchor_pos = td_anchor_pos
+            else:
+                reward_anchor_pos = positioned[len(positioned) // 2][0]
+
+            for pos, _idx, exp in positioned:
+                distance = abs(float(pos) - float(reward_anchor_pos))
+                depth = int(min(max(0, int(round(distance))), window))
+                depth_by_exp[id(exp)] = depth
         return depth_by_exp
 
     def _replay_state_key(self, exp) -> str:
@@ -1155,11 +1242,10 @@ class SleepManager:
         td_variance_cap = max(0.0, float(getattr(self, "td_variance_cap", 0.25)))
         salience_threshold = max(0.0, min(1.0, float(getattr(self, "salience_threshold", 0.10))))
         min_reinforcement = max(1, int(getattr(self, "min_reinforcement_for_consolidation", 1)))
-        variance_gate_threshold = max(0.01, float(getattr(self, "variance_gate_threshold", 1.0)))
         ach_min = max(0.0, min(1.0, float(getattr(self, "ach_min_for_consolidation", 0.0))))
 
         for exp in list(candidates or []):
-            td_mean = self._episode_td_mean(exp)
+            td_mean = self._replay_signed_td(exp)
             if abs(td_mean) < td_threshold:
                 rejection_counts["rejected_due_to_td_threshold"] += 1
                 continue
@@ -1179,7 +1265,9 @@ class SleepManager:
                 rejection_counts["rejected_due_to_reinforcement"] += 1
                 continue
 
-            if value_variance_ratio >= variance_gate_threshold:
+            # Per-state estimate variance. The cross-state spread in
+            # value_variance_ratio is not a rejection reason.
+            if self._per_state_variance_gate(exp) <= 0.0:
                 rejection_counts["rejected_due_to_variance_gate"] += 1
                 continue
 
@@ -1193,7 +1281,7 @@ class SleepManager:
 
             score = self._compute_consolidation_score(exp)
             exp._sleep_consolidation_score = float(score)
-            exp._sleep_variance_gate = max(0.0, min(1.0, 1.0 - float(value_variance_ratio)))
+            exp._sleep_variance_gate = float(self._per_state_variance_gate(exp))
             filtered.append(exp)
 
         return filtered, rejection_counts
@@ -1270,7 +1358,7 @@ class SleepManager:
         return sample
 
     def _compute_replay_priority(self, exp, value_variance: Optional[float] = None) -> float:
-        td_snapshot = abs(float(self._episode_td_mean(exp)))
+        td_snapshot = abs(float(self._replay_signed_td(exp)))
         stability_score = self._episode_expectation_stability(exp)
         shock_flag = 1.0 if self._episode_prediction_shock_flag(exp) else 0.0
         shock_gain = max(0.0, float(getattr(self, "shock_priority_gain", 1.0)))
@@ -1296,10 +1384,10 @@ class SleepManager:
             priority *= (0.5 + (0.5 * min(1.0, score)))
         ach_effective = self._episode_ach_effective(exp)
 
-        variance_v = float(self._compute_value_variance() if value_variance is None else value_variance)
-        variance_threshold = max(1e-9, float(getattr(self, "instability_variance_threshold", 0.25)))
-        variance_ratio = max(0.0, min(1.0, variance_v / variance_threshold))
-        variance_gate = max(0.0, min(1.0, 1.0 - variance_ratio))
+        # value_variance is the cross-state spread. Priority follows the
+        # uncertainty of this state's own estimate instead.
+        _ = value_variance
+        variance_gate = self._per_state_variance_gate(exp)
 
         ach_gain = max(0.0, min(2.0, float(getattr(self, "ach_replay_gain", 0.5))))
         priority *= (1.0 + (ach_gain * ach_effective * variance_gate))
@@ -1346,9 +1434,9 @@ class SleepManager:
         max_l2_update_per_cycle = max(
             1e-9, float(getattr(self, "max_l2_update_per_cycle", global_sleep_update_budget))
         )
-        current_variance = float(value_variance) if value_variance is not None else float(self._compute_value_variance())
-        variance_threshold = max(1e-9, float(getattr(self, "instability_variance_threshold", 0.25)))
-        variance_gate_default = max(0.0, min(1.0, 1.0 - (current_variance / variance_threshold)))
+        # value_variance is retained for callers. Replay no longer scales
+        # updates by the spread of V across states.
+        _ = value_variance
 
         beta_online = float(getattr(bg_learning, "learning_rate", 0.05)) if bg_learning is not None else 0.05
         beta_sleep = min(float(self.beta_sleep), max(0.0, beta_online - 1e-6))
@@ -1400,21 +1488,24 @@ class SleepManager:
             if remaining_l2_sq <= 0.0:
                 replay_blocked = True
                 break
-            td_mean = float(self._episode_td_mean(exp))
-            if abs(td_mean) <= 1e-12:
+            td_now = float(self._replay_signed_td(exp))
+            if abs(td_now) <= 1e-12:
                 continue
-            td_error = max(-td_clip, min(td_clip, td_mean))
+            td_error = max(-td_clip, min(td_clip, td_now))
 
             consolidation_score = float(
                 max(0.0, getattr(exp, "_sleep_consolidation_score", self._compute_consolidation_score(exp)))
             )
-            variance_gate = max(
-                0.0,
-                min(1.0, float(getattr(exp, "_sleep_variance_gate", variance_gate_default))),
-            )
+            stamped_gate = getattr(exp, "_sleep_variance_gate", None)
+            if stamped_gate is None:
+                variance_gate = self._per_state_variance_gate(exp)
+            else:
+                variance_gate = max(0.0, min(1.0, float(stamped_gate)))
             eligibility_trace = float(eligibility_map.get(id(exp), 0.0))
             credit_weight = float(credit_weight_map.get(id(exp), 0.0))
-            delta_v = alpha_sleep_effective * consolidation_score * math.copysign(1.0, td_mean)
+            # δ is recomputed above. The step follows that error, scaled by
+            # eligibility along the real episode order and the per-state gate.
+            delta_v = alpha_sleep_effective * td_error
             delta_v *= eligibility_trace * credit_weight
             delta_v *= variance_gate
             if abs(delta_v) > per_update_cap:
@@ -1590,24 +1681,109 @@ class SleepManager:
             "replay_causality_mean": replay_causality_mean,
         }
 
-    def _compute_offline_td_error(self, exp) -> float:
-        if hasattr(exp, "td_error_snapshot"):
+    def _offline_reward(self, exp) -> float:
+        committed = getattr(exp, "td_committed_reward", None)
+        if committed is not None:
             try:
-                return float(exp.td_error_snapshot)
-            except Exception:
+                reward = float(committed)
+                if math.isfinite(reward):
+                    return max(-1.0, min(1.0, reward))
+            except (TypeError, ValueError):
                 pass
+        try:
+            reward = float(getattr(exp, "reward", 0.0))
+        except (TypeError, ValueError):
+            return 0.0
+        if not math.isfinite(reward):
+            return 0.0
+        return max(-1.0, min(1.0, reward))
+
+    def _offline_current_value(self, exp) -> float:
         value_layer = getattr(self, "value_layer", None)
         if value_layer is None:
             return 0.0
-        reward = float(getattr(exp, "reward", 0.0))
-        gamma = float(getattr(value_layer, "gamma_default", 0.95))
-        state_snapshot = getattr(exp, "value_state_snapshot", None) or {"context_signature": "|".join(exp.path.signature())}
-        next_snapshot = getattr(exp, "value_next_state_snapshot", None) or state_snapshot
-        state_key = value_layer.encoder.encode(state_snapshot)
-        next_key = value_layer.encoder.encode(next_snapshot)
-        current_v = float(value_layer._get_value(state_key))
-        next_v = float(value_layer._get_value(next_key))
-        return reward + (gamma * next_v) - current_v
+        snapshot = getattr(exp, "value_state_snapshot", None)
+        if isinstance(snapshot, dict) and snapshot:
+            try:
+                return float(value_layer.get_value(snapshot))
+            except Exception:
+                pass
+        state_key = str(getattr(exp, "value_state_key", "") or "").strip()
+        if state_key:
+            try:
+                return float(value_layer._get_value(state_key))
+            except Exception:
+                return 0.0
+        return 0.0
+
+    def _offline_successor_value(self, exp) -> float:
+        """Bootstrap V(s'). Terminal transitions use 0; otherwise max_a Q(s', a)."""
+        if bool(getattr(exp, "value_terminal", False)):
+            return 0.0
+        value_layer = getattr(self, "value_layer", None)
+        if value_layer is None:
+            return 0.0
+        next_snapshot = getattr(exp, "value_next_state_snapshot", None)
+        if not isinstance(next_snapshot, dict) or not next_snapshot:
+            next_snapshot = getattr(exp, "value_state_snapshot", None)
+        if not isinstance(next_snapshot, dict) or not next_snapshot:
+            return 0.0
+
+        actions: List[str] = []
+        selector = getattr(self, "selector", None)
+        if selector is not None:
+            try:
+                actions = [str(action) for action in list(getattr(selector, "actions", []) or [])]
+            except Exception:
+                actions = []
+        own_action = self._extract_action_id(exp)
+        if own_action and own_action not in actions:
+            actions.append(str(own_action))
+
+        best = None
+        if actions:
+            for action in actions:
+                snap = dict(next_snapshot)
+                snap["action"] = action
+                try:
+                    value = float(value_layer.get_value(snap))
+                except Exception:
+                    continue
+                if best is None or value > best:
+                    best = value
+        if best is not None:
+            return float(best)
+        try:
+            return float(value_layer.get_value(next_snapshot))
+        except Exception:
+            return 0.0
+
+    def _compute_offline_td_error(self, exp) -> float:
+        """δ = r + γ V(s') − Q(s, a) on the current table.
+
+        The encoding-time td_error_snapshot is not returned. Q(s, a) is the
+        value of the stored state snapshot (it includes the action). V(s') is
+        0 on a terminal transition and max_a Q(s', a) otherwise.
+        """
+        value_layer = getattr(self, "value_layer", None)
+        if value_layer is None:
+            return 0.0
+        try:
+            reward = float(self._offline_reward(exp))
+            gamma = float(getattr(value_layer, "gamma_default", 0.95))
+            current_q = float(self._offline_current_value(exp))
+            successor = float(self._offline_successor_value(exp))
+        except Exception:
+            return 0.0
+        if not math.isfinite(gamma):
+            gamma = 0.95
+        gamma = max(0.0, min(0.999, gamma))
+        if bool(getattr(exp, "value_terminal", False)):
+            successor = 0.0
+        delta = reward + (gamma * successor) - current_q
+        if not math.isfinite(delta):
+            return 0.0
+        return float(delta)
 
     def _extract_action_id(self, exp) -> Optional[str]:
         replay_action = str(getattr(exp, "replay_action_id", "")).strip()

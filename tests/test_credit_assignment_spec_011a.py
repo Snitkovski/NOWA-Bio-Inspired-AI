@@ -102,8 +102,11 @@ def test_causal_depth_tracks_distance_to_reward_anchor():
 
     experiences = [_make_experience(i, sleep.value_layer) for i in range(5)]
     for exp in experiences:
-        exp.reward = 0.0
+        # Below the reward-anchor threshold, so the anchor stays on index 3.
+        # The reward itself is the live TD; a stored snapshot is not the update.
+        exp.reward = 0.05
         exp.td_error_snapshot = 0.8
+        exp.value_terminal = True
     experiences[3].reward = 1.0
 
     depths = sleep._assign_reward_anchored_causal_depth(experiences, credit_window=2)
