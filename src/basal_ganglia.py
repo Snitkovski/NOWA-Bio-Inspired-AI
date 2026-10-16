@@ -44,11 +44,31 @@ class ActionChannel:
     success_count: int = 0
     failure_count: int = 0
     last_outcome: Optional[float] = None
+    # Resting weights. Sleep decay relaxes toward these, not toward 0.
+    # None means "adopt the initial weight" so old callers stay stable.
+    prior_go: Optional[float] = None
+    prior_nogo: Optional[float] = None
+    prior_habit: Optional[float] = None
 
     def __post_init__(self):
         self.go_weight = max(0.0, min(1.0, float(self.go_weight)))
         self.nogo_weight = max(0.0, min(1.0, float(self.nogo_weight)))
         self.habit_strength = max(0.0, min(1.0, float(self.habit_strength)))
+        self.prior_go = self._prior_or_weight(self.prior_go, self.go_weight)
+        self.prior_nogo = self._prior_or_weight(self.prior_nogo, self.nogo_weight)
+        self.prior_habit = self._prior_or_weight(self.prior_habit, self.habit_strength)
+
+    @staticmethod
+    def _prior_or_weight(prior: Optional[float], weight: float) -> float:
+        if prior is None:
+            return float(weight)
+        try:
+            value = float(prior)
+        except (TypeError, ValueError):
+            return float(weight)
+        if not math.isfinite(value):
+            return float(weight)
+        return max(0.0, min(1.0, value))
 
     def update_weights(self, go_delta: float = 0.0, nogo_delta: float = 0.0, habit_delta: float = 0.0):
         self.go_weight = max(0.0, min(1.0, self.go_weight + float(go_delta)))
@@ -78,6 +98,9 @@ class ActionChannel:
             success_count=self.success_count,
             failure_count=self.failure_count,
             last_outcome=self.last_outcome,
+            prior_go=self.prior_go,
+            prior_nogo=self.prior_nogo,
+            prior_habit=self.prior_habit,
         )
 
 

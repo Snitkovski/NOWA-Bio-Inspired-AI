@@ -145,6 +145,8 @@ def test_instability_blocks_replay_and_reinforcement():
         state_key = str(getattr(exp, "value_state_key", "") or "")
         if state_key:
             agent.value_layer.expectation_memory[state_key] = {"expected_reward_var": 1.0}
+    # Outcome-cache consolidation is a separate path. This check is about replay.
+    agent.bg_sleep_memories.clear()
 
     before = agent.bg_action_channels["stable"].go_weight
     stats = agent.sleep(cycles=1)

@@ -3244,6 +3244,7 @@ class Agent:
             setattr(self.sleep_manager, "selector", self.selector)
             setattr(self.sleep_manager, "bg_action_channels", self.bg_action_channels)
             setattr(self.sleep_manager, "bg_learning", self.bg_learning)
+            setattr(self.sleep_manager, "bg_sleep_memories", self.bg_sleep_memories)
         except Exception:
             pass
 

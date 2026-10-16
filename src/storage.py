@@ -296,6 +296,9 @@ class AgentStorage:
                         "success_count": int(getattr(channel, "success_count", 0)),
                         "failure_count": int(getattr(channel, "failure_count", 0)),
                         "last_outcome": getattr(channel, "last_outcome", None),
+                        "prior_go": float(getattr(channel, "prior_go", getattr(channel, "go_weight", 0.5))),
+                        "prior_nogo": float(getattr(channel, "prior_nogo", getattr(channel, "nogo_weight", 0.5))),
+                        "prior_habit": float(getattr(channel, "prior_habit", getattr(channel, "habit_strength", 0.0))),
                     }
                 agent_state["bg_action_channels"] = channels_data
                 agent_state["bg_sleep_memories"] = dict(getattr(agent, "bg_sleep_memories", {}))
@@ -990,6 +993,9 @@ class AgentStorage:
                         go_weight=float(channel_data.get("go_weight", 0.5)),
                         nogo_weight=float(channel_data.get("nogo_weight", 0.5)),
                         habit_strength=float(channel_data.get("habit_strength", 0.0)),
+                        prior_go=channel_data.get("prior_go"),
+                        prior_nogo=channel_data.get("prior_nogo"),
+                        prior_habit=channel_data.get("prior_habit"),
                     )
                     ch.selection_count = int(channel_data.get("selection_count", 0))
                     ch.success_count = int(channel_data.get("success_count", 0))

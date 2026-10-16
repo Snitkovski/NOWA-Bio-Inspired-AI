@@ -185,7 +185,8 @@ class SleepManager:
         self.edpc_sac_td_stability_gain: float = 0.03
         self.edpc_sac_energy_budget: float = float(self.replay_budget_per_sleep)
         self.edpc_sac_conflict_threshold: float = 0.3
-        self.beta_sleep: float = 0.015
+        # Sleep BG steps must be able to beat one cycle of decay toward the prior.
+        self.beta_sleep: float = 0.05
         self.delta_weight_max_per_sleep: float = 0.05
         self.weight_total_cap: float = 0.6
         self.decay_rate_sleep: float = 0.02
@@ -1439,7 +1440,10 @@ class SleepManager:
         _ = value_variance
 
         beta_online = float(getattr(bg_learning, "learning_rate", 0.05)) if bg_learning is not None else 0.05
-        beta_sleep = min(float(self.beta_sleep), max(0.0, beta_online - 1e-6))
+        beta_cap = max(0.0, beta_online - 1e-6)
+        decay_for_beta = max(0.0, min(0.2, float(getattr(self, "decay_rate_sleep", 0.0))))
+        beta_floor = min(beta_cap, decay_for_beta * 2.5)
+        beta_sleep = min(beta_cap, max(float(self.beta_sleep), beta_floor))
 
         value_delta_total = 0.0
         value_delta_sq_total = 0.0
@@ -2470,6 +2474,24 @@ class SleepManager:
                 except Exception:
                     pass
 
+    def _channel_prior(self, channel, prior_name: str, weight_name: str) -> float:
+        prior = getattr(channel, prior_name, None)
+        if prior is None:
+            prior = getattr(channel, weight_name, 0.0)
+        try:
+            value = float(prior)
+        except (TypeError, ValueError):
+            value = float(getattr(channel, weight_name, 0.0))
+        if not math.isfinite(value):
+            value = 0.0
+        return max(0.0, min(1.0, value))
+
+    def _relax_channel_weight(self, channel, weight_name: str, prior_name: str, keep: float) -> None:
+        current = float(getattr(channel, weight_name, 0.0))
+        prior = self._channel_prior(channel, prior_name, weight_name)
+        updated = prior + (current - prior) * float(keep)
+        setattr(channel, weight_name, max(0.0, min(1.0, updated)))
+
     def _apply_bg_decay(self) -> bool:
         bg_channels = getattr(self, "bg_action_channels", None)
         if not isinstance(bg_channels, dict) or not bg_channels:
@@ -2479,29 +2501,89 @@ class SleepManager:
             return False
         keep = 1.0 - decay
         for channel in bg_channels.values():
-            channel.go_weight = max(0.0, min(1.0, channel.go_weight * keep))
-            channel.nogo_weight = max(0.0, min(1.0, channel.nogo_weight * keep))
-            channel.habit_strength = max(0.0, min(1.0, channel.habit_strength * keep))
+            self._relax_channel_weight(channel, "go_weight", "prior_go", keep)
+            self._relax_channel_weight(channel, "nogo_weight", "prior_nogo", keep)
+            self._relax_channel_weight(channel, "habit_strength", "prior_habit", keep)
         return True
 
+    def _channel_l1(self, channel) -> float:
+        return (
+            abs(float(getattr(channel, "go_weight", 0.0)))
+            + abs(float(getattr(channel, "nogo_weight", 0.0)))
+            + abs(float(getattr(channel, "habit_strength", 0.0)))
+        )
+
     def _normalize_bg_weights(self) -> bool:
+        """Scale a channel whose own L1 exceeds the cap. Other channels stay put."""
         bg_channels = getattr(self, "bg_action_channels", None)
         if not isinstance(bg_channels, dict) or not bg_channels:
             return False
-        current_sum = 0.0
-        for channel in bg_channels.values():
-            current_sum += abs(float(channel.go_weight))
-            current_sum += abs(float(channel.nogo_weight))
-            current_sum += abs(float(channel.habit_strength))
         cap = max(0.1, float(self.weight_norm_cap))
-        if current_sum <= cap:
-            return False
-        scale = cap / current_sum
+        applied = False
         for channel in bg_channels.values():
+            current_sum = self._channel_l1(channel)
+            if current_sum <= cap or current_sum <= 0.0:
+                continue
+            scale = cap / current_sum
             channel.go_weight = max(0.0, min(1.0, channel.go_weight * scale))
             channel.nogo_weight = max(0.0, min(1.0, channel.nogo_weight * scale))
             channel.habit_strength = max(0.0, min(1.0, channel.habit_strength * scale))
-        return True
+            applied = True
+        return applied
+
+    def _copy_bg_weights(self, channels: Dict, updated) -> None:
+        for channel in list(updated or []):
+            live = channels.get(getattr(channel, "action_id", None))
+            if live is None:
+                continue
+            live.go_weight = max(0.0, min(1.0, float(channel.go_weight)))
+            live.nogo_weight = max(0.0, min(1.0, float(channel.nogo_weight)))
+            live.habit_strength = max(0.0, min(1.0, float(channel.habit_strength)))
+
+    def _consolidate_bg_outcome_cache(self) -> None:
+        """Apply the outcome cache once, then consolidate habits.
+
+        ``apply_sleep_learning(..., forget_rate>0)`` still shrinks toward 0
+        for direct callers. The sleep path passes forget_rate=0 and lets
+        ``_apply_bg_decay`` relax toward each channel's prior.
+        """
+        channels = getattr(self, "bg_action_channels", None)
+        learning = getattr(self, "bg_learning", None)
+        if not isinstance(channels, dict) or not channels or learning is None:
+            return
+        memories = getattr(self, "bg_sleep_memories", None)
+        usable: Dict[str, List] = {}
+        if isinstance(memories, dict):
+            for action_id, items in memories.items():
+                kept = []
+                for item in list(items or []):
+                    try:
+                        outcome = float(item[0])
+                    except (TypeError, ValueError, IndexError):
+                        continue
+                    if not math.isfinite(outcome) or abs(outcome) <= 1e-12:
+                        continue
+                    kept.append(item)
+                if kept:
+                    usable[str(action_id)] = kept
+        if usable and hasattr(learning, "apply_sleep_learning"):
+            updated = learning.apply_sleep_learning(
+                list(channels.values()),
+                usable,
+                getattr(self, "neuromodulators", None),
+                forget_rate=0.0,
+            )
+            self._copy_bg_weights(channels, updated)
+        if hasattr(learning, "consolidate_habits"):
+            raw_serotonin = getattr(getattr(self, "neuromodulators", None), "serotonin", 0.1)
+            try:
+                serotonin = float(raw_serotonin)
+            except (TypeError, ValueError):
+                serotonin = 0.1
+            if not math.isfinite(serotonin):
+                serotonin = 0.1
+            updated = learning.consolidate_habits(list(channels.values()), serotonin=serotonin)
+            self._copy_bg_weights(channels, updated)
     
     def _cluster_experiences(self, experiences: List) -> List[List]:
         """
@@ -2706,6 +2788,8 @@ class SleepManager:
         }
         consolidation_score_weighted_sum = 0.0
         
+        self._consolidate_bg_outcome_cache()
+
         for _ in range(cycles):
             stats = self.sleep_cycle()
             total_stats["total_candidates"] += stats["candidates"]
