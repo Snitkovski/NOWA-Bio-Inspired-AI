@@ -45,7 +45,11 @@ from config_colony import (
     NAME_POOL,
     OFFER_COOLDOWNS,
     OFFER_TIMEOUT_S,
+    PHYSIOLOGY_AS_POLICY,
     RESOURCE_CONSUMPTION_MULTIPLIER,
+    UNMET_HUNGER_ENERGY_PER_S,
+    UNMET_SLEEP_ENERGY_PER_S,
+    UNMET_THIRST_ENERGY_PER_S,
 )
 from heat_cycle import HeatCycle
 from colony_reproduction_helpers import (
@@ -119,6 +123,8 @@ class ChinchillaAgent(Agent):
         is_mature: bool | None = None,
         position: str = "floor",
         rng: random.Random | None = None,
+        rng_seed: int | None = None,
+        physiology_as_policy: bool | None = None,
         hippocampus_capacity: int = 1024,
         cortex_capacity: int = 128,
         genome: GenomeVector | None = None,
@@ -147,6 +153,7 @@ class ChinchillaAgent(Agent):
             selector=selector,
             sleep_manager=sleep_manager,
             intent_memory=intent_memory,
+            rng_seed=rng_seed,
         )
 
         # Ensure neuromodulator baselines exist (guard against zeroing by factories/loaders)
@@ -230,7 +237,17 @@ class ChinchillaAgent(Agent):
         self.sim_time: float = 0.0
         self.current_action: str = "idle"
         self.is_sleeping: bool = False
-        self._rng: random.Random = rng or random.Random()
+        self.physiology_as_policy: bool = (
+            bool(PHYSIOLOGY_AS_POLICY) if physiology_as_policy is None else bool(physiology_as_policy)
+        )
+        # Replaces the cognitive choice. None keeps the core. The ablation uses "rest".
+        self.replaced_policy_action: str | None = None
+        if rng is not None:
+            self._rng = rng
+        elif rng_seed is not None:
+            self._rng = random.Random(int(rng_seed))
+        else:
+            self._rng = random.Random()
         self._food_source_preference: str = self._rng.choice(["food_pellets", "hay"])
         self.hunger: float = _clamp(0.2 + (self._rng.random() * 0.12), 0.0, 1.0)
         self.thirst: float = _clamp(0.18 + (self._rng.random() * 0.12), 0.0, 1.0)
@@ -424,7 +441,14 @@ class ChinchillaAgent(Agent):
             executed = "sleep"
             overridden = True
             override_source = "homeostatic:sleep_recovery"
+        elif self.replaced_policy_action:
+            decided_action = str(self.replaced_policy_action)
+            executed, overridden, override_source = self._resolve_executed_action(
+                decided_action,
+                context_events,
+            )
         else:
+            drive_bias = self._physiological_drive_bias()
             decided_action = self.step(
                 context_events=context_events,
                 reward=None,
@@ -432,6 +456,7 @@ class ChinchillaAgent(Agent):
                 conflict=conflict,
                 intensity=intensity,
                 decision_only=True,
+                physiological_bias=drive_bias or None,
             )
             executed, overridden, override_source = self._resolve_executed_action(
                 str(decided_action or "idle"),
@@ -454,6 +479,7 @@ class ChinchillaAgent(Agent):
             intensity=intensity,
         )
         self._resource_metabolism_step(dt)
+        self._apply_unmet_need_cost(dt)
 
         if (not self.is_sleeping) and getattr(self, "autonomous_runtime", None) is not None:
             self.autonomous_tick(dt)
@@ -518,6 +544,13 @@ class ChinchillaAgent(Agent):
         elif wakefulness_value >= SLEEP_WAKEFULNESS_THRESHOLD:
             events.append("wakefulness_high")
 
+        if self.physiology_as_policy:
+            events.append(f"hunger_bin:{int(hunger_value * 4)}")
+            events.append(f"thirst_bin:{int(thirst_value * 4)}")
+            events.append(f"wake_bin:{int(wakefulness_value * 4)}")
+            if self._courtship_target() is not None:
+                events.append("courtship_ready")
+
         return events
 
     def _physiology_snapshot(self) -> dict[str, float]:
@@ -567,12 +600,99 @@ class ChinchillaAgent(Agent):
                 and float(before.get("thirst", 0.0)) >= THIRST_NEED_THRESHOLD
             ):
                 reward -= 0.2
+            if self.physiology_as_policy:
+                reward += self._policy_need_alignment(before, action_name)
 
         if self._last_social_was_positive:
             reward += 0.2
             self._last_social_was_positive = False
 
         return _clamp(reward, -1.0, 1.0)
+
+    def _policy_need_alignment(self, before: dict[str, float], action_name: str) -> float:
+        """Reward the action that meets a need that was already present."""
+        bonus = 0.0
+        hunger = float(before.get("hunger", 0.0))
+        thirst = float(before.get("thirst", 0.0))
+        wake = float(before.get("wakefulness", 0.0))
+        if action_name == "eat" and hunger >= HUNGER_NEED_THRESHOLD:
+            bonus += 0.35
+        elif hunger >= HUNGER_NEED_THRESHOLD:
+            bonus -= 0.15
+        if action_name == "drink" and thirst >= THIRST_NEED_THRESHOLD:
+            bonus += 0.35
+        elif thirst >= THIRST_NEED_THRESHOLD:
+            bonus -= 0.15
+        if action_name == "sleep" and wake >= SLEEP_WAKEFULNESS_THRESHOLD:
+            bonus += 0.35
+        elif wake >= SLEEP_WAKEFULNESS_THRESHOLD:
+            bonus -= 0.15
+        return bonus
+
+    def _physiological_drive_bias(self) -> dict[str, float]:
+        """Soft policy input. It does not replace the selected action."""
+        if not self.physiology_as_policy:
+            return {}
+        bias: dict[str, float] = {}
+        hunger = _clamp(self.hunger, 0.0, 1.0)
+        thirst = _clamp(self.thirst, 0.0, 1.0)
+        wake = _clamp(float(self.wakefulness.wakefulness), 0.0, 1.0)
+        if hunger > 0.4:
+            bias["eat"] = (hunger - 0.4) * 1.8
+        if thirst > 0.35:
+            bias["drink"] = (thirst - 0.35) * 1.9
+        if wake > 0.5:
+            bias["sleep"] = (wake - 0.5) * 1.5
+        social = self._social_policy_bias()
+        if social > 0.0:
+            bias["socialize"] = social
+        return bias
+
+    def _social_policy_bias(self) -> float:
+        if not self.perceived_others:
+            return 0.0
+        bias = 0.2
+        if any(item.category in {"contact", "nearby", "unknown_nearby"} for item in self.perceived_others):
+            bias += 0.25
+        if self._courtship_target() is not None:
+            bias += 0.65
+        return bias
+
+    def _courtship_target(self) -> "ChinchillaAgent | None":
+        if self.sex != "M" or not self.is_mature:
+            return None
+        for perceived in self.perceived_others:
+            if perceived.public_state.sex != "F":
+                continue
+            if perceived.category not in {"contact", "nearby"}:
+                continue
+            candidate = self._find_agent_by_id(perceived.agent_id)
+            if candidate is None or not candidate.is_mature or candidate.is_pregnant:
+                continue
+            heat = candidate.heat_cycle
+            if heat is None or heat.phase != "estrus":
+                continue
+            return candidate
+        return None
+
+    def _apply_unmet_need_cost(self, dt: float) -> None:
+        """Ignored hunger, thirst, and sleep spend energy when the policy owns them."""
+        if not self.physiology_as_policy or self.mortality_system.is_dead():
+            return
+        safe_dt = max(0.0, float(dt))
+        cost = 0.0
+        if _clamp(self.hunger, 0.0, 1.0) >= HUNGER_NEED_THRESHOLD and self.current_action != "eat":
+            cost += UNMET_HUNGER_ENERGY_PER_S * safe_dt
+        if _clamp(self.thirst, 0.0, 1.0) >= THIRST_NEED_THRESHOLD and self.current_action != "drink":
+            cost += UNMET_THIRST_ENERGY_PER_S * safe_dt
+        if (
+            self._needs_sleep_action()
+            and self.current_action != "sleep"
+            and not self.is_sleeping
+        ):
+            cost += UNMET_SLEEP_ENERGY_PER_S * safe_dt
+        if cost > 0.0:
+            self.energy = max(0.0, float(self.energy) - cost)
 
     def _resolve_executed_action(
         self,
@@ -588,7 +708,10 @@ class ChinchillaAgent(Agent):
             action = reflex_action
             overridden = True
             source = f"reflex:{reflex_id}" if reflex_id else "reflex"
-        gated = self._apply_homeostatic_action_policy(action)
+        if self.physiology_as_policy:
+            gated = action
+        else:
+            gated = self._apply_homeostatic_action_policy(action)
         if gated != action:
             source = self._describe_homeostatic_override(action, gated)
             action = gated
@@ -815,6 +938,8 @@ class ChinchillaAgent(Agent):
                 last_time = self._reflex_last_activation.get(reflex.reflex_id)
                 if last_time is not None and (self.sim_time - last_time) < reflex.cooldown_s:
                     continue
+            if self.physiology_as_policy and reflex.action in {"eat", "drink", "sleep"}:
+                continue
             if reflex.priority > best_priority:
                 best_priority = reflex.priority
                 selected = reflex
@@ -1006,6 +1131,15 @@ class ChinchillaAgent(Agent):
         return self.stress > 0.7
 
     def _social_step(self) -> None:
+        if self.physiology_as_policy and self.current_action not in {
+            "socialize",
+            "play",
+            "mount_display",
+            "allogroom",
+            "sniff_greet",
+            "play_invite",
+        }:
+            return
         if self.pending_offer is not None or not self.perceived_others:
             return
         offer_type, target = self._choose_social_offer()

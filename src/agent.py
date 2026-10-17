@@ -286,7 +286,8 @@ class Agent:
     def step(self, context_events: list, consequence: Event = None,
              intensity: float = 1.0, reward: Optional[float] = None, novelty: float = 0.0,
              conflict: float = 0.0, affective_inputs: dict = None,
-             decision_only: bool = False, terminal: bool = False) -> str:
+             decision_only: bool = False, terminal: bool = False,
+             physiological_bias: dict = None) -> str:
         """
         Execute one behavioral step.
 
@@ -321,6 +322,9 @@ class Agent:
                 outcome, so that letting step() also record would duplicate the
                 episode and label it with an outcome that has not happened yet.
                 Defaults to False: every existing caller keeps the full step.
+            physiological_bias: Optional action->pressure added before the gate.
+                Embodied hosts pass drive urgency here so it is an input to the
+                choice, not a replacement of it. None leaves the vector unchanged.
         
         Returns:
             Action name chosen by selector
@@ -856,6 +860,18 @@ class Agent:
             novelty=float(novelty),
             conflict=float(conflict),
         )
+        if physiological_bias:
+            for bias_key, bias_value in dict(physiological_bias).items():
+                bias_name = str(bias_key)
+                if bias_name not in pressure_vector:
+                    continue
+                try:
+                    bias_delta = float(bias_value)
+                except (TypeError, ValueError):
+                    continue
+                if not math.isfinite(bias_delta):
+                    continue
+                pressure_vector[bias_name] = float(pressure_vector.get(bias_name, 0.0)) + bias_delta
         # Stash counts on self so monkeypatched pipeline wrappers keep their
         # original signature. The real pipeline reads this attribute.
         self._pending_visit_counts = self._visit_counts_for(
