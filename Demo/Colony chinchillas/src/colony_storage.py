@@ -212,6 +212,7 @@ class ColonyStorage:
                 "exclusive_action_timer": _f(agent._exclusive_action_timer),
                 "metabolism_tick": _f(agent._metabolism_tick),
                 "pending_offer": self._serialize_pending_offer(agent.pending_offer),
+                "physiology_as_policy": bool(getattr(agent, "physiology_as_policy", True)),
             },
             "affect": {
                 "stress": _f(agent.stress),
@@ -280,6 +281,8 @@ class ColonyStorage:
         agent._exclusive_action_timer = _f(runtime.get("exclusive_action_timer", 0.0))
         agent._metabolism_tick = _f(runtime.get("metabolism_tick", 0.0))
         agent.pending_offer = self._deserialize_pending_offer(runtime.get("pending_offer"))
+        if "physiology_as_policy" in runtime:
+            agent.physiology_as_policy = bool(runtime.get("physiology_as_policy"))
 
         stress = _clamp(_f(affect.get("stress", 0.1), 0.1), 0.0, 1.0)
         arousal = _clamp(_f(affect.get("arousal", 0.3), 0.3), 0.0, 1.0)
