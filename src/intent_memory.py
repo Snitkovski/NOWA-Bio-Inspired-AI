@@ -12,6 +12,36 @@ from typing import ClassVar, Dict, List, Tuple
 from dataclasses import dataclass, field
 
 
+def _event_priority(token: str) -> int:
+    """Higher means more salient. Unknown events sort by name after these."""
+    priorities = {
+        "alarm_call": 100,
+        "high_stress": 90,
+        "hunger_critical": 80,
+        "thirst_critical": 80,
+        "wakefulness_critical": 80,
+        "food_critical": 76,
+        "water_critical": 76,
+        "hunger_high": 70,
+        "thirst_high": 70,
+        "wakefulness_high": 70,
+        "food_low": 60,
+        "estrus": 55,
+        "pregnant": 50,
+        "stranger_nearby": 40,
+        "juvenile": 36,
+        "bored": 20,
+        "food_ok": 10,
+    }
+    if token in priorities:
+        return priorities[token]
+    if token.startswith("social_contact:"):
+        return 45
+    if token.startswith("zone:"):
+        return 5
+    return 0
+
+
 @dataclass
 class IntentTrace:
     """
@@ -24,6 +54,11 @@ class IntentTrace:
     strength: float = 1.0  # Частота / устойчивость
     recency: float = 0.0   # Свежесть (0-1), decay со временем
     timestamp: float = field(default_factory=time.time)
+    # Canonical events this trace was stored under. Empty on legacy saves.
+    context_features: tuple = ()
+    # Priors (dataset seeds) may match when their features are contained.
+    # Learned traces stay exact, so one situation cannot rewrite another.
+    match_subset: bool = False
     
     def __repr__(self):
         return f"IntentTrace({self.intent_type}@{self.context_signature}, strength={self.strength:.2f}, recency={self.recency:.2f})"
@@ -61,7 +96,8 @@ class IntentMemory:
                  min_strength_for_trace: float = 0.1):
         """
         Args:
-            context_signature_window: сколько последних событий учитывать в сигнатуре
+            context_signature_window: legacy tail length. New keys use the
+                canonical feature set; this window is only how old saves match.
             recency_half_life: время в секундах для exponential decay recency
             min_strength_for_trace: минимальная strength для активации
         """
@@ -70,14 +106,45 @@ class IntentMemory:
         self.recency_half_life = recency_half_life
         self.min_strength_for_trace = min_strength_for_trace
     
+    def _signature_text(self, text: str) -> str:
+        return hashlib.md5(text.encode()).hexdigest()[:8]
+
+    def canonical_context_features(self, context: List[str]) -> tuple:
+        """Order-independent salient set. Priority, then name, breaks ties.
+
+        Duplicates collapse. The result does not depend on PYTHONHASHSEED.
+        """
+        seen = set()
+        tokens: List[str] = []
+        for item in list(context or []):
+            token = str(item).strip()
+            if not token or token in seen:
+                continue
+            seen.add(token)
+            tokens.append(token)
+        tokens.sort(key=lambda token: (-_event_priority(token), token))
+        return tuple(tokens)
+
     def _compute_context_signature(self, context: List[str]) -> str:
-        """
-        Вычислить хеш контекста.
-        Использует последние N элементов контекста.
-        """
-        window = context[-self.context_signature_window:] if context else []
-        context_str = "|".join(window)
-        return hashlib.md5(context_str.encode()).hexdigest()[:8]
+        """Hash the canonical feature set, not the last event."""
+        return self._signature_text("|".join(self.canonical_context_features(context)))
+
+    def _legacy_context_signature(self, context: List[str]) -> str:
+        """Historical key: md5 of the last ``context_signature_window`` events."""
+        window = list(context)[-self.context_signature_window:] if context else []
+        return self._signature_text("|".join(str(item) for item in window))
+
+    def _trace_match_weight(self, trace: IntentTrace, features: tuple, exact: str, legacy: str) -> float:
+        signature = str(getattr(trace, "context_signature", "") or "")
+        if signature == exact:
+            return 1.0
+        stored = tuple(getattr(trace, "context_features", ()) or ())
+        if bool(getattr(trace, "match_subset", False)) and stored and set(stored) < set(features):
+            return 0.5
+        # Saves written before the canonical key only have the tail hash.
+        if (not stored) and signature == legacy and signature != exact:
+            return 1.0
+        return 0.0
     
     def record_trace(self, context: List[str], intent_type: str):
         """
@@ -89,18 +156,22 @@ class IntentMemory:
         Если нет:
           - создать новый trace
         """
-        context_sig = self._compute_context_signature(context)
+        features = self.canonical_context_features(context)
+        context_sig = self._signature_text("|".join(features))
         trace_key = f"{intent_type}:{context_sig}"
         
         if trace_key in self.traces:
             self.traces[trace_key].strengthen()
+            if not getattr(self.traces[trace_key], "context_features", ()):
+                self.traces[trace_key].context_features = features
         else:
             self.traces[trace_key] = IntentTrace(
                 intent_type=intent_type,
                 context_signature=context_sig,
                 strength=1.0,
                 recency=1.0,
-                timestamp=time.time()
+                timestamp=time.time(),
+                context_features=features,
             )
     
     def activate_by_context(self, context: List[str]) -> Dict[str, float]:
@@ -115,19 +186,21 @@ class IntentMemory:
         
         pressure = strength × recency × relevance
         """
-        context_sig = self._compute_context_signature(context)
+        features = self.canonical_context_features(context)
+        exact = self._signature_text("|".join(features))
+        legacy = self._legacy_context_signature(context)
         pressure: Dict[str, float] = {}
         
         # Обновить recency для всех traces и активировать релевантные
         for trace_key, trace in self.traces.items():
             trace.update_recency(self.recency_half_life)
-            
-            # Только traces с этой сигнатурой контекста
-            if trace.context_signature == context_sig:
-                if trace.strength >= self.min_strength_for_trace:
-                    p = trace.strength * trace.recency
-                    intent = trace.intent_type
-                    pressure[intent] = pressure.get(intent, 0.0) + p
+            weight = self._trace_match_weight(trace, features, exact, legacy)
+            if weight <= 0.0:
+                continue
+            if trace.strength >= self.min_strength_for_trace:
+                p = trace.strength * trace.recency * weight
+                intent = trace.intent_type
+                pressure[intent] = pressure.get(intent, 0.0) + p
         
         return pressure
     
@@ -201,12 +274,15 @@ class IntentMemory:
         Outcome-blind ``strength += 1`` locked the first pick. The trace is
         created at strength 0 until ``apply_outcome`` sees a real result.
         """
-        context_sig = self._compute_context_signature(context)
+        features = self.canonical_context_features(context)
+        context_sig = self._signature_text("|".join(features))
         trace_key = f"{intent_type}:{context_sig}"
         if trace_key in self.traces:
             trace = self.traces[trace_key]
             trace.timestamp = time.time()
             trace.recency = 1.0
+            if not getattr(trace, "context_features", ()):
+                trace.context_features = features
             return
         self.traces[trace_key] = IntentTrace(
             intent_type=intent_type,
@@ -214,6 +290,7 @@ class IntentMemory:
             strength=0.0,
             recency=1.0,
             timestamp=time.time(),
+            context_features=features,
         )
 
     def apply_outcome(
@@ -368,5 +445,90 @@ class IntentMemory:
         
         return stats
     
+    def to_dict(self) -> Dict:
+        """Serialize habits. Legacy loads may omit features and match_subset."""
+        traces = []
+        for trace in self.traces.values():
+            traces.append(
+                {
+                    "intent_type": trace.intent_type,
+                    "context_signature": trace.context_signature,
+                    "strength": float(trace.strength),
+                    "recency": float(trace.recency),
+                    "timestamp": float(trace.timestamp),
+                    "context_features": list(getattr(trace, "context_features", ()) or ()),
+                    "match_subset": bool(getattr(trace, "match_subset", False)),
+                }
+            )
+        return {
+            "context_signature_window": int(self.context_signature_window),
+            "recency_half_life": float(self.recency_half_life),
+            "min_strength_for_trace": float(self.min_strength_for_trace),
+            "traces": traces,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "IntentMemory":
+        """Load a habit save. Missing feature lists keep the legacy tail key."""
+        payload = data if isinstance(data, dict) else {}
+        try:
+            window = int(payload.get("context_signature_window", 1))
+        except (TypeError, ValueError):
+            window = 1
+        try:
+            half_life = float(payload.get("recency_half_life", 3600.0))
+        except (TypeError, ValueError):
+            half_life = 3600.0
+        try:
+            min_strength = float(payload.get("min_strength_for_trace", 0.1))
+        except (TypeError, ValueError):
+            min_strength = 0.1
+        memory = cls(
+            context_signature_window=max(1, window),
+            recency_half_life=half_life if half_life > 0.0 else 3600.0,
+            min_strength_for_trace=min_strength,
+        )
+        rows = payload.get("traces", []) or []
+        if isinstance(rows, dict):
+            rows = list(rows.values())
+        now = time.time()
+        for row in list(rows):
+            if not isinstance(row, dict):
+                continue
+            intent = str(row.get("intent_type", "") or "").strip()
+            signature = str(row.get("context_signature", "") or "").strip()
+            if not intent or not signature:
+                continue
+            raw_features = row.get("context_features", []) or []
+            features = tuple(str(item).strip() for item in list(raw_features) if str(item).strip())
+            try:
+                strength = float(row.get("strength", 1.0))
+            except (TypeError, ValueError):
+                strength = 1.0
+            try:
+                recency = float(row.get("recency", 0.0))
+            except (TypeError, ValueError):
+                recency = 0.0
+            try:
+                timestamp = float(row.get("timestamp", now))
+            except (TypeError, ValueError):
+                timestamp = now
+            if not math.isfinite(strength):
+                strength = 1.0
+            if not math.isfinite(recency):
+                recency = 0.0
+            if not math.isfinite(timestamp):
+                timestamp = now
+            memory.traces[f"{intent}:{signature}"] = IntentTrace(
+                intent_type=intent,
+                context_signature=signature,
+                strength=strength,
+                recency=recency,
+                timestamp=timestamp,
+                context_features=features,
+                match_subset=bool(row.get("match_subset", False)),
+            )
+        return memory
+
     def __repr__(self):
         return f"IntentMemory({len(self.traces)} traces)"

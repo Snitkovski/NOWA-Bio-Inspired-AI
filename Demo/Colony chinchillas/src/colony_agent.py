@@ -769,6 +769,7 @@ class ChinchillaAgent(Agent):
             return
         for habit in self.behavior_profile.habits:
             context = list(habit.context)
+            features = tuple(intent_memory.canonical_context_features(context))
             context_signature = intent_memory._compute_context_signature(context)
             trace_key = f"{habit.action}:{context_signature}"
             strength = max(intent_memory.min_strength_for_trace, float(habit.strength))
@@ -777,6 +778,8 @@ class ChinchillaAgent(Agent):
                 existing.strength = max(float(existing.strength), strength)
                 existing.recency = max(float(existing.recency), 1.0)
                 existing.timestamp = time.time()
+                existing.context_features = features
+                existing.match_subset = True
                 continue
             intent_memory.traces[trace_key] = IntentTrace(
                 intent_type=habit.action,
@@ -784,6 +787,8 @@ class ChinchillaAgent(Agent):
                 strength=strength,
                 recency=1.0,
                 timestamp=time.time(),
+                context_features=features,
+                match_subset=True,
             )
 
     def _select_unconditioned_reflex(self, context_events: list[str]) -> str | None:
