@@ -326,22 +326,7 @@ class Agent:
             Action name chosen by selector
         """
         import time
-        outcome_known = reward is not None
-        if reward is None:
-            reward = 0.0
-        else:
-            try:
-                reward = float(reward)
-            except (TypeError, ValueError):
-                reward = 0.0
-                outcome_known = False
-            else:
-                # NaN is an unknown outcome. ±inf is a saturated finite reward.
-                if math.isnan(reward):
-                    reward = 0.0
-                    outcome_known = False
-                elif not math.isfinite(reward):
-                    reward = 1.0 if reward > 0.0 else -1.0
+        reward, outcome_known = self._coerce_step_reward(reward)
         self._transition_terminal = bool(terminal)
         self.lived_steps += 1
         try:
@@ -360,11 +345,6 @@ class Agent:
         
         # Update wakefulness during waking period
         self.wakefulness.update_waking()
-        
-        # Build path from context
-        path = Path()
-        for c in context_events:
-            path = path.add_event(Event(c, event_type=EventType.CONTEXT))
         
         # Get intent pressure (habits from intent_memory)
         intent_pressure = {}
@@ -890,8 +870,143 @@ class Agent:
 
         self.last_action = action
         self._record_action_visit(context_events, action)
+        self._pending_commit_context = {
+            "stable_repetition": stable_repetition,
+            "effective_modulation": effective_modulation,
+            "step_elapsed": step_elapsed,
+            "time_elapsed": time_elapsed,
+        }
         if decision_only:
             return action
+
+        path = Path()
+        for item in context_events:
+            path = path.add_event(Event(item, event_type=EventType.CONTEXT))
+        return self._commit_waking_transition(
+            action=action,
+            context_events=context_events,
+            consequence=consequence,
+            intensity=intensity,
+            reward=reward,
+            outcome_known=outcome_known,
+            novelty=novelty,
+            conflict=conflict,
+            affective_inputs=affective_inputs,
+            step_elapsed=step_elapsed,
+            time_elapsed=time_elapsed,
+            stable_repetition=stable_repetition,
+            path=path,
+            effective_modulation=effective_modulation,
+            decided_action=action,
+            overridden=False,
+            override_source=None,
+        )
+
+    def _coerce_step_reward(self, reward):
+        """Return (reward, outcome_known) using the same rules as step()."""
+        if reward is None:
+            return 0.0, False
+        try:
+            reward = float(reward)
+        except (TypeError, ValueError):
+            return 0.0, False
+        if math.isnan(reward):
+            return 0.0, False
+        if not math.isfinite(reward):
+            return (1.0 if reward > 0.0 else -1.0), True
+        return reward, True
+
+    def commit_executed_transition(
+        self,
+        action: str,
+        reward: Optional[float] = None,
+        *,
+        context_events=None,
+        decided_action: str = None,
+        overridden: bool = False,
+        override_source: str = None,
+        novelty: float = 0.0,
+        conflict: float = 0.0,
+        intensity: float = 1.0,
+        consequence: Event = None,
+        affective_inputs: dict = None,
+        terminal: bool = False,
+        effective_modulation: dict = None,
+    ) -> Optional[str]:
+        """Store and learn the action that was actually executed.
+
+        ``step(..., decision_only=True)`` chooses without writing an episode.
+        This records one episode for the executed action, including an
+        ``overridden`` flag, and applies the same TD / habit / channel update
+        as a waking step whose reward is already known. A later feedback call
+        with the same reward is a no-op, addressed by episode id.
+        """
+        reward, outcome_known = self._coerce_step_reward(reward)
+        self._transition_terminal = bool(terminal)
+        context_events = list(context_events or [])
+        path = Path()
+        for item in context_events:
+            path = path.add_event(Event(item, event_type=EventType.CONTEXT))
+        pending = getattr(self, "_pending_commit_context", None)
+        if not isinstance(pending, dict):
+            pending = {}
+        if effective_modulation is None:
+            effective_modulation = pending.get("effective_modulation") or {}
+        self._commit_waking_transition(
+            action=str(action or ""),
+            context_events=context_events,
+            consequence=consequence,
+            intensity=intensity,
+            reward=reward,
+            outcome_known=outcome_known,
+            novelty=novelty,
+            conflict=conflict,
+            affective_inputs=affective_inputs,
+            step_elapsed=float(pending.get("step_elapsed", 1.0) or 1.0),
+            time_elapsed=float(pending.get("time_elapsed", 1.0) or 1.0),
+            stable_repetition=bool(pending.get("stable_repetition", False)),
+            path=path,
+            effective_modulation=dict(effective_modulation or {}),
+            decided_action=decided_action,
+            overridden=bool(overridden),
+            override_source=override_source,
+        )
+        return getattr(self, "last_episode_id", None)
+
+    def _commit_waking_transition(
+        self,
+        *,
+        action,
+        context_events,
+        consequence,
+        intensity,
+        reward,
+        outcome_known,
+        novelty,
+        conflict,
+        affective_inputs,
+        step_elapsed,
+        time_elapsed,
+        stable_repetition,
+        path,
+        effective_modulation,
+        decided_action,
+        overridden,
+        override_source,
+    ) -> str:
+        if (
+            decided_action is not None
+            and str(action or "") != str(decided_action)
+            and str(action or "") != "NO_ACTION"
+        ):
+            self._record_action_visit(context_events, action)
+        self.last_executed_action = str(action or "")
+        self.last_override = {
+            "overridden": bool(overridden),
+            "source": None if not overridden or override_source is None else str(override_source),
+            "decided_action": None if decided_action is None else str(decided_action),
+            "executed_action": str(action or ""),
+        }
 
         policy_entropy = 0.0
         try:
@@ -999,6 +1114,14 @@ class Agent:
             pass
         if stored_experience is not None:
             self.last_episode_id = getattr(stored_experience, "episode_id", None)
+            stored_experience.overridden = bool(overridden)
+            stored_experience.override_source = (
+                None if not overridden or override_source is None else str(override_source)
+            )
+            stored_experience.decided_action = str(
+                action if decided_action is None else decided_action
+            )
+            stored_experience.executed_action = str(action)
             self._mark_transition_trajectory(
                 stored_experience,
                 terminal=bool(getattr(self, "_transition_terminal", False)),
@@ -1076,7 +1199,7 @@ class Agent:
         if outcome_known:
             self._record_known_outcome(
                 context_events=list(context_events or []),
-                action_id=str(getattr(self, "last_action", "") or ""),
+                action_id=str(action or ""),
                 outcome=float(reward),
             )
         if stored_experience is not None and not outcome_known:

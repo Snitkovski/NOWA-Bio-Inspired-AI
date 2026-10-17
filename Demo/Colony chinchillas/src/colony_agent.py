@@ -413,32 +413,47 @@ class ChinchillaAgent(Agent):
                 self.wakefulness.update_waking(elapsed_seconds=wake_elapsed_s)
             except Exception:
                 pass
+        context_events = self._build_context_events()
+        novelty = self._compute_novelty()
+        conflict = self._compute_conflict()
+        intensity = self._compute_intensity()
         if self._should_continue_sleeping():
-            # Mandatory recovery mode: while still sleep-deprived, do not interrupt
-            # with normal action selection.
-            action = "sleep"
+            # Mandatory recovery: the core is not asked, and the episode
+            # records that the body kept sleep.
+            decided_action = None
+            executed = "sleep"
+            overridden = True
+            override_source = "homeostatic:sleep_recovery"
         else:
-            context_events = self._build_context_events()
-            reward = self._compute_reward()
-            novelty = self._compute_novelty()
-            conflict = self._compute_conflict()
-
-            action = self.step(
+            decided_action = self.step(
                 context_events=context_events,
-                reward=reward,
+                reward=None,
                 novelty=novelty,
                 conflict=conflict,
-                intensity=self._compute_intensity(),
+                intensity=intensity,
+                decision_only=True,
             )
-            reflex_action = self._select_unconditioned_reflex(context_events)
-            if reflex_action is not None:
-                action = reflex_action
-
-            action = self._apply_homeostatic_action_policy(action)
-        self._interpret_action(action)
+            executed, overridden, override_source = self._resolve_executed_action(
+                str(decided_action or "idle"),
+                context_events,
+            )
+        before = self._physiology_snapshot()
+        self._interpret_action(executed)
         self._social_step()
-        self._resource_metabolism_step(dt)
         self._apply_sleep_recovery(dt)
+        reward = self._compute_reward(before=before, executed_action=executed)
+        self.commit_executed_transition(
+            action=executed,
+            reward=reward,
+            context_events=context_events,
+            decided_action=None if decided_action is None else str(decided_action),
+            overridden=overridden,
+            override_source=override_source,
+            novelty=novelty,
+            conflict=conflict,
+            intensity=intensity,
+        )
+        self._resource_metabolism_step(dt)
 
         if (not self.is_sleeping) and getattr(self, "autonomous_runtime", None) is not None:
             self.autonomous_tick(dt)
@@ -505,7 +520,18 @@ class ChinchillaAgent(Agent):
 
         return events
 
-    def _compute_reward(self) -> float:
+    def _physiology_snapshot(self) -> dict[str, float]:
+        return {
+            "hunger": _clamp(self.hunger, 0.0, 1.0),
+            "thirst": _clamp(self.thirst, 0.0, 1.0),
+            "wakefulness": _clamp(float(self.wakefulness.wakefulness), 0.0, 1.0),
+        }
+
+    def _compute_reward(
+        self,
+        before: dict[str, float] | None = None,
+        executed_action: str | None = None,
+    ) -> float:
         reward = 0.0
 
         if self.resources:
@@ -515,16 +541,82 @@ class ChinchillaAgent(Agent):
             elif food_level < 0.15:
                 reward -= 0.4
 
-        reward += self.valence * 0.3
+        # Valence is updated from reward. Feeding it back here is a loop.
         reward -= self.stress * 0.3
         reward -= _clamp(self.hunger - 0.4, 0.0, 1.0) * 0.25
         reward -= _clamp(self.thirst - 0.35, 0.0, 1.0) * 0.35
+        if before is not None:
+            hunger_drop = float(before.get("hunger", self.hunger)) - _clamp(self.hunger, 0.0, 1.0)
+            thirst_drop = float(before.get("thirst", self.thirst)) - _clamp(self.thirst, 0.0, 1.0)
+            wake_drop = float(before.get("wakefulness", 0.0)) - _clamp(
+                float(self.wakefulness.wakefulness), 0.0, 1.0
+            )
+            reward += _clamp(hunger_drop, -1.0, 1.0) * 0.8
+            reward += _clamp(thirst_drop, -1.0, 1.0) * 0.8
+            reward += _clamp(wake_drop, -1.0, 1.0) * 0.5
+            action_name = str(executed_action or "")
+            if (
+                action_name == "eat"
+                and hunger_drop <= 1e-9
+                and float(before.get("hunger", 0.0)) >= HUNGER_NEED_THRESHOLD
+            ):
+                reward -= 0.2
+            if (
+                action_name == "drink"
+                and thirst_drop <= 1e-9
+                and float(before.get("thirst", 0.0)) >= THIRST_NEED_THRESHOLD
+            ):
+                reward -= 0.2
 
         if self._last_social_was_positive:
             reward += 0.2
             self._last_social_was_positive = False
 
         return _clamp(reward, -1.0, 1.0)
+
+    def _resolve_executed_action(
+        self,
+        decided: str,
+        context_events: list[str],
+    ) -> tuple[str, bool, str | None]:
+        """Apply reflex and homeostatic overrides to the core's choice."""
+        action = str(decided or "idle")
+        overridden = False
+        source: str | None = None
+        reflex_action, reflex_id = self._select_unconditioned_reflex_detail(context_events)
+        if reflex_action is not None and reflex_action != action:
+            action = reflex_action
+            overridden = True
+            source = f"reflex:{reflex_id}" if reflex_id else "reflex"
+        gated = self._apply_homeostatic_action_policy(action)
+        if gated != action:
+            source = self._describe_homeostatic_override(action, gated)
+            action = gated
+            overridden = True
+        return action, overridden, source
+
+    def _describe_homeostatic_override(self, before: str, after: str) -> str:
+        wakefulness_value = _clamp(float(self.wakefulness.wakefulness), 0.0, 1.0)
+        hunger_value = _clamp(self.hunger, 0.0, 1.0)
+        thirst_value = _clamp(self.thirst, 0.0, 1.0)
+        wake_resume_threshold = SLEEP_WAKEFULNESS_THRESHOLD * SLEEP_HYSTERESIS
+        if self.is_sleeping and wakefulness_value >= wake_resume_threshold:
+            return "homeostatic:sleep_recovery"
+        if wakefulness_value >= SLEEP_CRITICAL_THRESHOLD:
+            return "homeostatic:critical_sleep"
+        if thirst_value >= THIRST_CRITICAL_THRESHOLD:
+            return "homeostatic:critical_thirst"
+        if hunger_value >= HUNGER_CRITICAL_THRESHOLD:
+            return "homeostatic:critical_hunger"
+        if after in {"drink", "eat", "sleep"}:
+            return f"homeostatic:urgent_{after}"
+        if before == "sleep":
+            return "homeostatic:blocked_sleep"
+        if before == "eat":
+            return "homeostatic:blocked_eat"
+        if before == "drink":
+            return "homeostatic:blocked_drink"
+        return f"homeostatic:{after}"
 
     def _compute_novelty(self) -> float:
         novelty = 0.0
@@ -695,8 +787,15 @@ class ChinchillaAgent(Agent):
             )
 
     def _select_unconditioned_reflex(self, context_events: list[str]) -> str | None:
+        action, _reflex_id = self._select_unconditioned_reflex_detail(context_events)
+        return action
+
+    def _select_unconditioned_reflex_detail(
+        self,
+        context_events: list[str],
+    ) -> tuple[str | None, str | None]:
         if not self.unconditioned_reflexes:
-            return None
+            return None, None
         context_set = set(context_events)
         selected: UnconditionedReflex | None = None
         best_priority = float("-inf")
@@ -716,9 +815,9 @@ class ChinchillaAgent(Agent):
                 selected = reflex
 
         if selected is None:
-            return None
+            return None, None
         self._reflex_last_activation[selected.reflex_id] = self.sim_time
-        return selected.action
+        return selected.action, selected.reflex_id
 
     def _interpret_action(self, action: str) -> None:
         was_sleeping = self.is_sleeping
