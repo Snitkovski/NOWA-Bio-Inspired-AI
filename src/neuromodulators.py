@@ -72,6 +72,25 @@ class NeuromodulatorField:
     def snapshot(self) -> Dict[str, float]:
         return dict(self.levels)
 
+    def _minimum_stable_decay(self) -> float:
+        """Decay that keeps one Euler step contractive for this matrix.
+
+        Gershgorin: the off-diagonal mass of a row is a bound on how far an
+        eigenvalue can sit from the diagonal. Decay has to clear that mass
+        or a positive feedback mode walks the levels off baseline.
+        """
+        dt = max(float(self.dt), 1e-6)
+        max_off = 0.0
+        matrix = getattr(self, "INTERACTION_MATRIX", ()) or ()
+        for row in matrix:
+            try:
+                off = sum(abs(float(weight)) for weight in row)
+            except (TypeError, ValueError):
+                continue
+            if off > max_off:
+                max_off = off
+        return max_off + (0.25 / dt)
+
     def update(
         self,
         signals: Optional[Dict[str, float]] = None,
@@ -81,6 +100,9 @@ class NeuromodulatorField:
         dt_v = self.dt if dt is None else max(0.0, float(dt))
         if dt_v <= 0.0:
             return self.snapshot()
+        needed = self._minimum_stable_decay()
+        if self.decay < needed:
+            self.decay = needed
 
         m = [self.levels[key] for key in self.KEYS]
         b = [self.baselines[key] for key in self.KEYS]
@@ -160,7 +182,8 @@ class NeuromodulatorState:
     DECAY_HALF_LIFE = 90.0  # seconds
 
     # Interaction layer parameters
-    INTERACTION_DECAY = 0.2
+    INTERACTION_DECAY = 0.85
+    IMPULSE_LIMIT = 0.25
     INTERACTION_DT = 1.0
 
     # Update coefficients (from specification)
@@ -214,6 +237,8 @@ class NeuromodulatorState:
         self.ach_novelty_trace = 0.0
         self.ach_alpha_gain = float(self.ACH_ALPHA_GAIN)
         self.ach_replay_gain = float(self.ACH_REPLAY_GAIN)
+        self.ach_running_mean = float(self.ach_baseline)
+        self.ach_mean_rate = 0.05
         self.interaction_field: Optional[NeuromodulatorField] = None
         self.timestamp = time.time()
 
@@ -375,7 +400,9 @@ class NeuromodulatorState:
             delta += self.ach_novelty_gain * effective_novelty
 
         if stable_repetition:
-            delta -= self.ach_repetition_penalty
+            # Pull excess ACh down, but do not drive the fixed point under baseline.
+            excess = max(0.0, float(self.acetylcholine) - float(self.ach_baseline))
+            delta -= min(float(self.ach_repetition_penalty), excess)
 
         # Decay toward baseline.
         ach_after_signal = self.acetylcholine + delta
@@ -419,7 +446,65 @@ class NeuromodulatorState:
         self.acetylcholine = self.ach_baseline + (self.acetylcholine - self.ach_baseline) * decay_factor
 
         self._clamp_all()
+        self._track_ach_running_mean()
         self.timestamp = time.time()
+
+    def _track_ach_running_mean(self) -> None:
+        rate = max(0.0, min(1.0, float(getattr(self, "ach_mean_rate", 0.05))))
+        current = self._clamp(self.acetylcholine)
+        previous = self._clamp(getattr(self, "ach_running_mean", self.ach_baseline))
+        self.ach_running_mean = self._clamp(previous + (rate * (current - previous)))
+
+    def acetylcholine_reference(self) -> float:
+        """Level ACh gating is measured against. A slow mean, not a fixed floor."""
+        return self._clamp(getattr(self, "ach_running_mean", self.ach_baseline))
+
+    def acetylcholine_gate(self) -> float:
+        return max(0.0, self._clamp(self.acetylcholine) - self.acetylcholine_reference())
+
+    def apply_impulses(self, impulses: Optional[Dict[str, float]] = None) -> Dict[str, float]:
+        """Add bounded impulses. The field integrator relaxes them on its next step.
+
+        Writers used to assign levels directly, so a large delta could pin a
+        modulator on the clamp. Impulses are clipped, then stored on the same
+        state the interaction field integrates.
+        """
+        payload = dict(impulses or {})
+        limit = float(getattr(self, "IMPULSE_LIMIT", 0.25))
+        before = {
+            "dopamine": float(self.dopamine),
+            "serotonin": float(self.serotonin),
+            "norepinephrine": float(self.norepinephrine),
+            "acetylcholine": float(self.acetylcholine),
+            "cortisol": float(self.cortisol),
+        }
+        for key in ("dopamine", "serotonin", "norepinephrine", "acetylcholine"):
+            if key not in payload:
+                continue
+            try:
+                raw = float(payload[key])
+            except (TypeError, ValueError):
+                continue
+            if not math.isfinite(raw):
+                continue
+            bounded = max(-limit, min(limit, raw))
+            setattr(self, key, self._clamp(float(getattr(self, key)) + bounded))
+        if "cortisol" in payload:
+            try:
+                raw_cortisol = float(payload["cortisol"])
+            except (TypeError, ValueError):
+                raw_cortisol = 0.0
+            if math.isfinite(raw_cortisol):
+                bounded_cortisol = max(-limit, min(limit, raw_cortisol))
+                self.cortisol = self._clamp(float(self.cortisol) + bounded_cortisol)
+        self._sync_field_from_state()
+        self._track_ach_running_mean()
+        self.timestamp = time.time()
+        return {
+            key: float(getattr(self, key)) - before[key]
+            for key in before
+            if key in payload
+        }
 
     def update_acetylcholine(self, novelty: float = 0.0, stable_repetition: bool = False):
         """
@@ -434,6 +519,7 @@ class NeuromodulatorState:
         self.ach_novelty_trace = next_trace
         self.acetylcholine = self._clamp(self.acetylcholine + delta)
         self._sync_field_from_state()
+        self._track_ach_running_mean()
 
     def update_from_signals(
         self,
@@ -560,17 +646,18 @@ class NeuromodulatorState:
 
         # Clamp all values
         self._clamp_all()
+        self._track_ach_running_mean()
         self.timestamp = time.time()
 
     def apply_dopamine_delta(self, delta: float):
-        """Apply additive dopamine delta and clamp to valid range."""
+        """Apply a bounded dopamine impulse. The field relaxes it on the next step."""
         try:
             d = float(delta)
         except Exception:
             d = 0.0
-        self.dopamine = self._clamp(self.dopamine + d)
-        self._sync_field_from_state()
-        self.timestamp = time.time()
+        if not math.isfinite(d):
+            d = 0.0
+        self.apply_impulses({"dopamine": d})
 
     def get_learning_rate_modifier(self) -> float:
         """
@@ -712,6 +799,8 @@ class NeuromodulatorState:
             "ach_novelty_trace": self.ach_novelty_trace,
             "ach_alpha_gain": self.ach_alpha_gain,
             "ach_replay_gain": self.ach_replay_gain,
+            "ach_running_mean": float(getattr(self, "ach_running_mean", self.ach_baseline)),
+            "ach_mean_rate": float(getattr(self, "ach_mean_rate", 0.05)),
             "acc_combined_conflict_trace": self._acc_combined_conflict_trace,
             "acc_cognitive_conflict_trace": self._acc_cognitive_conflict_trace,
             "acc_affective_conflict_trace": self._acc_affective_conflict_trace,
@@ -737,6 +826,8 @@ class NeuromodulatorState:
         inst.ach_novelty_trace = float(data.get("ach_novelty_trace", 0.0))
         inst.ach_alpha_gain = float(data.get("ach_alpha_gain", cls.ACH_ALPHA_GAIN))
         inst.ach_replay_gain = float(data.get("ach_replay_gain", cls.ACH_REPLAY_GAIN))
+        inst.ach_running_mean = inst._clamp(float(data.get("ach_running_mean", inst.ach_baseline)))
+        inst.ach_mean_rate = max(0.0, min(1.0, float(data.get("ach_mean_rate", 0.05))))
         legacy_conflict_trace = inst._clamp(float(data.get("acc_conflict_trace", 0.0)))
         inst._acc_combined_conflict_trace = inst._clamp(
             float(data.get("acc_combined_conflict_trace", legacy_conflict_trace))
@@ -769,6 +860,7 @@ class NeuromodulatorState:
         self.serotonin = self.BASELINE_HT
         self.cortisol = self.BASELINE_CORT
         self.acetylcholine = self.ach_baseline
+        self.ach_running_mean = float(self.ach_baseline)
         self.ach_novelty_trace = 0.0
         self._acc_combined_conflict_trace = 0.0
         self._acc_cognitive_conflict_trace = 0.0

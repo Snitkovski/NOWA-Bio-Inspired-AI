@@ -91,6 +91,7 @@ class AgentStorage:
                     "salience_threshold",
                     "min_reinforcement_for_consolidation",
                     "variance_gate_threshold",
+                    "state_estimate_variance_threshold",
                     "ach_min_for_consolidation",
                     "stability_index_threshold",
                     "consolidation_cap",
@@ -295,6 +296,9 @@ class AgentStorage:
                         "success_count": int(getattr(channel, "success_count", 0)),
                         "failure_count": int(getattr(channel, "failure_count", 0)),
                         "last_outcome": getattr(channel, "last_outcome", None),
+                        "prior_go": float(getattr(channel, "prior_go", getattr(channel, "go_weight", 0.5))),
+                        "prior_nogo": float(getattr(channel, "prior_nogo", getattr(channel, "nogo_weight", 0.5))),
+                        "prior_habit": float(getattr(channel, "prior_habit", getattr(channel, "habit_strength", 0.0))),
                     }
                 agent_state["bg_action_channels"] = channels_data
                 agent_state["bg_sleep_memories"] = dict(getattr(agent, "bg_sleep_memories", {}))
@@ -305,6 +309,10 @@ class AgentStorage:
                     "expected_lifetime_steps": getattr(agent, "expected_lifetime_steps", None),
                 }
                 agent_state["last_episode_id"] = getattr(agent, "last_episode_id", None)
+                agent_state["trajectory_seq"] = int(getattr(agent, "_trajectory_seq", 0))
+                agent_state["trajectory_step"] = int(getattr(agent, "_trajectory_step", 0))
+                agent_state["trajectory_id"] = getattr(agent, "_trajectory_id", None)
+                agent_state["trajectory_closed"] = bool(getattr(agent, "_trajectory_closed", True))
                 visit_counts = getattr(agent, "_action_visit_counts", None)
                 if isinstance(visit_counts, dict):
                     portable_visits = {}
@@ -490,6 +498,7 @@ class AgentStorage:
                     "salience_threshold",
                     "min_reinforcement_for_consolidation",
                     "variance_gate_threshold",
+                    "state_estimate_variance_threshold",
                     "ach_min_for_consolidation",
                     "stability_index_threshold",
                     "consolidation_cap",
@@ -984,6 +993,9 @@ class AgentStorage:
                         go_weight=float(channel_data.get("go_weight", 0.5)),
                         nogo_weight=float(channel_data.get("nogo_weight", 0.5)),
                         habit_strength=float(channel_data.get("habit_strength", 0.0)),
+                        prior_go=channel_data.get("prior_go"),
+                        prior_nogo=channel_data.get("prior_nogo"),
+                        prior_habit=channel_data.get("prior_habit"),
                     )
                     ch.selection_count = int(channel_data.get("selection_count", 0))
                     ch.success_count = int(channel_data.get("success_count", 0))
@@ -1022,6 +1034,15 @@ class AgentStorage:
 
         if agent is not None and "last_episode_id" in agent_state:
             agent.last_episode_id = agent_state.get("last_episode_id")
+        if agent is not None and "trajectory_seq" in agent_state:
+            try:
+                agent._trajectory_seq = int(agent_state.get("trajectory_seq", 0))
+                agent._trajectory_step = int(agent_state.get("trajectory_step", 0))
+                raw_trajectory = agent_state.get("trajectory_id")
+                agent._trajectory_id = None if raw_trajectory in (None, "") else str(raw_trajectory)
+                agent._trajectory_closed = bool(agent_state.get("trajectory_closed", True))
+            except (TypeError, ValueError):
+                pass
         if agent is not None and isinstance(agent_state.get("action_visit_counts"), dict):
             restored_visits = {}
             for key, count in agent_state.get("action_visit_counts", {}).items():
