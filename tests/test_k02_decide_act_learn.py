@@ -102,7 +102,7 @@ def test_commit_stores_executed_action_and_override_flag():
 
 
 def test_colony_episode_follows_executed_outcome_not_pre_action_choice():
-    agent = ChinchillaAgent(sex="F")
+    agent = ChinchillaAgent(sex="F", physiology_as_policy=False)
     agent.colony = []
     agent.resources = SharedResources(food_pellets=1.0, hay=1.0, water=1.0)
     agent.hunger = 0.9

@@ -36,8 +36,10 @@ def test_tc02_first_meeting_of_strangers() -> None:
 
 def test_tc05_position_knowledge_degrades_without_contact() -> None:
     runner = SimulationRunner()
-    a0 = ChinchillaAgent(sex="F", position="wheel")
-    a1 = ChinchillaAgent(sex="M", position="wheel")
+    # Frozen interpretation cannot eat. Keep the gate so unmet hunger does not
+    # end the decay window early.
+    a0 = ChinchillaAgent(sex="F", position="wheel", physiology_as_policy=False)
+    a1 = ChinchillaAgent(sex="M", position="wheel", physiology_as_policy=False)
     runner.add_agent(a0)
     runner.add_agent(a1)
     runner.run_for(10.0, dt=1.0)

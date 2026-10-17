@@ -77,7 +77,7 @@ def test_tc05_hippocampus_accumulates_experience() -> None:
 
 
 def test_tc06_sleep_triggered_by_high_wakefulness() -> None:
-    agent = ChinchillaAgent(sex="M")
+    agent = ChinchillaAgent(sex="M", physiology_as_policy=False)
     agent.colony = []
     agent.resources = SharedResources()
     agent.wakefulness._wakefulness = 0.85

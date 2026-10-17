@@ -15,10 +15,10 @@ OFFER_TIMEOUT_S: Final[float] = 10.0
 COLONY_MAX_LIFESPAN_STEPS: Final[int] = 20000
 # Global resource drain multiplier for colony balancing in dense populations.
 RESOURCE_CONSUMPTION_MULTIPLIER: Final[float] = 2.0
-# When false, hunger/thirst/sleep stay post-hoc body overrides and the social
-# layer runs every tick. The demo default stays on that path. When true, those
-# needs are a soft input to the policy and ignored needs spend energy.
-PHYSIOLOGY_AS_POLICY: Final[bool] = False
+# Owner decision: the demo default is on. Hunger, thirst, and sleep are a
+# soft policy input, and ignored needs spend energy. An agent can still set
+# physiology_as_policy False to keep the historical homeostatic gate.
+PHYSIOLOGY_AS_POLICY: Final[bool] = True
 UNMET_HUNGER_ENERGY_PER_S: Final[float] = 0.02
 UNMET_THIRST_ENERGY_PER_S: Final[float] = 0.025
 UNMET_SLEEP_ENERGY_PER_S: Final[float] = 0.02

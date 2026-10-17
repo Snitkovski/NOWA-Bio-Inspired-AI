@@ -6,6 +6,7 @@ check turns PHYSIOLOGY_AS_POLICY on. Seeded RNGs only; no PYTHONHASHSEED.
 
 from __future__ import annotations
 
+import json
 import random
 import re
 import sys
@@ -17,8 +18,10 @@ if str(COLONY_SRC) not in sys.path:
 
 from agent_knowledge import KnownAgent  # noqa: E402
 from colony_agent import ChinchillaAgent  # noqa: E402
+from colony_storage import ColonyStorage  # noqa: E402
 from config_colony import ESTRUS_DURATION_S, HEAT_CYCLE_LENGTH_S, MATURITY_AGE_S  # noqa: E402
 from shared_resources import SharedResources  # noqa: E402
+from simulation_runner import SimulationRunner  # noqa: E402
 
 _NAME = re.compile(r"^G[0-9]+A[0-9]+S[MFU]$")
 _SURVIVAL_STEPS = 30
@@ -115,11 +118,58 @@ def _pair(seed: int, policy: str | None) -> tuple[ChinchillaAgent, ChinchillaAge
     return female, male
 
 
-def test_policy_flag_defaults_off_and_context_stays_unchanged() -> None:
+def test_policy_flag_defaults_on_and_context_includes_need_bins() -> None:
     agent = ChinchillaAgent(sex="F", name="Luna")
-    assert agent.physiology_as_policy is False
+    assert agent.physiology_as_policy is True
     events = agent._build_context_events()
+    assert any(event.startswith("hunger_bin:") for event in events)
+    assert any(event.startswith("thirst_bin:") for event in events)
+    assert any(event.startswith("wake_bin:") for event in events)
+
+
+def test_policy_flag_off_keeps_historical_context_and_forces_sleep() -> None:
+    agent = ChinchillaAgent(sex="M", name="Milo", physiology_as_policy=False)
+    agent.colony = [agent]
+    agent.resources = SharedResources()
+    events = agent._build_context_events()
+    assert agent.physiology_as_policy is False
     assert not any(event.startswith("hunger_bin:") for event in events)
+    agent.wakefulness.wakefulness = 0.85
+    before = float(agent.wakefulness.wakefulness)
+    agent.sim_step(0.1)
+    assert agent.is_sleeping is True
+    assert float(agent.wakefulness.wakefulness) < before
+
+
+def test_physiology_flag_is_saved_loaded_and_inherited(tmp_path: Path) -> None:
+    runner = SimulationRunner(death_journal_path=tmp_path / "deaths.jsonl")
+    gated = ChinchillaAgent(sex="F", name="Luna", physiology_as_policy=False)
+    policy = ChinchillaAgent(sex="M", name="Milo", physiology_as_policy=True)
+    runner.add_agent(gated)
+    runner.add_agent(policy)
+
+    storage = ColonyStorage(save_dir=tmp_path)
+    saved_path = Path(storage.save_colony(runner, "flags.json"))
+    loaded = storage.load_colony(saved_path)
+    by_id = {agent.agent_id: agent for agent in loaded.agents}
+    assert by_id[gated.agent_id].physiology_as_policy is False
+    assert by_id[policy.agent_id].physiology_as_policy is True
+
+    payload = json.loads(saved_path.read_text(encoding="utf-8"))
+    for row in payload["agents"]:
+        assert "physiology_as_policy" in row["runtime"]
+        row["runtime"].pop("physiology_as_policy")
+    legacy_path = tmp_path / "legacy.json"
+    legacy_path.write_text(json.dumps(payload), encoding="utf-8")
+    legacy = storage.load_colony(legacy_path)
+    assert all(agent.physiology_as_policy is True for agent in legacy.agents)
+
+    gated.is_mature = True
+    gated._current_mate_id = policy.agent_id
+    child = gated._create_offspring(policy)
+    assert child.physiology_as_policy is False
+    policy_child = policy._create_offspring(None)
+    assert policy_child.physiology_as_policy is True
 
 
 def test_policy_mode_does_not_force_eat_and_still_reports_reflexes() -> None:

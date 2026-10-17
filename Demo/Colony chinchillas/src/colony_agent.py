@@ -1728,6 +1728,7 @@ class ChinchillaAgent(Agent):
             resources=self.resources,
             is_mature=False,
             rng=self._rng,
+            physiology_as_policy=bool(self.physiology_as_policy),
         )
         offspring._inherit_nowa_from(self, father)
 
