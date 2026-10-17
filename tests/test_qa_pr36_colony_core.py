@@ -8,6 +8,7 @@ that depends on the core only when PHYSIOLOGY_AS_POLICY is on.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import random
 import re
@@ -316,7 +317,7 @@ def _survival(seed: int, policy: str | None, steps: int = 30) -> dict:
 
 
 def test_ablation_rest_loses_and_seed_is_deterministic():
-    assert PHYSIOLOGY_AS_POLICY is False
+    assert PHYSIOLOGY_AS_POLICY is True
     first = _survival(7, None)
     second = _survival(7, None)
     rest_a = _survival(7, "rest")
@@ -479,7 +480,10 @@ def test_core_births_keep_generated_names_and_rest_does_not():
     assert rest_f.is_pregnant is False
     for child in births:
         assert _NAME.match(child.name)
-        assert child.physiology_as_policy is False
+        assert child.physiology_as_policy is True
+    gated_mother = ChinchillaAgent(sex="F", name="Luna", physiology_as_policy=False, is_mature=True)
+    gated_child = gated_mother._create_offspring(None)
+    assert gated_child.physiology_as_policy is False
 
 
 def test_colony_save_roundtrip_and_missing_new_fields(tmp_path):
@@ -497,14 +501,34 @@ def test_colony_save_roundtrip_and_missing_new_fields(tmp_path):
     agent.hunger = 0.4
     runner.add_agent(agent)
     storage = ColonyStorage(save_dir=tmp_path)
+    gated = ChinchillaAgent(
+        sex="M",
+        name="Milo",
+        rng_seed=4,
+        physiology_as_policy=False,
+        age=12.0,
+        is_mature=False,
+        position="floor",
+    )
+    runner.add_agent(gated)
     path = storage.save_colony(runner, "colony.json")
     raw = Path(path).read_text(encoding="utf-8")
-    assert "physiology_as_policy" not in raw
+    assert '"physiology_as_policy": true' in raw
+    assert '"physiology_as_policy": false' in raw
     loaded = storage.load_colony(path)
-    assert loaded.agents[0].name == "Luna"
-    assert loaded.agents[0].position == "house"
-    assert loaded.agents[0].energy == pytest.approx(0.77)
-    assert loaded.agents[0].physiology_as_policy is False
+    by_name = {item.name: item for item in loaded.agents}
+    assert by_name["Luna"].position == "house"
+    assert by_name["Luna"].energy == pytest.approx(0.77)
+    assert by_name["Luna"].physiology_as_policy is True
+    assert by_name["Milo"].physiology_as_policy is False
+
+    payload = json.loads(raw)
+    for row in payload["agents"]:
+        row["runtime"].pop("physiology_as_policy")
+    legacy_path = Path(tmp_path / "legacy_flag.json")
+    legacy_path.write_text(json.dumps(payload), encoding="utf-8")
+    legacy_flag = ColonyStorage(save_dir=tmp_path).load_colony(legacy_path)
+    assert all(item.physiology_as_policy is True for item in legacy_flag.agents)
 
     stripped = Path(tmp_path / "old.json")
     text = raw.replace('"energy": 0.77', '"note": "legacy"')
