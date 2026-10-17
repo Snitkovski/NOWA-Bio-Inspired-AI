@@ -601,7 +601,12 @@ class ChinchillaAgent(Agent):
             ):
                 reward -= 0.2
             if self.physiology_as_policy:
-                reward += self._policy_need_alignment(before, action_name)
+                reward += self._policy_need_alignment(
+                    before,
+                    hunger_drop=hunger_drop,
+                    thirst_drop=thirst_drop,
+                    wake_drop=wake_drop,
+                )
 
         if self._last_social_was_positive:
             reward += 0.2
@@ -609,21 +614,28 @@ class ChinchillaAgent(Agent):
 
         return _clamp(reward, -1.0, 1.0)
 
-    def _policy_need_alignment(self, before: dict[str, float], action_name: str) -> float:
-        """Reward the action that meets a need that was already present."""
+    def _policy_need_alignment(
+        self,
+        before: dict[str, float],
+        *,
+        hunger_drop: float,
+        thirst_drop: float,
+        wake_drop: float,
+    ) -> float:
+        """Credit measured relief. Choosing eat or drink without a drop is not a success."""
         bonus = 0.0
         hunger = float(before.get("hunger", 0.0))
         thirst = float(before.get("thirst", 0.0))
         wake = float(before.get("wakefulness", 0.0))
-        if action_name == "eat" and hunger >= HUNGER_NEED_THRESHOLD:
+        if hunger_drop > 1e-6:
             bonus += 0.35
         elif hunger >= HUNGER_NEED_THRESHOLD:
             bonus -= 0.15
-        if action_name == "drink" and thirst >= THIRST_NEED_THRESHOLD:
+        if thirst_drop > 1e-6:
             bonus += 0.35
         elif thirst >= THIRST_NEED_THRESHOLD:
             bonus -= 0.15
-        if action_name == "sleep" and wake >= SLEEP_WAKEFULNESS_THRESHOLD:
+        if wake_drop > 1e-6:
             bonus += 0.35
         elif wake >= SLEEP_WAKEFULNESS_THRESHOLD:
             bonus -= 0.15
@@ -1938,6 +1950,10 @@ class ChinchillaAgent(Agent):
                     self._resource_block_feedback_at[resource] = float(self.sim_time)
             return acquired
         if resource == "food_pellets":
+            # A full sip every tick empties the shared bowl when the step is
+            # shorter than the need. Drink and eat only when there is a deficit.
+            if self.physiology_as_policy and not self._needs_eat_action():
+                return False
             if self._food_availability() > 0.05:
                 self.resources.consume_food(
                     0.003 * RESOURCE_CONSUMPTION_MULTIPLIER,
@@ -1948,6 +1964,8 @@ class ChinchillaAgent(Agent):
             self._apply_affect_impulse(stress=0.2, valence=-0.3, intensity=0.8)
             return False
         if resource == "water":
+            if self.physiology_as_policy and not self._needs_drink_action():
+                return False
             if self.resources.water > 0.02:
                 self.resources.water = max(
                     0.0,
