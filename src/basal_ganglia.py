@@ -52,13 +52,23 @@ class ActionChannel:
     prior_nogo: Optional[float] = None
     prior_habit: Optional[float] = None
 
+    def __setattr__(self, name, value):
+        # Direct assignment of learned weights is a stable write. Construction
+        # (before the channel is sealed) and host seeding under initializing()
+        # still go through. Sleep opens learning_allowed() for the real writers.
+        if name in ("go_weight", "nogo_weight", "habit_strength") and getattr(self, "_weights_sealed", False):
+            if not assert_learning_allowed(f"ActionChannel.{name}"):
+                return
+        object.__setattr__(self, name, value)
+
     def __post_init__(self):
-        self.go_weight = max(0.0, min(1.0, float(self.go_weight)))
-        self.nogo_weight = max(0.0, min(1.0, float(self.nogo_weight)))
-        self.habit_strength = max(0.0, min(1.0, float(self.habit_strength)))
-        self.prior_go = self._prior_or_weight(self.prior_go, self.go_weight)
-        self.prior_nogo = self._prior_or_weight(self.prior_nogo, self.nogo_weight)
-        self.prior_habit = self._prior_or_weight(self.prior_habit, self.habit_strength)
+        object.__setattr__(self, "go_weight", max(0.0, min(1.0, float(self.go_weight))))
+        object.__setattr__(self, "nogo_weight", max(0.0, min(1.0, float(self.nogo_weight))))
+        object.__setattr__(self, "habit_strength", max(0.0, min(1.0, float(self.habit_strength))))
+        object.__setattr__(self, "prior_go", self._prior_or_weight(self.prior_go, self.go_weight))
+        object.__setattr__(self, "prior_nogo", self._prior_or_weight(self.prior_nogo, self.nogo_weight))
+        object.__setattr__(self, "prior_habit", self._prior_or_weight(self.prior_habit, self.habit_strength))
+        object.__setattr__(self, "_weights_sealed", True)
 
     @staticmethod
     def _prior_or_weight(prior: Optional[float], weight: float) -> float:
@@ -548,15 +558,19 @@ class BasalGangliaLearning:
         neuromodulators,
         forget_rate: float = 0.01,
     ) -> List[ActionChannel]:
-        from learning_guard import learning_allowed
+        """Replay BG memories into a clone.
 
-        with learning_allowed():
-            return self._apply_sleep_learning_unlocked(
-                channels,
-                memories,
-                neuromodulators,
-                forget_rate=forget_rate,
-            )
+        This does not open the learning guard. The sleep path
+        (``SleepManager`` / a host sleep that enters ``learning_allowed``)
+        must already be open. A waking call leaves the clone unchanged
+        (or raises when ``NOWA_STRICT_LEARNING`` is set).
+        """
+        return self._apply_sleep_learning_unlocked(
+            channels,
+            memories,
+            neuromodulators,
+            forget_rate=forget_rate,
+        )
 
     def _apply_sleep_learning_unlocked(
         self,
@@ -598,6 +612,8 @@ class BasalGangliaLearning:
         return updated_channels
 
     def consolidate_habits(self, channels: List[ActionChannel], serotonin: float) -> List[ActionChannel]:
+        if not assert_learning_allowed("BasalGangliaLearning.consolidate_habits"):
+            return [ch.clone() for ch in channels]
         updated = [ch.clone() for ch in channels]
         for channel in updated:
             if channel.selection_count > 0:

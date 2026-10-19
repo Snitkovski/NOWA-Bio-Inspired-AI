@@ -171,6 +171,18 @@ class Agent:
                 setattr(self.sleep_manager, "bg_learning", self.bg_learning)
                 setattr(self.sleep_manager, "affective_space", self.affective_space)
                 setattr(self.sleep_manager, "affective_background", self.affective_background)
+                setattr(self.sleep_manager, "_host_agent", self)
+            except Exception:
+                pass
+        for slow_layer in (
+            self.affective_background,
+            self.semantic_emotions,
+            self.emotional_memory,
+            self.emotional_expectations,
+            self.conflict_arbitration,
+        ):
+            try:
+                setattr(slow_layer, "_stable_owner", self)
             except Exception:
                 pass
         self._last_step_time = None
@@ -203,6 +215,12 @@ class Agent:
             plasticity.alpha_reference = float(getattr(self.value_layer, "alpha_default", 0.03))
         self.plasticity = plasticity
         self.labile = LabileLayer(plasticity)
+        self.lost_unconsolidated = 0
+        self._pending_slow_affect = []
+        if self.sleep_manager is not None:
+            setattr(self.sleep_manager, "labile", self.labile)
+            setattr(self.sleep_manager, "plasticity", self.plasticity)
+            setattr(self.sleep_manager, "_host_agent", self)
         if plasticity.expected_wake_interval_s is None:
             plasticity.warn_unset_wake_interval(_nowa_logging.getLogger("nowa.plasticity"))
         # Creation timestamp for lifetime reporting
@@ -934,8 +952,14 @@ class Agent:
         )
 
     def _coerce_step_reward(self, reward):
-        """Return (reward, outcome_known) using the same rules as step()."""
-        if reward is None:
+        """Return (reward, outcome_known).
+
+        Shared non-finite rule with feedback: ``None``, non-numeric values
+        and NaN are unknown (no labile tag, no episode outcome). ±inf is ±1.
+        Finite rewards are kept on the host's scale. Feedback then maps a
+        finite value through the integer rating scale [-2, 2] / 2.
+        """
+        if reward is None or isinstance(reward, bool):
             return 0.0, False
         try:
             reward = float(reward)
@@ -946,6 +970,28 @@ class Agent:
         if not math.isfinite(reward):
             return (1.0 if reward > 0.0 else -1.0), True
         return reward, True
+
+    def _coerce_feedback_rating(self, feedback_rating):
+        """Return (rating, reward_signal) or None when the rating is unknown.
+
+        NaN and non-numeric ratings are unknown: the episode is left as it
+        was. ±inf becomes reward ±1 (rating ±2). A finite number is an
+        integer rating clamped to [-2, 2], and the reward is rating/2.
+        """
+        if feedback_rating is None or isinstance(feedback_rating, bool):
+            return None
+        try:
+            numeric = float(feedback_rating)
+        except (TypeError, ValueError):
+            return None
+        if math.isnan(numeric):
+            return None
+        if math.isinf(numeric):
+            rating = 2 if numeric > 0.0 else -2
+            return rating, (1.0 if numeric > 0.0 else -1.0)
+        rating = max(-2, min(2, int(numeric)))
+        reward_signal = max(-1.0, min(1.0, float(rating) / 2.0))
+        return rating, reward_signal
 
     def commit_executed_transition(
         self,
@@ -1146,7 +1192,14 @@ class Agent:
                 stored_experience.encoding_strength = float(encoding_strength)
         except Exception:
             pass
+        self._note_evicted_episodes()
         if stored_experience is not None:
+            self._annotate_episode_encoding(
+                stored_experience,
+                context_events=list(context_events or []),
+                novelty=float(novelty),
+                intensity=float(intensity),
+            )
             self.last_episode_id = getattr(stored_experience, "episode_id", None)
             stored_experience.overridden = bool(overridden)
             stored_experience.override_source = (
@@ -1343,17 +1396,9 @@ class Agent:
         except Exception:
             pass
 
-        # Update affective background field (Phase 3.75)
-        try:
-            traces = self.affective_persistence.get_traces()
-            self.affective_background.update_from_traces(
-                traces=traces,
-                wakefulness=self.wakefulness.wakefulness,
-                lifetime_progress=self.get_lifetime_progress(),
-                time_elapsed=step_elapsed,
-            )
-        except Exception:
-            pass
+        # Affective background, semantic emotions, emotional memory and
+        # expectations are stable. The day's inputs are queued and applied
+        # in sleep. The fast affective space still steps now.
 
         # Update affective space (Phase 4 pre) - no action influence
         try:
@@ -1381,43 +1426,6 @@ class Agent:
                     self.emotional_regulation.sync_from_canonical(self.affective_space.axes)
             except Exception:
                 pass
-        except Exception:
-            pass
-
-        # Update semantic emotions (Phase 4.1) - interpret affective space only
-        try:
-            if hasattr(self, "semantic_emotions") and self.semantic_emotions is not None:
-                self.semantic_emotions.update_from_space(
-                    space=self.affective_space,
-                    wakefulness=self.wakefulness.wakefulness,
-                    agent_lifetime=self.get_lifetime(),
-                )
-        except Exception:
-            pass
-
-        # Update emotional memory narratives (Phase 4.2) - retrospective only
-        try:
-            if hasattr(self, "emotional_memory") and self.emotional_memory is not None:
-                self.emotional_memory.update_from_layers(
-                    semantic_emotions=self.semantic_emotions,
-                    space=self.affective_space,
-                    background=getattr(self.affective_background, "snapshot", lambda: {})(),
-                    agent_lifetime=self.get_lifetime(),
-                    timestamp=time.time(),
-                )
-        except Exception:
-            pass
-
-        # Update emotional expectations (Phase 4.3) - prospective only
-        try:
-            if hasattr(self, "emotional_expectations") and self.emotional_expectations is not None:
-                self.emotional_expectations.update(
-                    memory_layer=self.emotional_memory,
-                    semantic_emotions=self.semantic_emotions,
-                    background=getattr(self.affective_background, "snapshot", lambda: {})(),
-                    agent_lifetime=self.get_lifetime(),
-                    timestamp=time.time(),
-                )
         except Exception:
             pass
 
@@ -1497,18 +1505,18 @@ class Agent:
         except Exception:
             pass
 
-        # Update ACC-like internal failure/error windows from realized outcome.
+        # Slow affective statistics and ACC outcome windows wait for sleep.
         try:
-            if hasattr(self, "conflict_arbitration") and self.conflict_arbitration is not None:
-                td_for_acc = (
-                    float(value_update.get("phasic_delta", value_update.get("td_error", 0.0)))
-                    if value_update is not None
-                    else 0.0
-                )
-                self.conflict_arbitration.register_outcome(
-                    reward_signal=float(reward),
-                    prediction_error=td_for_acc,
-                )
+            td_for_acc = (
+                float(value_update.get("phasic_delta", value_update.get("td_error", 0.0)))
+                if value_update is not None
+                else 0.0
+            )
+            self._queue_slow_affect(
+                reward=float(reward),
+                td_error=td_for_acc,
+                step_elapsed=float(step_elapsed),
+            )
         except Exception:
             pass
 
@@ -2814,21 +2822,20 @@ class Agent:
         return selected_action
     
     def register_action_channel(self, action_id: str, go_weight: float = 0.5, nogo_weight: float = 0.5, habit_strength: float = 0.0):
+        """Register an action channel. This is host seeding, not waking learning.
+
+        The write runs under ``initializing()``. A later direct assignment to
+        ``go_weight`` / ``nogo_weight`` / ``habit_strength`` does not.
         """
-        Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊ РґРµР№СЃС‚РІРёРµ РІ Р±Р°Р·Р°Р»СЊРЅС‹С… РіР°РЅРіР»РёСЏС… (РєР°РЅР°Р» РґР»СЏ РІС‹Р±РѕСЂР°).
-        
-        Args:
-            action_id: РёРјСЏ РґРµР№СЃС‚РІРёСЏ
-            go_weight: РІРµСЃ Go РєР°РЅР°Р»Р° [0..1]
-            nogo_weight: РІРµСЃ NoGo РєР°РЅР°Р»Р° [0..1]
-            habit_strength: СЃРёР»Р° РїСЂРёРІС‹С‡РєРё [0..1]
-        """
-        self.bg_action_channels[action_id] = ActionChannel(
-            action_id=action_id,
-            go_weight=go_weight,
-            nogo_weight=nogo_weight,
-            habit_strength=habit_strength
-        )
+        from learning_guard import initializing
+
+        with initializing():
+            self.bg_action_channels[action_id] = ActionChannel(
+                action_id=action_id,
+                go_weight=go_weight,
+                nogo_weight=nogo_weight,
+                habit_strength=habit_strength,
+            )
 
     def set_organ_risk(self, tool_id: str, risk_level: str) -> None:
         """Record a WRITE organ's risk class without importing MCP types."""
@@ -2969,17 +2976,8 @@ class Agent:
         """
         if action_id in self.bg_action_channels:
             self.bg_action_channels[action_id].record_outcome(outcome)
-        
-        # РЎРѕС…СЂР°РЅРёС‚СЊ РґР»СЏ РѕР±СѓС‡РµРЅРёСЏ РІРѕ СЃРЅРµ
-        if action_id not in self.bg_sleep_memories:
-            self.bg_sleep_memories[action_id] = []
-        
-        self.bg_sleep_memories[action_id].append((
-            outcome,
-            self.neuromodulators.dopamine,
-            self.neuromodulators.cortisol,
-            self.neuromodulators.serotonin
-        ))
+        # Outcomes for sleep come from hippocampal episodes (decision 5).
+        # ``bg_sleep_memories`` is no longer a learning source.
 
     def _record_known_outcome(
         self,
@@ -3064,6 +3062,15 @@ class Agent:
                 episode.encoded_at = float(now)
                 if not hasattr(episode, "consolidated"):
                     episode.consolidated = False
+                previous_reward = getattr(episode, "td_committed_reward", None)
+                already = bool(getattr(episode, "td_outcome_committed", False))
+                changed = (
+                    not already
+                    or previous_reward is None
+                    or abs(float(previous_reward) - float(outcome)) > 1e-9
+                )
+                if changed:
+                    episode.outcome_revision = int(getattr(episode, "outcome_revision", 0) or 0) + 1
                 episode.td_outcome_committed = True
                 episode.td_committed_reward = float(outcome)
                 episode.td_prior_value = float(q_eff)
@@ -3077,12 +3084,9 @@ class Agent:
                 episode.td_error_snapshot = float(td_error)
             except Exception:
                 pass
-        if action_name and action_name != NO_ACTION:
-            try:
-                self._remember_bg_outcome(episode_id, action_name, float(outcome))
-            except Exception:
-                pass
         # Diagnostics only. The Q table itself is not written while awake.
+        # g_DA stays 1 (owner decision after PR A): the labile step is not
+        # scaled by the current dopamine level.
         # The next step's exploration coupling reads last_td_error.
         layer = getattr(self, "value_layer", None)
         if layer is not None:
@@ -3292,13 +3296,23 @@ class Agent:
         A new rating writes one labile contribution and stores the outcome
         for sleep. The same rating again is a no-op. A changed rating
         replaces that episode's labile contribution. Stable Q is not rewritten.
+
+        NaN and non-numeric ratings are unknown (``updated=False``, no write).
+        ±inf is ±1, the same rule as ``step`` / ``commit``. A finite rating
+        is clamped to the integer scale [-2, 2] and divided by 2.
+        A rating changed after that episode was consolidated is a correction
+        in the next sleep, not a second waking write into the stable tier.
         """
-        try:
-            rating = int(feedback_rating)
-        except Exception:
-            rating = 0
-        rating = max(-2, min(2, rating))
-        reward_signal = max(-1.0, min(1.0, float(rating) / 2.0))
+        parsed = self._coerce_feedback_rating(feedback_rating)
+        if parsed is None:
+            return {
+                "updated": False,
+                "reward_signal": 0.0,
+                "td_error": 0.0,
+                "salience": 0.0,
+                "importance": 0.0,
+            }
+        rating, reward_signal = parsed
 
         result = {
             "updated": False,
@@ -3519,13 +3533,225 @@ class Agent:
             'last_nets': self.basal_ganglia.last_nets
         }
     
+    def _annotate_episode_encoding(self, episode, context_events, novelty: float, intensity: float) -> None:
+        """Fields sleep consolidation reads. Written once, at encoding."""
+        if episode is None:
+            return
+        try:
+            episode.context_events = [str(item) for item in list(context_events or [])]
+        except Exception:
+            pass
+        try:
+            episode.novelty = max(0.0, min(1.0, float(novelty)))
+        except (TypeError, ValueError):
+            episode.novelty = 0.0
+        try:
+            episode.emotional_salience = max(0.0, min(1.0, float(intensity) / 2.0))
+        except (TypeError, ValueError):
+            episode.emotional_salience = 0.0
+        if not hasattr(episode, "consolidated"):
+            episode.consolidated = False
+        if not hasattr(episode, "outcome_revision"):
+            episode.outcome_revision = 0
+        if getattr(episode, "affect_gain_at_encoding", None) is None:
+            gain = 1.0
+            try:
+                gain = float(self.affect_state.get_habit_reinforcement_modifier(1.0))
+            except Exception:
+                gain = 1.0
+            if not math.isfinite(gain):
+                gain = 1.0
+            episode.affect_gain_at_encoding = gain
+        try:
+            neuromod = getattr(self, "neuromodulators", None)
+            episode.neuromodulator_snapshot = {
+                "dopamine": float(getattr(neuromod, "dopamine", 0.0) or 0.0),
+                "cortisol": float(getattr(neuromod, "cortisol", 0.0) or 0.0),
+                "serotonin": float(getattr(neuromod, "serotonin", 0.0) or 0.0),
+                "acetylcholine": float(getattr(neuromod, "acetylcholine", 0.0) or 0.0),
+            }
+        except Exception:
+            pass
+
+    def _outcome_pending_consolidation(self, episode) -> bool:
+        if episode is None or not bool(getattr(episode, "td_outcome_committed", False)):
+            return False
+        if not bool(getattr(episode, "consolidated", False)):
+            return True
+        done = getattr(episode, "consolidated_revision", None)
+        if done is None:
+            return False
+        try:
+            return int(done) != int(getattr(episode, "outcome_revision", 0) or 0)
+        except (TypeError, ValueError):
+            return False
+
+    def _note_evicted_episodes(self) -> None:
+        """Known outcomes dropped from the hippocampus never reach stable Q."""
+        hip = getattr(self, "hippocampus", None)
+        raw = getattr(hip, "last_evicted", None)
+        if not isinstance(raw, list):
+            evicted = []
+        else:
+            evicted = list(raw)
+            hip.last_evicted = []
+        if not evicted:
+            return
+        now = float(getattr(self, "_host_clock_s", 0.0) or 0.0)
+        labile = getattr(self, "labile", None)
+        for episode in evicted:
+            if not self._outcome_pending_consolidation(episode):
+                continue
+            self.lost_unconsolidated = int(getattr(self, "lost_unconsolidated", 0)) + 1
+            episode_id = str(getattr(episode, "episode_id", "") or "")
+            if episode_id and labile is not None and hasattr(labile, "pop_contribution"):
+                try:
+                    labile.pop_contribution(episode_id, now)
+                except Exception:
+                    pass
+
+    def _queue_slow_affect(self, reward: float, td_error: float, step_elapsed: float) -> None:
+        """Record one waking step for the sleep-only affective statistics."""
+        pending = getattr(self, "_pending_slow_affect", None)
+        if not isinstance(pending, list):
+            pending = []
+            self._pending_slow_affect = pending
+        space = getattr(self, "affective_space", None)
+        traces = []
+        try:
+            for trace in list(self.affective_persistence.get_traces() or []):
+                trace_type = getattr(trace, "trace_type", None) or getattr(trace, "type", None)
+                if isinstance(trace, dict):
+                    trace_type = trace.get("trace_type", trace.get("type"))
+                    intensity = trace.get("intensity", 0.0)
+                else:
+                    intensity = getattr(trace, "intensity", 0.0)
+                if trace_type:
+                    traces.append({"trace_type": str(trace_type), "intensity": float(intensity or 0.0)})
+        except Exception:
+            traces = []
+        try:
+            axes = dict(getattr(space, "axes", {}) or {})
+            inertia = dict(getattr(space, "inertia", {}) or {})
+            fall_rate = dict(getattr(space, "fall_rate", {}) or {})
+            speed = float(space.speed()) if space is not None and callable(getattr(space, "speed", None)) else 0.0
+        except Exception:
+            axes, inertia, fall_rate, speed = {}, {}, {}, 0.0
+        try:
+            wakefulness = float(self.wakefulness.wakefulness)
+        except Exception:
+            wakefulness = 1.0
+        try:
+            lifetime_progress = float(self.get_lifetime_progress())
+        except Exception:
+            lifetime_progress = 0.0
+        try:
+            agent_lifetime = float(self.get_lifetime())
+        except Exception:
+            agent_lifetime = 0.0
+        pending.append(
+            {
+                "traces": traces,
+                "wakefulness": wakefulness,
+                "lifetime_progress": lifetime_progress,
+                "time_elapsed": float(step_elapsed or 1.0),
+                "agent_lifetime": agent_lifetime,
+                "timestamp": time.time(),
+                "axes": axes,
+                "inertia": inertia,
+                "fall_rate": fall_rate,
+                "speed": speed,
+                "reward": float(reward),
+                "td_error": float(td_error),
+            }
+        )
+
+    def _replay_slow_affect(self) -> None:
+        """Apply queued slow statistics. Caller must hold the sleep guard."""
+        pending = list(getattr(self, "_pending_slow_affect", None) or [])
+        self._pending_slow_affect = []
+
+        class _SpaceView:
+            def __init__(self, item):
+                self.axes = dict(item.get("axes") or {})
+                self.inertia = dict(item.get("inertia") or {})
+                self.fall_rate = dict(item.get("fall_rate") or {})
+                self._speed = float(item.get("speed", 0.0) or 0.0)
+
+            def speed(self):
+                return self._speed
+
+        class _TraceView:
+            def __init__(self, trace_type, intensity):
+                self.trace_type = trace_type
+                self.intensity = intensity
+
+        for item in pending:
+            if not isinstance(item, dict):
+                continue
+            traces = [
+                _TraceView(row.get("trace_type"), row.get("intensity", 0.0))
+                for row in list(item.get("traces") or [])
+                if isinstance(row, dict)
+            ]
+            try:
+                self.affective_background.update_from_traces(
+                    traces=traces,
+                    wakefulness=float(item.get("wakefulness", 1.0)),
+                    lifetime_progress=float(item.get("lifetime_progress", 0.0)),
+                    time_elapsed=float(item.get("time_elapsed", 1.0)),
+                )
+            except Exception:
+                pass
+            view = _SpaceView(item)
+            try:
+                if self.semantic_emotions is not None:
+                    self.semantic_emotions.update_from_space(
+                        space=view,
+                        wakefulness=float(item.get("wakefulness", 1.0)),
+                        agent_lifetime=float(item.get("agent_lifetime", 0.0)),
+                    )
+            except Exception:
+                pass
+            try:
+                if self.emotional_memory is not None:
+                    self.emotional_memory.update_from_layers(
+                        semantic_emotions=self.semantic_emotions,
+                        space=view,
+                        background=self.affective_background.snapshot(),
+                        agent_lifetime=float(item.get("agent_lifetime", 0.0)),
+                        timestamp=float(item.get("timestamp", time.time())),
+                    )
+            except Exception:
+                pass
+            try:
+                if self.emotional_expectations is not None:
+                    self.emotional_expectations.update(
+                        memory_layer=self.emotional_memory,
+                        semantic_emotions=self.semantic_emotions,
+                        background=self.affective_background.snapshot(),
+                        agent_lifetime=float(item.get("agent_lifetime", 0.0)),
+                        timestamp=float(item.get("timestamp", time.time())),
+                    )
+            except Exception:
+                pass
+            try:
+                if self.conflict_arbitration is not None:
+                    self.conflict_arbitration.register_outcome(
+                        reward_signal=float(item.get("reward", 0.0)),
+                        prediction_error=float(item.get("td_error", 0.0)),
+                    )
+            except Exception:
+                pass
+
     def sleep(self, cycles: int = 3, sleep_duration_seconds: float = None) -> dict:
         """
         Sleep and consolidate memories.
         
         This is the only writer of the stable tier.
-        Called explicitly, not automatically. Waking offsets stay labile
-        until a later consolidation step captures them.
+        Called explicitly, not automatically. One sleep consolidates each
+        known episode once: replay writes stable Q, capture moves the
+        Go/NoGo tag, and habit EMA runs here. Unconsolidated tags keep decaying.
         
         Args:
             cycles: Number of sleep consolidation cycles
@@ -3543,7 +3769,10 @@ class Agent:
         with learning_allowed():
             if getattr(self, "labile", None) is not None:
                 self.labile.decay_to(float(getattr(self, "_host_clock_s", 0.0)))
-            self._flush_external_learning()
+            # External hooks, slow affect, capture and visit transfer run
+            # inside deep_sleep's one-per-sleep pass, under this same guard
+            # when deep_sleep opens it. Decay is applied up front so the
+            # tags capture sees are the ones at sleep onset.
 
         # Delegate deep sleep to manager; ensure temporal and affect_state are attached
         try:

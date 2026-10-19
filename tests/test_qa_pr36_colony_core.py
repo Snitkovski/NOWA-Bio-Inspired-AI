@@ -173,9 +173,16 @@ def test_colony_override_credits_hide_not_the_rest_choice():
     assert exp.replay_action_id == "hide"
     assert exp.decided_action == "rest"
     assert str(exp.override_source).startswith("reflex:")
-    assert agent.bg_action_channels["hide"].go_weight != pytest.approx(
+    # Stable Go stays put while awake. A non-zero outcome credits hide on the labile tag.
+    assert agent.bg_action_channels["hide"].go_weight == pytest.approx(
         agent.bg_action_channels["rest"].go_weight
-    ) or agent.bg_action_channels["hide"].selection_count != agent.bg_action_channels["rest"].selection_count
+    )
+    reward = float(getattr(exp, "td_committed_reward", 0.0) or 0.0)
+    if abs(reward) > 1e-9:
+        now = float(agent._host_clock_s)
+        hide_go, _hide_nogo = agent.labile.channel_offset("hide", now)
+        rest_go, _rest_nogo = agent.labile.channel_offset("rest", now)
+        assert hide_go != pytest.approx(rest_go)
 
 
 def test_reward_ignores_valence_and_is_scored_after_the_action():

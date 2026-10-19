@@ -138,6 +138,10 @@ class SemanticEmotionsLayer:
             wakefulness: optional, reserved for future use
             agent_lifetime: optional, reserved for future use
         """
+        from learning_guard import guard_owned_writer
+
+        if not guard_owned_writer(self, "SemanticEmotionsLayer.update_from_space"):
+            return [dict(item) for item in (self.active_emotions or [])]
         if space is None:
             self.active_emotions = []
             return []

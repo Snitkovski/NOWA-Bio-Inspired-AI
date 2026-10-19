@@ -1,7 +1,7 @@
-"""PR A of #13: labile tier, stable-tier guard, host clock.
+"""Two-tier plasticity: labile tier plus sleep consolidation.
 
-Core tests construct Agent directly. Consolidation capture, exactly-once
-replay priority and lost-episode rules are the next PR.
+Core tests construct Agent directly. Capture, exactly-once, replay
+priority and lost-episode rules are the sleep half of issue #13.
 """
 
 from __future__ import annotations
@@ -237,7 +237,7 @@ def test_feedback_is_idempotent_and_a_changed_rating_replaces():
     single = _once((2,))
     repeated = _once((2, 2, 2))
     assert labile_snapshot(single)["q"] == pytest.approx(labile_snapshot(repeated)["q"], abs=1e-12, rel=0)
-    assert len(repeated.bg_sleep_memories.get("go", [])) == 1
+    assert len(labile_snapshot(repeated)["contributions"]) == 1
     assert stable_fingerprint(single) == stable_fingerprint(repeated)
 
     replaced = _once((2, -2))
@@ -405,3 +405,279 @@ def test_labile_snapshot_is_deterministic_across_pythonhashseed():
         assert completed.returncode == 0, completed.stderr[-2000:]
         outputs.append(completed.stdout.strip())
     assert outputs[0] == outputs[1] == outputs[2]
+
+
+def _stable_q(agent, context, action) -> float:
+    snapshot = agent._build_value_state_snapshot(
+        context_events=list(context),
+        action=action,
+        consequence=None,
+        intensity=1.0,
+        novelty=0.0,
+        conflict=0.0,
+    )
+    return float(agent.value_layer.get_value(snapshot))
+
+
+def _habit(agent, action) -> float:
+    traces = getattr(agent.intent_memory, "traces", {}) or {}
+    best = 0.0
+    for trace in traces.values():
+        if str(getattr(trace, "intent_type", "")) != str(action):
+            continue
+        best = max(best, float(getattr(trace, "strength", 0.0)))
+    return best
+
+
+def test_sleep_moves_stable_q_habits_and_channels_in_the_outcome_direction():
+    """Rewarded (c, a) rises; punished falls; consolidated tags are cleared."""
+    agent = _build_agent(("go", "stop"), seed=1)
+    for _ in range(8):
+        agent.commit_executed_transition(
+            action="go",
+            reward=1.0,
+            context_events=["good"],
+            decided_action="go",
+            terminal=True,
+            dt=0.0,
+        )
+    for _ in range(8):
+        agent.commit_executed_transition(
+            action="stop",
+            reward=-1.0,
+            context_events=["bad"],
+            decided_action="stop",
+            terminal=True,
+            dt=0.0,
+        )
+    go_before = float(agent.bg_action_channels["go"].go_weight)
+    nogo_before = float(agent.bg_action_channels["go"].nogo_weight)
+    stop_go_before = float(agent.bg_action_channels["stop"].go_weight)
+    stop_nogo_before = float(agent.bg_action_channels["stop"].nogo_weight)
+    agent.sleep(cycles=3)
+    assert _stable_q(agent, ["good"], "go") > 0.0
+    assert _stable_q(agent, ["bad"], "stop") < 0.0
+    assert float(agent.bg_action_channels["go"].go_weight) > go_before
+    assert float(agent.bg_action_channels["go"].nogo_weight) < nogo_before
+    assert float(agent.bg_action_channels["stop"].go_weight) < stop_go_before
+    assert float(agent.bg_action_channels["stop"].nogo_weight) > stop_nogo_before
+    assert _habit(agent, "go") > _habit(agent, "stop")
+    assert _habit(agent, "go") > 0.0
+    assert agent.labile.max_abs_q(agent._host_clock_s) == pytest.approx(0.0, abs=1e-9)
+    assert agent.labile.max_abs_channel(agent._host_clock_s) == pytest.approx(0.0, abs=1e-9)
+    for episode in agent.hippocampus.experiences:
+        assert bool(getattr(episode, "consolidated", False)) is True
+        assert getattr(episode, "episode_id", None) not in agent.labile._contributions
+
+
+def test_second_sleep_matches_shy_only_control():
+    """A second sleep without new episodes does not learn them again."""
+    from copy import copy
+
+    from learning_guard import learning_allowed
+
+    agent = _build_agent(("go",), seed=2)
+    for _ in range(6):
+        agent.commit_executed_transition(
+            action="go",
+            reward=1.0,
+            context_events=["bin"],
+            decided_action="go",
+            terminal=True,
+            dt=0.0,
+        )
+    agent.sleep(cycles=2)
+    control = _build_agent(("go",), seed=2)
+    with learning_allowed():
+        for key, value in list(agent.value_layer.values.items()):
+            control.value_layer._set_value(str(key), float(value))
+        for name, channel in agent.bg_action_channels.items():
+            other = control.bg_action_channels[name]
+            other.go_weight = float(channel.go_weight)
+            other.nogo_weight = float(channel.nogo_weight)
+            other.habit_strength = float(channel.habit_strength)
+            other.prior_go = float(channel.prior_go)
+            other.prior_nogo = float(channel.prior_nogo)
+            other.prior_habit = float(channel.prior_habit)
+    control.intent_memory.traces = {
+        key: copy(trace) for key, trace in agent.intent_memory.traces.items()
+    }
+    agent.sleep_manager._rng.seed(0)
+    control.sleep_manager._rng.seed(0)
+    agent.sleep(cycles=2)
+    control.sleep(cycles=2)
+
+    def _channels(subject):
+        return {
+            name: (
+                float(channel.go_weight),
+                float(channel.nogo_weight),
+                float(channel.habit_strength),
+            )
+            for name, channel in subject.bg_action_channels.items()
+        }
+
+    assert _channels(agent) == pytest.approx(_channels(control), abs=1e-9, rel=0)
+    assert _stable_q(agent, ["bin"], "go") == pytest.approx(_stable_q(control, ["bin"], "go"), abs=1e-9)
+    left = {key: float(trace.strength) for key, trace in agent.intent_memory.traces.items()}
+    right = {key: float(trace.strength) for key, trace in control.intent_memory.traces.items()}
+    assert left.keys() == right.keys()
+    for key in left:
+        assert left[key] == pytest.approx(right[key], abs=1e-9)
+
+
+def test_evicted_unconsolidated_episode_does_not_change_stable_q():
+    agent = _build_agent(("red", "green"), seed=3, capacity=1)
+    agent.commit_executed_transition(
+        action="red",
+        reward=1.0,
+        context_events=["north"],
+        decided_action="red",
+        terminal=True,
+        dt=0.0,
+    )
+    evicted_id = agent.last_episode_id
+    agent.commit_executed_transition(
+        action="green",
+        reward=1.0,
+        context_events=["south"],
+        decided_action="green",
+        terminal=True,
+        dt=0.0,
+    )
+    assert agent.hippocampus.get_experience(evicted_id) is None
+    assert agent.lost_unconsolidated == 1
+    assert evicted_id not in agent.labile._contributions
+    agent.sleep(cycles=2)
+    assert _stable_q(agent, ["north"], "red") == pytest.approx(0.0, abs=1e-9)
+    assert _stable_q(agent, ["south"], "green") > 0.0
+
+
+def test_replay_priority_follows_weights_and_breaks_ties_by_episode_id():
+    agent = _build_agent(("go",), seed=4)
+    made = []
+    for novelty, emotion, reward in ((0.0, 0.0, 1.0), (1.0, 0.0, 0.2), (0.0, 1.0, 0.2)):
+        agent.commit_executed_transition(
+            action="go",
+            reward=reward,
+            context_events=["bin"],
+            decided_action="go",
+            terminal=True,
+            novelty=novelty,
+            intensity=emotion * 2.0,
+            dt=0.0,
+        )
+        episode = agent.hippocampus.get_experience(agent.last_episode_id)
+        episode.novelty = float(novelty)
+        episode.emotional_salience = float(emotion)
+        made.append(episode)
+    order = agent.sleep_manager.consolidation_order(made)
+    scores = [agent.sleep_manager.spec_replay_priority(exp) for exp in order]
+    assert scores == sorted(scores, reverse=True)
+    assert order[0] is made[0]
+    # |δ| and |r| match for the last two; novelty outranks emotion at the default weights
+    # only if its coefficient wins. Force novelty-only weights and check the order.
+    agent.plasticity.replay_priority_weights = (0.0, 0.0, 1.0, 0.0)
+    novelty_order = agent.sleep_manager.consolidation_order(made)
+    assert novelty_order[0] is made[1]
+    agent.plasticity.replay_priority_weights = (0.0, 0.0, 0.0, 0.0)
+    tied = agent.sleep_manager.consolidation_order(made)
+    assert [exp.episode_id for exp in tied] == sorted(exp.episode_id for exp in made)
+
+
+def test_waking_guard_blocks_direct_stable_writes():
+    agent = _build_agent(("go",), seed=5)
+    before = stable_fingerprint(agent)
+    channel = agent.bg_action_channels["go"]
+    with pytest.raises(WakingLearningError):
+        channel.go_weight = 0.9
+    with pytest.raises(WakingLearningError):
+        agent.value_layer._set_value("state", 0.4)
+    with pytest.raises(WakingLearningError):
+        agent.bg_learning.apply_sleep_learning(
+            [channel],
+            {"go": [(1.0, 0.8, 0.1, 0.2)]},
+            agent.neuromodulators,
+            forget_rate=0.0,
+        )
+    with pytest.raises(WakingLearningError):
+        agent.bg_learning.consolidate_habits([channel], serotonin=1.0)
+    agent.register_action_channel("seeded", go_weight=0.8, habit_strength=0.3)
+    assert agent.bg_action_channels["seeded"].go_weight == pytest.approx(0.8)
+    assert stable_fingerprint(agent) != before
+    assert channel.go_weight == pytest.approx(0.5)
+
+
+def test_feedback_nan_is_unknown_and_inf_is_unit_reward():
+    agent = _build_agent(("go",), seed=6)
+    agent.step(["bin"], reward=None, terminal=True, dt=0.0)
+    episode_id = agent.last_episode_id
+    before = labile_snapshot(agent)
+    missing = agent.apply_feedback_to_last_experience(float("nan"), episode_id=episode_id)
+    assert missing["updated"] is False
+    assert labile_snapshot(agent) == before
+    applied = agent.apply_feedback_to_last_experience(float("inf"), episode_id=episode_id)
+    assert applied["updated"] is True
+    assert applied["reward_signal"] == pytest.approx(1.0)
+    stored = agent.hippocampus.get_experience(episode_id)
+    assert float(stored.reward) == pytest.approx(1.0)
+    negative = _build_agent(("go",), seed=6)
+    negative.step(["bin"], reward=None, terminal=True, dt=0.0)
+    negative.apply_feedback_to_last_experience(float("-inf"), episode_id=negative.last_episode_id)
+    assert float(negative.hippocampus.get_experience(negative.last_episode_id).reward) == pytest.approx(-1.0)
+
+
+def test_labile_visits_transfer_into_stable_counts_during_sleep():
+    agent = _build_agent(("go",), seed=7)
+    for _ in range(4):
+        agent.commit_executed_transition(
+            action="go",
+            reward=1.0,
+            context_events=["bin"],
+            decided_action="go",
+            terminal=True,
+            dt=0.0,
+        )
+    for _ in range(4):
+        agent._record_action_visit(["bin"], "go")
+    key = ("bin", "go")
+    assert agent.labile.visit_count("bin", "go") == pytest.approx(4.0)
+    assert agent._action_visit_counts.get(key, 0) == 0
+    agent.sleep(cycles=1)
+    assert agent.labile.visit_count("bin", "go") == pytest.approx(0.0)
+    assert int(agent._action_visit_counts.get(key, 0)) >= 4
+
+
+def test_slow_affect_stays_fixed_until_sleep():
+    agent = _build_agent(("go",), seed=8)
+    before = stable_fingerprint(agent)
+    for _ in range(4):
+        agent.step(["bin"], reward=1.0, novelty=0.8, conflict=0.6, terminal=True, dt=1.0)
+    assert stable_fingerprint(agent) == before
+    assert agent.semantic_emotions.snapshot() == []
+    assert agent._pending_slow_affect
+    agent.sleep(cycles=1)
+    assert agent._pending_slow_affect == []
+    assert stable_fingerprint(agent) != before
+
+
+def test_rating_changed_after_consolidation_is_learned_next_sleep():
+    agent = _build_agent(("go",), seed=9)
+    episode_id = agent.commit_executed_transition(
+        action="go",
+        reward=1.0,
+        context_events=["bin"],
+        decided_action="go",
+        terminal=True,
+        dt=0.0,
+    )
+    agent.sleep(cycles=1)
+    episode = agent.hippocampus.get_experience(episode_id)
+    assert bool(episode.consolidated) is True
+    first_q = _stable_q(agent, ["bin"], "go")
+    agent.apply_feedback_to_last_experience(-2, context_events=["bin"], action_id="go", episode_id=episode_id)
+    assert int(episode.outcome_revision) != int(episode.consolidated_revision)
+    assert _stable_q(agent, ["bin"], "go") == pytest.approx(first_q)
+    agent.sleep(cycles=2)
+    assert _stable_q(agent, ["bin"], "go") < first_q
+    assert int(episode.consolidated_revision) == int(episode.outcome_revision)

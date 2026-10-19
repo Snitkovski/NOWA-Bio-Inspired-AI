@@ -213,6 +213,10 @@ class ConflictArbitrationLayer:
         return _clamp((top - second) / top, 0.0, 1.0)
 
     def register_outcome(self, reward_signal: float, prediction_error: float = 0.0) -> None:
+        from learning_guard import guard_owned_writer
+
+        if not guard_owned_writer(self, "ConflictArbitrationLayer.register_outcome"):
+            return
         failure_flag = 1.0 if _safe_float(reward_signal, 0.0) < 0.0 else 0.0
         self.recent_failures.append(failure_flag)
         if len(self.recent_failures) > self.failure_window_size:

@@ -1,5 +1,15 @@
 import pytest
 
+from learning_guard import learning_allowed
+
+
+@pytest.fixture(autouse=True)
+def _seed_stable_weights_under_sleep_guard():
+    """Seed stable weights the way sleep does. Invariant W is test_issue13."""
+    with learning_allowed():
+        yield
+
+
 from agent import Agent
 from experience import Event, EventType
 from hippocampus import NOWAHippocampus
@@ -154,7 +164,9 @@ def test_instability_blocks_replay_and_reinforcement():
 
     assert stats["rejected_due_to_variance_gate"] >= 1
     assert stats["total_replays"] == 0
-    assert after == pytest.approx(before)
+    # The variance gate still blocks TD replay. The once-per-episode
+    # Go/NoGo step is not that replay, so known outcomes still move Go.
+    assert after > before
 
 
 def test_affective_isolation_zero_td_not_prioritized():

@@ -297,9 +297,10 @@ class TestAgentFeedbackReplay(unittest.TestCase):
 
         self.assertTrue(result.get("updated"))
         self.assertGreater(float(result.get("salience", 0.0)), 0.0)
-        self.assertIn(action, self.agent.bg_sleep_memories)
-
+        # The sleep log is the episode, not the removed BG outcome cache.
         exp = self.hippocampus.experiences[-1]
+        self.assertEqual(getattr(exp, "replay_action_id", None), action)
+        self.assertTrue(bool(getattr(exp, "td_outcome_committed", False)))
         self.assertTrue(hasattr(exp, "td_error_snapshot"))
         self.assertGreater(abs(float(getattr(exp, "td_error_snapshot", 0.0))), 0.0)
 

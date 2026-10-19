@@ -1,5 +1,7 @@
 import math
 
+from learning_guard import learning_allowed
+
 from agent import Agent
 from cortex import CortexMemory
 from hippocampus import NOWAHippocampus
@@ -34,8 +36,9 @@ def test_agent_switches_to_inhibit_after_repeated_failures():
     agent.conflict_arbitration.inhibit_error_threshold = 0.40
     agent.conflict_arbitration.inhibit_failure_threshold = 0.50
     agent.selector.compute_pressures = lambda *args, **kwargs: {"a": 0.34, "b": 0.33, "c": 0.33}
-    for _ in range(16):
-        agent.conflict_arbitration.register_outcome(reward_signal=-1.0, prediction_error=1.0)
+    with learning_allowed():
+        for _ in range(16):
+            agent.conflict_arbitration.register_outcome(reward_signal=-1.0, prediction_error=1.0)
 
     agent.step(["ctx:repeated_failure"], reward=-0.2, novelty=0.2, conflict=0.0)
     last_output = dict(agent.get_state().get("conflict_arbitration", {}).get("last_output", {}) or {})

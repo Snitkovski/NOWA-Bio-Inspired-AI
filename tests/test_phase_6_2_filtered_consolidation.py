@@ -2,6 +2,16 @@ import os
 
 import pytest
 
+from learning_guard import learning_allowed
+
+
+@pytest.fixture(autouse=True)
+def _seed_stable_weights_under_sleep_guard():
+    """Seed stable values the way sleep does. Invariant W is test_issue13."""
+    with learning_allowed():
+        yield
+
+
 from agent import Agent
 from experience import Event, EventType
 from hippocampus import NOWAHippocampus

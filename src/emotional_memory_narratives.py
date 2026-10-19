@@ -69,6 +69,10 @@ class EmotionalMemoryNarrativesLayer:
         """
         Update emotional memory from semantic emotions and contextual state.
         """
+        from learning_guard import guard_owned_writer
+
+        if not guard_owned_writer(self, "EmotionalMemoryNarrativesLayer.update_from_layers"):
+            return list(self.narrative_fragments)
         ts = float(timestamp) if timestamp is not None else time.time()
         background = background or {}
         self.last_update_ts = ts
