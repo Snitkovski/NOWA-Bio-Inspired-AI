@@ -429,6 +429,64 @@ def _habit(agent, action) -> float:
     return best
 
 
+def test_one_episode_moves_go_by_exactly_0_08_and_replay_writes_only_q():
+    """Replay must not add a second Go step on top of capture.
+
+    One terminal +1, decay forced to 0: Go 0.50 -> 0.58 for both
+    sleep(cycles=1) and sleep(cycles=3). Q still rises from replay.
+    """
+    def _run(cycles: int):
+        agent = _build_agent(("go",), seed=1)
+        agent.sleep_manager.decay_rate_sleep = 0.0
+        agent.commit_executed_transition(
+            action="go",
+            reward=1.0,
+            context_events=["bin"],
+            decided_action="go",
+            terminal=True,
+            dt=0.0,
+        )
+        stats = agent.sleep(cycles=cycles)
+        return agent, stats
+
+    once, stats_once = _run(1)
+    assert once.bg_action_channels["go"].go_weight == pytest.approx(0.58, abs=1e-9)
+    assert _stable_q(once, ["bin"], "go") > 0.0
+    assert stats_once["total_replays"] > 0
+    assert float(stats_once.get("total_bg_delta_sleep", 0.0)) == pytest.approx(0.0)
+
+    triple, stats_triple = _run(3)
+    assert triple.bg_action_channels["go"].go_weight == pytest.approx(0.58, abs=1e-9)
+    assert _stable_q(triple, ["bin"], "go") > _stable_q(once, ["bin"], "go")
+    assert stats_triple["total_replays"] > stats_once["total_replays"]
+
+
+def test_direct_replay_does_not_open_the_learning_guard(monkeypatch, caplog):
+    agent = _build_agent(("go",), seed=2)
+    episode_id = agent.commit_executed_transition(
+        action="go",
+        reward=1.0,
+        context_events=["bin"],
+        decided_action="go",
+        terminal=True,
+        dt=0.0,
+    )
+    episode = agent.hippocampus.get_experience(episode_id)
+    before = stable_fingerprint(agent)
+    with pytest.raises(WakingLearningError):
+        agent.sleep_manager._apply_replay_td_bg([episode])
+    assert stable_fingerprint(agent) == before
+    assert _stable_q(agent, ["bin"], "go") == pytest.approx(0.0)
+    assert episode.consolidated is not True
+
+    monkeypatch.setenv("NOWA_STRICT_LEARNING", "0")
+    with caplog.at_level(logging.WARNING, logger="nowa.learning"):
+        skipped = agent.sleep_manager._apply_replay_td_bg([episode])
+    assert skipped["replays_applied"] == 0
+    assert stable_fingerprint(agent) == before
+    assert any("SleepManager._apply_replay_td_bg" in record.message for record in caplog.records)
+
+
 def test_sleep_moves_stable_q_habits_and_channels_in_the_outcome_direction():
     """Rewarded (c, a) rises; punished falls; consolidated tags are cleared."""
     agent = _build_agent(("go", "stop"), seed=1)

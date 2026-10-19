@@ -1425,16 +1425,34 @@ class SleepManager:
         return capped
 
     def _apply_replay_td_bg(self, replay_sample: List, value_variance: Optional[float] = None) -> Dict[str, float]:
-        """Stable TD/BG replay. Opens the learning guard for direct callers."""
-        from learning_guard import learning_allowed
+        """Replay stable Q only. Does not open the learning guard.
 
-        with learning_allowed():
-            return self._apply_replay_td_bg_unlocked(replay_sample, value_variance)
+        ``Agent.sleep`` / ``sleep_cycle`` already hold the guard. A daytime
+        call raises in strict mode and skips the write in production.
+        Go/NoGo and habit-channel weights are not updated here (decision 13):
+        those move only in the once-per-sleep capture plus compensated step.
+        """
+        from learning_guard import assert_learning_allowed
+
+        if not assert_learning_allowed("SleepManager._apply_replay_td_bg"):
+            return {
+                "value_delta_total": 0.0,
+                "weight_delta_total": 0.0,
+                "total_value_delta_sleep": 0.0,
+                "total_bg_delta_sleep": 0.0,
+                "sleep_update_count": 0,
+                "replay_blocked": False,
+                "replays_applied": 0,
+                "sleep_update_l2_total": 0.0,
+                "mean_consolidation_score": 0.0,
+                "eligibility_trace_mean": 0.0,
+                "credit_window_usage": 0.0,
+                "replay_causality_mean": 0.0,
+            }
+        return self._apply_replay_td_bg_unlocked(replay_sample, value_variance)
 
     def _apply_replay_td_bg_unlocked(self, replay_sample: List, value_variance: Optional[float] = None) -> Dict[str, float]:
         value_layer = getattr(self, "value_layer", None)
-        bg_channels = getattr(self, "bg_action_channels", None)
-        bg_learning = getattr(self, "bg_learning", None)
         if value_layer is None:
             return {
                 "value_delta_total": 0.0,
@@ -1473,12 +1491,6 @@ class SleepManager:
         # value_variance is retained for callers. Replay no longer scales
         # updates by the spread of V across states.
         _ = value_variance
-
-        beta_online = float(getattr(bg_learning, "learning_rate", 0.05)) if bg_learning is not None else 0.05
-        beta_cap = max(0.0, beta_online - 1e-6)
-        decay_for_beta = max(0.0, min(0.2, float(getattr(self, "decay_rate_sleep", 0.0))))
-        beta_floor = min(beta_cap, decay_for_beta * 2.5)
-        beta_sleep = min(beta_cap, max(float(self.beta_sleep), beta_floor))
 
         value_delta_total = 0.0
         value_delta_sq_total = 0.0
@@ -1631,47 +1643,8 @@ class SleepManager:
             except Exception:
                 pass
 
-            # BG reinforcement from clipped TD with caps.
-            if isinstance(bg_channels, dict) and bg_channels:
-                action_id = self._extract_action_id(exp)
-                if action_id and action_id in bg_channels:
-                    channel = bg_channels[action_id]
-                    if td_error > 1e-12:
-                        go_scale = 1.15
-                        nogo_scale = 0.85
-                    elif td_error < -1e-12:
-                        go_scale = 0.85
-                        nogo_scale = 1.15
-                    else:
-                        go_scale = 1.0
-                        nogo_scale = 1.0
-
-                    go_delta = beta_sleep * go_scale * td_error
-                    nogo_delta = -beta_sleep * nogo_scale * td_error
-                    habit_delta = beta_sleep * td_error * 0.2
-                    for delta_name, delta_value in (
-                        ("go", go_delta),
-                        ("nogo", nogo_delta),
-                        ("habit", habit_delta),
-                    ):
-                        if abs(delta_value) > float(self.delta_weight_max_per_sleep):
-                            clipped = math.copysign(float(self.delta_weight_max_per_sleep), delta_value)
-                            if delta_name == "go":
-                                go_delta = clipped
-                            elif delta_name == "nogo":
-                                nogo_delta = clipped
-                            else:
-                                habit_delta = clipped
-                    delta_l1 = abs(go_delta) + abs(nogo_delta) + abs(habit_delta)
-                    remaining_weight_budget = max(0.0, float(self.weight_total_cap) - weight_delta_total)
-                    if delta_l1 > remaining_weight_budget and delta_l1 > 0.0:
-                        scale = remaining_weight_budget / delta_l1
-                        go_delta *= scale
-                        nogo_delta *= scale
-                        habit_delta *= scale
-                        delta_l1 = remaining_weight_budget
-                    channel.update_weights(go_delta=go_delta, nogo_delta=nogo_delta, habit_delta=habit_delta)
-                    weight_delta_total += delta_l1
+            # Channel Go/NoGo and habit weights are not part of replay.
+            # They move once per episode in the capture + compensated step.
             if value_delta_total >= global_sleep_update_budget - 1e-12:
                 replay_blocked = True
                 break

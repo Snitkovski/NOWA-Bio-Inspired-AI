@@ -468,3 +468,24 @@ Scope: **ядро** NOWA (`src/`) как универсальный движок
 3. Лабильные счётчики визитов днём не затухают; во сне переносятся в стабильные визиты и обнуляются (решение 6).
 4. Обходы guard закрываются: прямая запись `go_weight`, `register_action_channel`, `ValueLayer._set_value` вне сна, `consolidate_habits` без guard; `apply_sleep_learning` не должен открывать guard при вызове днём.
 5. Адаптация демо (бывший PR D) разбита на отдельные этапы и PR по каждому демо: Colony chinchillas, Tamagochi Chinchilla, Virtual company, Warriner Validation — каждое адаптируется и полностью проверяется отдельно, без подстройки ядра.
+
+---
+**Owner decisions after PR B (2026-10-19):**
+1. The sleep Go/NoGo step is not scaled by the encoding neuromodulator snapshot. `g_DA` stays 1.
+2. A rating changed after consolidation is a new observation. The previous stable write is not rolled back (reconsolidation-like: the new reward is applied again).
+3. `register_action_channel` enters `initializing()` itself. Host seeding stays a scoped write.
+4. Slow affective statistics are inside `stable_fingerprint` and change only in sleep. Fast per-step affect (space position, valence/arousal, regulation output, the arbitration mode of the current step) stays outside the fingerprint.
+5. The four-term replay priority orders only the single consolidation pass. It is not added inside the bounded EDPC replay score.
+6. Replay caps from PR #35 stay. `Q > 0.8` after `sleep(cycles=3)` is not a requirement.
+7. Replay learns only stable Q. Go/NoGo and habit-channel weights change only via tag capture plus the compensated sleep step (an undecayed +1 totals +0.08 on Go).
+8. Only the sleep path opens the learning guard. `SleepManager._apply_replay_td_bg` does not open it; a direct daytime call raises in strict mode and skips the write in production.
+
+**Решения владельца после PR B (2026-10-19):**
+1. Сонный шаг Go/NoGo не масштабируется снимком нейромодуляторов при кодировании. `g_DA` остаётся 1.
+2. Оценка, изменённая после консолидации, — новое наблюдение. Прежняя запись в стабильный слой не откатывается (как реконсолидация: новая награда применяется ещё раз).
+3. `register_action_channel` сам входит в `initializing()`. Посев хоста остаётся записью внутри явной области.
+4. Медленная аффективная статистика входит в `stable_fingerprint` и меняется только во сне. Быстрый аффект шага (положение в пространстве, valence/arousal, выход регуляции, режим арбитража текущего шага) в отпечаток не входит.
+5. Четырёхчленный приоритет replay задаёт порядок только однократного прохода консолидации. В ограниченный счёт EDPC он не прибавляется.
+6. Потолки replay из PR #35 остаются. `Q > 0.8` после `sleep(cycles=3)` не требуется.
+7. Replay учит только стабильный Q. Веса Go/NoGo и habit канала меняются только захватом метки плюс компенсированным сонным шагом (незатухший +1 даёт +0.08 на Go).
+8. Guard обучения открывает только сонный путь. `SleepManager._apply_replay_td_bg` его не открывает: прямой дневной вызов в строгом режиме бросает исключение, в проде запись пропускается.

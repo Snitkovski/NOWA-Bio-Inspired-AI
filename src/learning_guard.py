@@ -184,6 +184,37 @@ def _value_rows(agent: Any) -> dict:
     return {"values": value_rows, "expectation_memory": expectation_rows}
 
 
+def _temporal_chain_rows(agent: Any) -> list:
+    """Learned sleep chains. Wall-clock stamps are not part of the structure."""
+    sleep = getattr(agent, "sleep_manager", None)
+    memory = getattr(sleep, "chain_memory", None)
+    chains = getattr(memory, "chains", None)
+    if not isinstance(chains, dict):
+        return []
+    rows = []
+    for signature, chain in chains.items():
+        try:
+            sig = [str(item) for item in tuple(signature)]
+        except TypeError:
+            sig = [str(signature)]
+        try:
+            net_affect = float(getattr(chain, "net_affect", 0.0))
+            stability = float(getattr(chain, "stability", 0.0))
+            usage = int(getattr(chain, "usage_count", 0))
+        except (TypeError, ValueError):
+            continue
+        rows.append(
+            {
+                "signature": sig,
+                "net_affect": net_affect,
+                "stability": stability,
+                "usage_count": usage,
+            }
+        )
+    rows.sort(key=lambda row: row["signature"])
+    return rows
+
+
 def _cortex_rows(agent: Any) -> list:
     cortex = getattr(agent, "cortex", None)
     patterns = getattr(cortex, "patterns", None)
@@ -354,6 +385,7 @@ def stable_payload(agent: Any) -> dict:
         "intent_strengths": _trace_strengths(agent),
         "channels": _channel_rows(agent),
         "cortex": _cortex_rows(agent),
+        "temporal_chains": _temporal_chain_rows(agent),
         "strategies": _strategy_rows(agent),
         "slow_affect": _slow_affect_rows(agent),
     }
