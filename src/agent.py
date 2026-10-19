@@ -8,9 +8,10 @@ Behavior emerges from:
 4. Affective regulators - operational parameters for adaptation
 5. Conflict resolution (selector) - confidence-based choice
 
-While awake, a known reward updates the value of the transition,
-the outcome-gated habit, and that action's Go/NoGo channel.
-Sleep consolidates episodes; it is not the only learning step.
+While awake, a known reward writes a labile offset on Q and on that
+action's Go/NoGo channel. Habit strength does not change. Sleep is the
+only writer of the stable tier; it still replays episodes into stable Q
+and the basal-ganglia outcome cache.
 """
 
 import hashlib
@@ -34,6 +35,8 @@ from neuromodulators import NeuromodulatorState
 from wakefulness import WakefulnessState
 from basal_ganglia import BasalGangliaGate, ActionChannel, BasalGangliaLearning, ThalamicGate, NO_ACTION
 from value_layer import ValueLayer, state_similarity
+from labile_layer import LabileLayer, PlasticityConfig
+import logging as _nowa_logging
 from hippocampal_imagine_engine import HippocampalImagineEngine, quantile
 from decision_arbitrator import DecisionArbitrator
 from external_interaction_layer import (
@@ -68,9 +71,10 @@ class Agent:
 
     During waking:
     - Experiences are stored and addressed by episode id
-    - Behavior emerges from memory, habits, and learned action values
-    - A known reward applies one TD update, an outcome-gated habit
-      update, and a Go/NoGo update for the chosen channel
+    - Behavior emerges from memory, habits, and effective action values
+      (stable + labile)
+    - A known reward writes a labile Q tag and a labile Go/NoGo tag
+    - Habit strength is unchanged; an empty strength-0 trace may be noted
     - An unknown reward waits for apply_feedback_to_last_experience
 
     During sleep:
@@ -91,6 +95,7 @@ class Agent:
         environment_interface=None,
         external_interaction_layer=None,
         rng_seed: Optional[int] = None,
+        plasticity_config: Optional[PlasticityConfig] = None,
     ):
         """
         Initialize agent
@@ -189,6 +194,17 @@ class Agent:
         self._rng_controls_thalamic = rng_seed is not None
         self._rng = random.Random(rng_seed) if rng_seed is not None else random.Random()
         self._action_visit_counts: dict = {}
+        self._bg_outcome_slots: dict = {}
+        self._pending_external_learning: list = []
+        self._host_clock_s: float = 0.0
+        self._dt_warning_sent: bool = False
+        plasticity = plasticity_config if plasticity_config is not None else PlasticityConfig()
+        if plasticity.eta_labile_q is None:
+            plasticity.alpha_reference = float(getattr(self.value_layer, "alpha_default", 0.03))
+        self.plasticity = plasticity
+        self.labile = LabileLayer(plasticity)
+        if plasticity.expected_wake_interval_s is None:
+            plasticity.warn_unset_wake_interval(_nowa_logging.getLogger("nowa.plasticity"))
         # Creation timestamp for lifetime reporting
         self.created_ts = time.time()
         # Lifetime progress for background dynamics (steps-based)
@@ -287,15 +303,16 @@ class Agent:
              intensity: float = 1.0, reward: Optional[float] = None, novelty: float = 0.0,
              conflict: float = 0.0, affective_inputs: dict = None,
              decision_only: bool = False, terminal: bool = False,
-             physiological_bias: dict = None) -> str:
+             physiological_bias: dict = None, dt: Optional[float] = None) -> str:
         """
         Execute one behavioral step.
 
         Stores the episode and returns the action. When ``reward`` is known,
-        this step also applies one TD backup and the outcome updates for the
-        habit and the basal-ganglia channel. ``reward=None`` leaves that
-        learning to apply_feedback_to_last_experience. Affect is updated
-        either way.
+        this step writes a labile Q offset and a labile Go/NoGo offset.
+        Habit strength is not changed. ``reward=None`` leaves the labile
+        write to apply_feedback_to_last_experience. Affect is updated either
+        way. ``dt`` is elapsed host time in seconds. Without it, the host
+        clock falls back to the wall clock once per agent and logs a warning.
         
         Decision pipeline:
         1. Check intent_memory for habits (preferred actions for context)
@@ -309,7 +326,9 @@ class Agent:
             consequence: Optional consequence event
             intensity: Emotional intensity of this experience (0-2)
             reward: Outcome signal (-1.0 to +1.0). None means the outcome is
-                not known yet; the TD update then waits for feedback.
+                not known yet; the labile update then waits for feedback.
+            dt: Elapsed host seconds since the previous waking tick. When
+                omitted, wall-clock time is used and a one-time warning is logged.
             terminal: This transition ends the episode, so the bootstrap is 0.
             novelty: Unexpectedness signal (0.0 to 1.0) for curiosity
             conflict: Conflict detection (0.0 to 1.0) for threat
@@ -339,13 +358,9 @@ class Agent:
         except Exception:
             pass
         
-        # Decay affect state over time if needed
+        # Decay affect and the labile tier on host time.
         step_elapsed = 1.0
-        time_elapsed = 1.0
-        if self._last_step_time is not None:
-            time_elapsed = max(0.0, time.time() - self._last_step_time)
-        
-        self._last_step_time = time.time()
+        time_elapsed = self._advance_host_clock(dt, wall_fallback=dt is None)
         
         # Update wakefulness during waking period
         self.wakefulness.update_waking()
@@ -948,15 +963,20 @@ class Agent:
         affective_inputs: dict = None,
         terminal: bool = False,
         effective_modulation: dict = None,
+        dt: Optional[float] = None,
     ) -> Optional[str]:
-        """Store and learn the action that was actually executed.
+        """Store the executed action and, when the reward is known, tag it.
 
         ``step(..., decision_only=True)`` chooses without writing an episode.
         This records one episode for the executed action, including an
-        ``overridden`` flag, and applies the same TD / habit / channel update
-        as a waking step whose reward is already known. A later feedback call
-        with the same reward is a no-op, addressed by episode id.
+        ``overridden`` flag, and applies the same labile Q / channel update
+        as a waking step whose reward is already known. Habit strength is
+        not changed. A later feedback call with the same reward is a no-op,
+        addressed by episode id. ``dt`` advances the host clock; omitted
+        ``dt`` does not read the wall clock (the paired ``step`` already did).
         """
+        if dt is not None:
+            self._advance_host_clock(dt, wall_fallback=False)
         reward, outcome_known = self._coerce_step_reward(reward)
         self._transition_terminal = bool(terminal)
         context_events = list(context_events or [])
@@ -1048,8 +1068,6 @@ class Agent:
             # is known (see apply_feedback_to_last_experience).
             if hasattr(self.intent_memory, "note_selection"):
                 self.intent_memory.note_selection(context_events, action)
-            else:
-                self.intent_memory.record_trace(context_events, action)
         
         # Add action to path
         path = path.add_event(Event(f"action:{action}", event_type=EventType.ACTION))
@@ -1152,72 +1170,26 @@ class Agent:
         except Exception:
             pass
 
-        # Update value layer (Phase 5.0) before any regulation updates.
+        # Labile tags only. Stable Q is written later, by sleep replay.
         value_update = None
         try:
-            if hasattr(self, "value_layer") and self.value_layer is not None:
-                stability_index = None
-                try:
-                    stability_snapshot = (
-                        self.stability_monitor.snapshot()
-                        if hasattr(self, "stability_monitor") and self.stability_monitor is not None
-                        else {}
-                    )
-                    stability_index = float(stability_snapshot.get("stability_index", 1.0))
-                except Exception:
-                    stability_index = None
-
-                if outcome_known:
-                    transition_terminal = bool(getattr(self, "_transition_terminal", False))
-                    prior_value = float(self.value_layer.get_value(value_state_snapshot))
-                    value_update = self.value_layer.update(
-                        state_snapshot=value_state_snapshot,
-                        reward=reward,
-                        next_state_snapshot=value_next_state_snapshot,
-                        gamma=getattr(self.value_layer, "gamma_default", 0.95),
-                        alpha=float(
-                            getattr(
-                                self.value_layer,
-                                "alpha_online_default",
-                                getattr(self.value_layer, "alpha_default", 0.03),
-                            )
-                        )
-                        * max(0.5, min(2.0, float(effective_modulation.get("learning_rate_scale", 1.0)))),
-                        timestamp=float(self.lived_steps),
-                        stability_index=stability_index,
-                        mode="online",
-                        acetylcholine=ach_snapshot_for_step,
-                        acetylcholine_baseline=self._acetylcholine_gate_reference(),
-                        acc_learning_boost=1.0,
-                        cer_stress_level=float(effective_modulation.get("cer_stress_level", 0.0)),
-                        exploration_baseline=float(effective_modulation.get("exploration_bias", 0.0)),
-                        terminal=transition_terminal,
-                        bootstrap_value=self._successor_bootstrap(
-                            next_context_events=next_context_events,
-                            intensity=float(intensity),
-                            novelty=float(novelty),
-                            conflict=float(conflict),
-                            terminal=transition_terminal,
-                        ),
-                    )
-                    if stored_experience is not None:
-                        stored_experience.td_outcome_committed = True
-                        stored_experience.td_committed_reward = float(reward)
-                        stored_experience.td_prior_value = prior_value
-                        stored_experience.td_applied_delta = float(
-                            getattr(self.value_layer, "last_applied_delta", 0.0)
-                        )
-                        stored_experience.value_terminal = transition_terminal
-                        stored_experience.value_next_context_events = list(next_context_events)
+            if outcome_known:
+                transition_terminal = bool(getattr(self, "_transition_terminal", False))
+                value_update = self._record_known_outcome(
+                    context_events=list(context_events or []),
+                    action_id=str(action or ""),
+                    outcome=float(reward),
+                    episode=stored_experience,
+                    state_snapshot=value_state_snapshot,
+                    next_state_snapshot=value_next_state_snapshot,
+                    next_context_events=list(next_context_events),
+                    terminal=transition_terminal,
+                    intensity=float(intensity),
+                    novelty=float(novelty),
+                    conflict=float(conflict),
+                )
         except Exception:
             value_update = None
-
-        if outcome_known:
-            self._record_known_outcome(
-                context_events=list(context_events or []),
-                action_id=str(action or ""),
-                outcome=float(reward),
-            )
         if stored_experience is not None and not outcome_known:
             stored_experience.td_outcome_committed = False
             stored_experience.value_terminal = bool(getattr(self, "_transition_terminal", False))
@@ -2522,7 +2494,7 @@ class Agent:
                 conflict=float(conflict),
             )
             try:
-                model_value = float(value_layer.get_value(action_state))
+                model_value = float(self.effective_action_value(action_state, action_id))
             except Exception:
                 model_value = 0.0
             action_experiences = self._filter_similar_action_experiences(
@@ -2771,9 +2743,17 @@ class Agent:
         for aid in pressures.keys():
             channel = self.bg_action_channels.get(aid)
             if channel is not None:
+                go_stable = float(getattr(channel, "go_weight", 1.0))
+                nogo_stable = float(getattr(channel, "nogo_weight", 1.0))
+                go_eff, nogo_eff = self.labile.effective_channel(
+                    str(aid),
+                    go_stable,
+                    nogo_stable,
+                    float(getattr(self, "_host_clock_s", 0.0)),
+                )
                 channel_modulators[aid] = {
-                    "go_weight": float(getattr(channel, "go_weight", 1.0)),
-                    "nogo_weight": float(getattr(channel, "nogo_weight", 1.0)),
+                    "go_weight": go_eff,
+                    "nogo_weight": nogo_eff,
                 }
         cer = dict(cer_modulation_factors or {})
         exploration_bias = max(0.0, min(1.5, float(cer.get("exploration_bias", 0.0))))
@@ -2948,10 +2928,17 @@ class Agent:
 
         self._ensure_bg_channels(available_actions)
         pressure_vector = {}
+        now = float(getattr(self, "_host_clock_s", 0.0))
         for action_name in available_actions:
             aid = str(action_name)
             channel = self.bg_action_channels.get(aid)
-            pressure_vector[aid] = float(getattr(channel, "go_weight", 0.0))
+            if channel is None:
+                pressure_vector[aid] = 0.0
+                continue
+            go_stable = float(getattr(channel, "go_weight", 0.0))
+            nogo_stable = float(getattr(channel, "nogo_weight", 0.0))
+            go_eff, _nogo_eff = self.labile.effective_channel(aid, go_stable, nogo_stable, now)
+            pressure_vector[aid] = go_eff
         if isinstance(pfc_pressure, dict):
             for aid, pressure in pfc_pressure.items():
                 if aid in pressure_vector:
@@ -2994,23 +2981,194 @@ class Agent:
             self.neuromodulators.serotonin
         ))
 
-    def _record_known_outcome(self, context_events, action_id: str, outcome: float) -> None:
-        """Apply one known outcome to the habit, the BG channel, and the sleep log.
+    def _record_known_outcome(
+        self,
+        context_events,
+        action_id: str,
+        outcome: float,
+        episode=None,
+        state_snapshot=None,
+        next_state_snapshot=None,
+        next_context_events=None,
+        terminal: bool = False,
+        intensity: float = 1.0,
+        novelty: float = 0.0,
+        conflict: float = 0.0,
+    ) -> dict:
+        """Write one known outcome into the labile tier and the sleep log.
 
-        ``step(reward=...)`` and ``apply_feedback_to_last_experience`` both
-        call this so a known reward is not TD-only.
+        Stable Q, Go/NoGo and habit strength are not touched. A second call
+        for the same episode replaces that episode's labile contribution.
         """
-        self._apply_outcome_to_habits(
-            context_events=list(context_events or []),
-            action_id=str(action_id or ""),
-            outcome=float(outcome),
-        )
-        self._apply_outcome_to_channel(str(action_id or ""), float(outcome))
-        if action_id and str(action_id) != NO_ACTION:
+        action_name = str(action_id or "")
+        if not isinstance(state_snapshot, dict):
+            state_snapshot = self._build_value_state_snapshot(
+                context_events=list(context_events or []),
+                action=action_name,
+                consequence=None,
+                intensity=float(intensity),
+                novelty=float(novelty),
+                conflict=float(conflict),
+            )
+        if not isinstance(next_context_events, list):
+            next_context_events = list(context_events or [])
+        now = float(getattr(self, "_host_clock_s", 0.0))
+        episode_id = str(getattr(episode, "episode_id", "") or "")
+        if not episode_id:
+            episode_id = str(getattr(self, "last_episode_id", "") or "")
+        if episode_id and getattr(self, "labile", None) is not None:
+            self.labile.pop_contribution(episode_id, now)
+        state_key = ""
+        stable_q = 0.0
+        try:
+            if getattr(self, "value_layer", None) is not None:
+                state_key = str(self.value_layer.encoder.encode(state_snapshot or {}))
+                stable_q = float(self.value_layer.get_value(state_snapshot))
+        except Exception:
+            state_key = ""
+            stable_q = 0.0
+        q_offset = 0.0
+        if getattr(self, "labile", None) is not None:
+            q_offset = float(self.labile.q_offset(state_key, action_name, now))
+        q_eff = stable_q + q_offset
+        gamma = float(getattr(getattr(self, "value_layer", None), "gamma_default", 0.95))
+        if not math.isfinite(gamma):
+            gamma = 0.95
+        if terminal:
+            bootstrap = 0.0
+        else:
+            bootstrap = self._successor_bootstrap(
+                next_context_events=next_context_events,
+                intensity=float(intensity),
+                novelty=float(novelty),
+                conflict=float(conflict),
+                terminal=False,
+            )
+        td_error = float(outcome) + (gamma * float(bootstrap)) - q_eff
+        if not math.isfinite(td_error):
+            td_error = 0.0
+        applied = {}
+        if getattr(self, "labile", None) is not None and episode_id:
+            applied = self.labile.apply_outcome(
+                episode_id=episode_id,
+                state_key=state_key,
+                action=action_name,
+                reward=float(outcome),
+                td_error=float(td_error),
+                now=now,
+                g_da=1.0,
+            )
+        if episode is not None:
             try:
-                self.record_action_outcome(str(action_id), float(outcome))
+                episode.labile_contribution = dict(applied)
+                episode.encoded_at = float(now)
+                if not hasattr(episode, "consolidated"):
+                    episode.consolidated = False
+                episode.td_outcome_committed = True
+                episode.td_committed_reward = float(outcome)
+                episode.td_prior_value = float(q_eff)
+                episode.td_applied_delta = float(applied.get("q_delta", 0.0))
+                episode.value_terminal = bool(terminal)
+                episode.value_next_context_events = list(next_context_events)
+                episode.value_state_snapshot = dict(state_snapshot or {})
+                if isinstance(next_state_snapshot, dict):
+                    episode.value_next_state_snapshot = dict(next_state_snapshot)
+                episode.value_state_key = state_key
+                episode.td_error_snapshot = float(td_error)
             except Exception:
                 pass
+        if action_name and action_name != NO_ACTION:
+            try:
+                self._remember_bg_outcome(episode_id, action_name, float(outcome))
+            except Exception:
+                pass
+        # Diagnostics only. The Q table itself is not written while awake.
+        # The next step's exploration coupling reads last_td_error.
+        layer = getattr(self, "value_layer", None)
+        if layer is not None:
+            try:
+                layer.last_td_error = float(td_error)
+                layer.last_reward_raw = float(outcome)
+                layer.last_dopamine_delta = float(layer.compute_dopamine_delta(td_error))
+            except Exception:
+                pass
+        return {
+            "td_error": float(td_error),
+            "state_key": state_key,
+            "replay_priority": abs(float(td_error)),
+            "consolidation_weight": max(0.0, min(1.0, abs(float(td_error)))),
+            "confidence_score": 0.0,
+            "stability_score": 0.0,
+            "prediction_shock": False,
+            "expected_reward_mean": 0.0,
+            "expected_reward_var": 0.0,
+            "confirmation_count": 0.0,
+            "prediction_shock_score": 0.0,
+            "error_likelihood": 0.0,
+            "shock_replay_boost": 1.0,
+            "value": float(q_eff) + float(applied.get("q_delta", 0.0)),
+            "q_delta": float(applied.get("q_delta", 0.0)),
+            "go_delta": float(applied.get("go_delta", 0.0)),
+            "nogo_delta": float(applied.get("nogo_delta", 0.0)),
+        }
+
+    def _remember_bg_outcome(self, episode_id: str, action_id: str, outcome: float) -> None:
+        """Keep one sleep-log row per episode so a revised rating does not stack.
+
+        The tuple shape stays ``(outcome, dopamine, cortisol, serotonin)`` so
+        the existing sleep cache reader is unchanged.
+        """
+        if not action_id or str(action_id) == NO_ACTION:
+            return
+        sample = (
+            float(outcome),
+            float(getattr(self.neuromodulators, "dopamine", 0.0)),
+            float(getattr(self.neuromodulators, "cortisol", 0.0)),
+            float(getattr(self.neuromodulators, "serotonin", 0.0)),
+        )
+        slots = getattr(self, "_bg_outcome_slots", None)
+        if not isinstance(slots, dict):
+            slots = {}
+            self._bg_outcome_slots = slots
+        memories = getattr(self, "bg_sleep_memories", None)
+        if not isinstance(memories, dict):
+            memories = {}
+            self.bg_sleep_memories = memories
+        slot = slots.get(str(episode_id)) if episode_id else None
+        if isinstance(slot, tuple) and len(slot) == 2:
+            prev_action, index = slot
+            bucket = memories.get(str(prev_action), [])
+            if str(prev_action) == str(action_id) and isinstance(bucket, list) and 0 <= int(index) < len(bucket):
+                bucket[int(index)] = sample
+                return
+            if isinstance(bucket, list) and 0 <= int(index) < len(bucket):
+                bucket.pop(int(index))
+                self._reindex_bg_slots(str(prev_action), int(index))
+        channel = getattr(self, "bg_action_channels", {}).get(str(action_id))
+        if channel is not None and hasattr(channel, "record_outcome"):
+            try:
+                channel.record_outcome(float(outcome))
+            except Exception:
+                pass
+        bucket = memories.setdefault(str(action_id), [])
+        bucket.append(sample)
+        if episode_id:
+            slots[str(episode_id)] = (str(action_id), len(bucket) - 1)
+
+    def _reindex_bg_slots(self, action_id: str, removed_index: int) -> None:
+        slots = getattr(self, "_bg_outcome_slots", None)
+        if not isinstance(slots, dict):
+            return
+        for episode_id, slot in list(slots.items()):
+            if not isinstance(slot, tuple) or len(slot) != 2:
+                continue
+            if str(slot[0]) != str(action_id):
+                continue
+            index = int(slot[1])
+            if index == removed_index:
+                slots.pop(episode_id, None)
+            elif index > removed_index:
+                slots[episode_id] = (str(action_id), index - 1)
 
     def _apply_outcome_to_channel(self, action_id: str, outcome: float) -> None:
         """Move this action's learned Go/NoGo. Other actions are left alone."""
@@ -3064,20 +3222,32 @@ class Agent:
         return "|".join(str(item) for item in list(context_events or []))
 
     def _visit_counts_for(self, context_events, actions) -> dict:
+        """Stable counts plus the waking labile counter (decision 6)."""
         key = self._context_visit_key(context_events)
         counts = getattr(self, "_action_visit_counts", None)
         if not isinstance(counts, dict):
             counts = {}
             self._action_visit_counts = counts
-        return {
-            str(action): int(counts.get((key, str(action)), 0))
-            for action in list(actions or [])
-        }
+        labile = getattr(self, "labile", None)
+        merged = {}
+        for action in list(actions or []):
+            name = str(action)
+            stable = int(counts.get((key, name), 0))
+            extra = 0.0
+            if labile is not None and hasattr(labile, "visit_count"):
+                extra = float(labile.visit_count(key, name))
+            merged[name] = int(stable + extra)
+        return merged
 
     def _record_action_visit(self, context_events, action: str) -> None:
+        """Count a waking visit on the labile counter. Stable counts stay frozen."""
         if not action or str(action) == NO_ACTION:
             return
         key = self._context_visit_key(context_events)
+        labile = getattr(self, "labile", None)
+        if labile is not None and hasattr(labile, "note_visit"):
+            labile.note_visit(key, str(action), 1.0)
+            return
         counts = getattr(self, "_action_visit_counts", None)
         if not isinstance(counts, dict):
             counts = {}
@@ -3119,9 +3289,9 @@ class Agent:
         """
         Attach explicit user feedback to the episode from this step.
 
-        A new rating commits one TD backup and the shared outcome update.
-        The same rating again is a no-op. A changed rating revises that
-        one backup inside the current Q instead of rewriting the cell.
+        A new rating writes one labile contribution and stores the outcome
+        for sleep. The same rating again is a no-op. A changed rating
+        replaces that episode's labile contribution. Stable Q is not rewritten.
         """
         try:
             rating = int(feedback_rating)
@@ -3159,10 +3329,19 @@ class Agent:
         except Exception:
             pass
         resolved_action = str(action_id or getattr(exp, "replay_action_id", "") or "")
+        next_context = getattr(exp, "value_next_context_events", None)
+        if not isinstance(next_context, list):
+            next_context = list(context_events or [])
         self._record_known_outcome(
             context_events=list(context_events or []),
             action_id=resolved_action,
             outcome=reward_signal,
+            episode=exp,
+            state_snapshot=getattr(exp, "value_state_snapshot", None),
+            next_state_snapshot=getattr(exp, "value_next_state_snapshot", None),
+            next_context_events=next_context,
+            terminal=bool(getattr(exp, "value_terminal", getattr(self, "_transition_terminal", False))),
+            intensity=float(getattr(exp, "intensity", 1.0) or 1.0),
         )
 
         state_snapshot = getattr(exp, "value_state_snapshot", None)
@@ -3344,8 +3523,9 @@ class Agent:
         """
         Sleep and consolidate memories.
         
-        This is THE ONLY mechanism for learning/adaptation.
-        Called explicitly, not automatically.
+        This is the only writer of the stable tier.
+        Called explicitly, not automatically. Waking offsets stay labile
+        until a later consolidation step captures them.
         
         Args:
             cycles: Number of sleep consolidation cycles
@@ -3357,6 +3537,13 @@ class Agent:
         """
         if not self.sleep_manager:
             return {"error": "Sleep manager not configured"}
+
+        from learning_guard import learning_allowed
+
+        with learning_allowed():
+            if getattr(self, "labile", None) is not None:
+                self.labile.decay_to(float(getattr(self, "_host_clock_s", 0.0)))
+            self._flush_external_learning()
 
         # Delegate deep sleep to manager; ensure temporal and affect_state are attached
         try:
@@ -3397,6 +3584,9 @@ class Agent:
         result = self.sleep_manager.deep_sleep(cycles=cycles)
         # Legacy outcome cache is not used in replay-driven consolidation.
         self.bg_sleep_memories.clear()
+        slots = getattr(self, "_bg_outcome_slots", None)
+        if isinstance(slots, dict):
+            slots.clear()
         return result
     
     def get_state(self) -> dict:
@@ -3532,7 +3722,7 @@ class Agent:
                 conflict=float(conflict),
             )
             try:
-                value = float(self.value_layer.get_value(snapshot))
+                value = float(self.effective_action_value(snapshot, action))
             except Exception:
                 continue
             if best is None or value > best:
@@ -3563,7 +3753,7 @@ class Agent:
                 conflict=float(conflict),
             )
             try:
-                q_values[action] = float(value_layer.get_value(snapshot))
+                q_values[action] = float(self.effective_action_value(snapshot, str(action)))
             except Exception:
                 q_values[action] = 0.0
         if all(abs(value) <= 1e-8 for value in q_values.values()):
@@ -3617,6 +3807,24 @@ class Agent:
         intensity = float(dict(state_snapshot or {}).get("intensity", getattr(exp, "intensity", 1.0)))
         novelty = float(dict(state_snapshot or {}).get("novelty", 0.0))
         conflict = float(dict(state_snapshot or {}).get("conflict", 0.0))
+        # Labile contribution was already replaced by _record_known_outcome.
+        # Do not write the stable value table from feedback.
+        if bool(getattr(exp, "td_outcome_committed", False)):
+            return {
+                "td_error": float(getattr(exp, "td_error_snapshot", 0.0)),
+                "state_key": str(getattr(exp, "value_state_key", "")),
+                "replay_priority": float(getattr(exp, "replay_priority", abs(float(getattr(exp, "td_error_snapshot", 0.0))))),
+                "consolidation_weight": float(getattr(exp, "consolidation_weight", 0.0)),
+                "confidence_score": float(getattr(exp, "expectation_confidence_score", 0.0)),
+                "stability_score": float(getattr(exp, "expectation_stability_score", 0.0)),
+                "prediction_shock": bool(getattr(exp, "prediction_shock_flag", False)),
+                "expected_reward_mean": float(getattr(exp, "expected_reward_mean", 0.0)),
+                "expected_reward_var": float(getattr(exp, "expected_reward_var", 0.0)),
+                "confirmation_count": float(getattr(exp, "confirmation_count", 0.0)),
+                "prediction_shock_score": float(getattr(exp, "prediction_shock_score", 0.0)),
+                "error_likelihood": float(getattr(exp, "error_likelihood", 0.0)),
+                "shock_replay_boost": float(getattr(exp, "shock_replay_boost", 1.0)),
+            }
         prior = getattr(exp, "td_prior_value", None) if committed else None
         replaced_reward = getattr(exp, "td_committed_reward", None) if committed else None
         if not committed:
@@ -4161,7 +4369,104 @@ class Agent:
 
         return drives, strategies
 
+    def _advance_host_clock(self, dt: Optional[float], *, wall_fallback: bool) -> float:
+        """Move the host clock. ``dt`` is host seconds and does not read the wall clock."""
+        if not wall_fallback:
+            try:
+                elapsed = float(dt)
+            except (TypeError, ValueError):
+                elapsed = 0.0
+            if not math.isfinite(elapsed) or elapsed < 0.0:
+                elapsed = 0.0
+            self._host_clock_s = float(getattr(self, "_host_clock_s", 0.0)) + elapsed
+            return elapsed
+        if not getattr(self, "_dt_warning_sent", False):
+            self._dt_warning_sent = True
+            _nowa_logging.getLogger("nowa.plasticity").warning(
+                "dt was not passed; falling back to the wall clock. "
+                "Pass dt to step or commit_executed_transition, or call advance_time."
+            )
+        now = time.time()
+        if self._last_step_time is None:
+            elapsed = 1.0
+        else:
+            elapsed = max(0.0, now - float(self._last_step_time))
+        self._last_step_time = now
+        self._host_clock_s = float(getattr(self, "_host_clock_s", 0.0)) + elapsed
+        return elapsed
+
+    def advance_time(self, dt: float) -> float:
+        """Advance the host clock by ``dt`` seconds without taking a behavioral step."""
+        self._advance_host_clock(dt, wall_fallback=False)
+        if getattr(self, "labile", None) is not None:
+            self.labile.decay_to(float(self._host_clock_s))
+        return float(self._host_clock_s)
+
+    def effective_action_value(self, state_snapshot, action: str = None) -> float:
+        """Q_eff(s, a) = Q_stable + L_Q. Selection and δ both use this."""
+        snapshot = dict(state_snapshot or {})
+        action_name = str(action if action is not None else snapshot.get("action", "") or "")
+        stable = 0.0
+        state_key = ""
+        layer = getattr(self, "value_layer", None)
+        if layer is not None:
+            try:
+                stable = float(layer.get_value(snapshot))
+            except Exception:
+                stable = 0.0
+            try:
+                state_key = str(layer.encoder.encode(snapshot))
+            except Exception:
+                state_key = ""
+        offset = 0.0
+        labile = getattr(self, "labile", None)
+        if labile is not None:
+            offset = float(
+                labile.q_offset(state_key, action_name, float(getattr(self, "_host_clock_s", 0.0)))
+            )
+        return stable + offset
+
     def _apply_external_feedback_learning(
+        self,
+        feedback: Feedback,
+        predicted_reward: Optional[Mapping[str, Any]] = None,
+        hypothesis: Optional[Hypothesis] = None,
+    ) -> dict:
+        """Queue external strategy learning for the next sleep. Waking does not write it."""
+        pending = getattr(self, "_pending_external_learning", None)
+        if not isinstance(pending, list):
+            pending = []
+            self._pending_external_learning = pending
+        pending.append(
+            {
+                "feedback": feedback,
+                "predicted_reward": predicted_reward,
+                "hypothesis": hypothesis,
+            }
+        )
+        return {
+            "queued_for_sleep": True,
+            "reward_signal": float(getattr(feedback, "reward", 0.0) or 0.0),
+            "strategy_updates": {},
+        }
+
+    def _flush_external_learning(self) -> list:
+        pending = list(getattr(self, "_pending_external_learning", None) or [])
+        self._pending_external_learning = []
+        applied = []
+        for item in pending:
+            if not isinstance(item, dict):
+                continue
+            applied.append(
+                self._apply_external_feedback_learning_now(
+                    feedback=item.get("feedback"),
+                    predicted_reward=item.get("predicted_reward"),
+                    hypothesis=item.get("hypothesis"),
+                )
+            )
+        return applied
+
+    def _apply_external_feedback_learning_now(
         self,
         feedback: Feedback,
         predicted_reward: Optional[Mapping[str, Any]] = None,

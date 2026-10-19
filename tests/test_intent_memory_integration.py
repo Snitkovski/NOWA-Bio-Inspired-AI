@@ -17,6 +17,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from agent import Agent
+from learning_guard import learning_allowed
 from selector import ActionSelector
 from hippocampus import NOWAHippocampus
 from cortex import CortexMemory
@@ -81,14 +82,20 @@ class TestIntentMemoryIntegration:
         target = selector.actions[0]
         for _ in range(16):
             action = agent.step(context)
-            # Only the rewarded action becomes a habit. Repeating a punished
-            # action must not count as one.
+            # Waking reward must not raise habit strength. The stable habit
+            # is written by the same outcome rule, under the sleep guard.
             rating = 2 if action == target else -2
             agent.apply_feedback_to_last_experience(
                 rating,
                 context_events=context,
                 action_id=action,
             )
+        assert all(float(trace.strength) == 0.0 for trace in intent_memory.traces.values())
+
+        with learning_allowed():
+            for _ in range(16):
+                intent_memory.apply_outcome(context, target, 1.0)
+                intent_memory.apply_outcome(context, selector.actions[1], -1.0)
 
         intent, confidence = intent_memory.get_dominant_intent(context)
         assert intent == target
@@ -185,12 +192,17 @@ class TestIntentMemoryIntegration:
         
         traces2 = len(intent_memory.traces)
         
-        # Should have created or strengthened trace
+        # Waking selection notes an empty trace. Strength stays 0.
         assert traces2 >= traces1
-        
-        # Check that we can get dominant intent
+        assert all(float(trace.strength) == 0.0 for trace in intent_memory.traces.values())
+        awake_intent, _awake_confidence = intent_memory.get_dominant_intent(context)
+        assert awake_intent is None
+
+        with learning_allowed():
+            intent_memory.apply_outcome(context, action1, 1.0)
         intent, confidence = intent_memory.get_dominant_intent(context)
         assert intent is not None
+        assert confidence > 0.5
     
     def test_habit_influences_selector_choice(self):
         """Привычка влияет на выбор селектора"""
@@ -215,14 +227,19 @@ class TestIntentMemoryIntegration:
         agent.thalamic_gate.base_temperature = 0.03
         agent.thalamic_gate.min_temperature = 0.03
         
-        # One action is rewarded. The others are punished, so repetition alone
-        # cannot make them the habit.
+        # Waking reward does not build the habit. The sleep writer does,
+        # and that stable habit is what the selector then reads.
         target = selector.actions[0]
-        for _ in range(16):
+        for _ in range(4):
             action = agent.step(context)
             rating = 2 if action == target else -2
             agent.apply_feedback_to_last_experience(rating, context_events=context, action_id=action)
-        
+        assert all(float(trace.strength) == 0.0 for trace in intent_memory.traces.values())
+        with learning_allowed():
+            for _ in range(12):
+                intent_memory.apply_outcome(context, target, 1.0)
+            intent_memory.apply_outcome(context, selector.actions[1], -1.0)
+
         # Get the dominant intent
         dominant_intent, confidence = intent_memory.get_dominant_intent(context)
         
@@ -280,18 +297,15 @@ class TestIntentMemorySleep:
         context1 = ["user:кто ты"]
         context2 = ["user:привет"]
         
-        # Strong habit
-        for _ in range(20):
-            intent_memory.record_trace(context1, "ответить_кто_я")
-        
-        # Weak habit
-        intent_memory.record_trace(context2, "сказать_привет")
-        
-        initial_stats = intent_memory.get_stats()
-        initial_count = len(intent_memory.traces)
-        
-        # Simulate sleep - degrade unused
-        intent_memory.degrade_unused(decay_factor=0.5)
+        with learning_allowed():
+            # Strong habit
+            for _ in range(20):
+                intent_memory.record_trace(context1, "ответить_кто_я")
+            # Weak habit
+            intent_memory.record_trace(context2, "сказать_привет")
+            initial_count = len(intent_memory.traces)
+            # Simulate sleep - degrade unused
+            intent_memory.degrade_unused(decay_factor=0.5)
         
         final_count = len(intent_memory.traces)
         

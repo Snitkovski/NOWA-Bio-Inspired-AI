@@ -11,6 +11,8 @@ import hashlib
 from typing import ClassVar, Dict, List, Tuple
 from dataclasses import dataclass, field
 
+from learning_guard import assert_learning_allowed
+
 
 def _event_priority(token: str) -> int:
     """Higher means more salient. Unknown events sort by name after these."""
@@ -156,6 +158,8 @@ class IntentMemory:
         Если нет:
           - создать новый trace
         """
+        if not assert_learning_allowed("IntentMemory.record_trace"):
+            return
         features = self.canonical_context_features(context)
         context_sig = self._signature_text("|".join(features))
         trace_key = f"{intent_type}:{context_sig}"
@@ -239,6 +243,8 @@ class IntentMemory:
         Args:
             decay_factor: на какой множитель умножить strength (0-1)
         """
+        if not assert_learning_allowed("IntentMemory.degrade_unused"):
+            return
         traces_to_remove = []
         for trace_key, trace in self.traces.items():
             trace.strength *= decay_factor
@@ -250,6 +256,8 @@ class IntentMemory:
     
     def strengthen_trace(self, context: List[str], intent_type: str, factor: float = 1.5):
         """Усилить конкретный trace при его успешном использовании"""
+        if not assert_learning_allowed("IntentMemory.strengthen_trace"):
+            return
         context_sig = self._compute_context_signature(context)
         trace_key = f"{intent_type}:{context_sig}"
         
@@ -272,17 +280,13 @@ class IntentMemory:
         """Remember that an action was selected, without counting it as success.
 
         Outcome-blind ``strength += 1`` locked the first pick. The trace is
-        created at strength 0 until ``apply_outcome`` sees a real result.
+        created at strength 0 until sleep applies an outcome. An existing
+        trace is left untouched: waking selection is not a habit update.
         """
         features = self.canonical_context_features(context)
         context_sig = self._signature_text("|".join(features))
         trace_key = f"{intent_type}:{context_sig}"
         if trace_key in self.traces:
-            trace = self.traces[trace_key]
-            trace.timestamp = time.time()
-            trace.recency = 1.0
-            if not getattr(trace, "context_features", ()):
-                trace.context_features = features
             return
         self.traces[trace_key] = IntentTrace(
             intent_type=intent_type,
@@ -310,6 +314,8 @@ class IntentMemory:
         except (TypeError, ValueError):
             return
         if not math.isfinite(outcome_v):
+            return
+        if not assert_learning_allowed("IntentMemory.apply_outcome"):
             return
         outcome_v = max(-1.0, min(1.0, outcome_v))
         self.note_selection(context, intent_type)

@@ -4,6 +4,7 @@ import time
 import pytest
 
 from agent import Agent
+from learning_guard import learning_allowed
 from cortex import CortexMemory
 from external_interaction_layer import (
     AsyncInteractionScheduler,
@@ -99,15 +100,16 @@ def test_delayed_feedback_resolution_and_learning_hooks():
 
     drives = {"curiosity": 0.2, "social_drive": 0.7}
     strategies = {"explore": 0.1, "rest": 0.1}
-    updates = layer.apply_learning_hooks(
-        feedback=ready[0].feedback,
-        drives=drives,
-        strategies=strategies,
-        alpha=0.2,
-        learning_rate=0.05,
-        predicted_reward={"explore": 0.2, "rest": 0.8},
-        hypothesis=ready[0].hypothesis,
-    )
+    with learning_allowed():
+        updates = layer.apply_learning_hooks(
+            feedback=ready[0].feedback,
+            drives=drives,
+            strategies=strategies,
+            alpha=0.2,
+            learning_rate=0.05,
+            predicted_reward={"explore": 0.2, "rest": 0.8},
+            hypothesis=ready[0].hypothesis,
+        )
 
     assert drives["curiosity"] > 0.2
     assert 0.0 <= drives["social_drive"] <= 1.0
@@ -140,18 +142,19 @@ def test_drive_strategy_coupling_modulates_policy_even_with_neutral_reward():
         "rest": {"social_drive": 1.0, "curiosity": -0.5},
     }
 
-    updates = layer.apply_learning_hooks(
-        feedback=feedback,
-        drives=drives,
-        strategies=strategies,
-        alpha=0.0,
-        learning_rate=0.4,
-        predicted_reward={"explore": 0.0, "rest": 0.0},
-        strategy_drive_coupling=coupling,
-        drive_policy_gain=1.0,
-        strategy_weight_decay=0.0,
-        strategy_temperature=0.7,
-    )
+    with learning_allowed():
+        updates = layer.apply_learning_hooks(
+            feedback=feedback,
+            drives=drives,
+            strategies=strategies,
+            alpha=0.0,
+            learning_rate=0.4,
+            predicted_reward={"explore": 0.0, "rest": 0.0},
+            strategy_drive_coupling=coupling,
+            drive_policy_gain=1.0,
+            strategy_weight_decay=0.0,
+            strategy_temperature=0.7,
+        )
 
     assert strategies["explore"] > strategies["rest"]
     assert sum(strategies.values()) == pytest.approx(1.0, abs=1e-6)
@@ -198,7 +201,7 @@ def test_agent_builds_drive_to_strategy_coupling_from_action_metadata():
         },
     )
 
-    updates = agent._apply_external_feedback_learning(
+    agent._apply_external_feedback_learning(
         feedback=Feedback(
             reward=0.0,
             signal={"source": "neutral"},
@@ -208,9 +211,9 @@ def test_agent_builds_drive_to_strategy_coupling_from_action_metadata():
         predicted_reward={"explore": 0.0, "rest": 0.0},
         hypothesis=None,
     )
-
-    strategy_updates = dict(updates.get("strategy_updates", {}) or {})
-    assert strategy_updates.get("explore", 0.0) > strategy_updates.get("rest", 0.0)
+    agent.sleep(cycles=1)
+    weights = agent.external_interaction_layer.get_strategy_weights()
+    assert weights.get("explore", 0.0) > weights.get("rest", 0.0)
 
 
 def test_async_scheduler_non_blocking_observation_and_parallel_simulation():
@@ -268,6 +271,7 @@ def test_agent_external_action_execution_updates_strategy_weights():
 
     assert result["queued"] is False
     assert isinstance(result["feedback"], Feedback)
+    agent.sleep(cycles=1)
     weights = agent.external_interaction_layer.get_strategy_weights()
     assert "explore" in weights
     assert weights["explore"] > 0.0

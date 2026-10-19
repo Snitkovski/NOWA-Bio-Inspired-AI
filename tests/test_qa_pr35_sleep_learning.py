@@ -95,6 +95,27 @@ def _state_var(agent, exp):
     return float(profile.get("expected_reward_var", 0.0))
 
 
+def _write_reward_history(agent) -> None:
+    """Expectation variance is a stable statistic. Waking steps no longer write it.
+
+    The gate below still has to see the real reward sequence, so the stable
+    writer runs here under the sleep guard, once per stored episode.
+    """
+    from learning_guard import learning_allowed
+
+    with learning_allowed():
+        for exp in list(agent.hippocampus.experiences):
+            snapshot = getattr(exp, "value_state_snapshot", None) or {}
+            nxt = getattr(exp, "value_next_state_snapshot", None) or snapshot
+            agent.value_layer.update(
+                state_snapshot=snapshot,
+                reward=float(getattr(exp, "reward", 0.0) or 0.0),
+                next_state_snapshot=nxt,
+                mode="online",
+                terminal=bool(getattr(exp, "value_terminal", True)),
+            )
+
+
 def test_replay_moves_toward_current_delta_across_different_state_values():
     """Q follows r + γV(s') − Q. A stale snapshot of the opposite sign does not win."""
     dummy = object()
@@ -214,6 +235,7 @@ def test_variance_gate_follows_real_reward_history_per_state():
         steady.bg_action_channels["only"].go_weight = 1.0
         steady.bg_action_channels["only"].nogo_weight = 0.0
         steady.step(["same"], reward=0.4, novelty=0.0, conflict=0.0, intensity=1.0, terminal=True)
+    _write_reward_history(steady)
     steady_exp = steady.hippocampus.experiences[-1]
     steady_var = _state_var(steady, steady_exp)
     assert steady_var < 0.5
@@ -235,6 +257,7 @@ def test_variance_gate_follows_real_reward_history_per_state():
         noisy.bg_action_channels["only"].nogo_weight = 0.0
         reward = 1.0 if index % 2 == 0 else -1.0
         noisy.step(["flip"], reward=reward, novelty=0.0, conflict=0.0, intensity=1.0, terminal=True)
+    _write_reward_history(noisy)
     noisy_exp = noisy.hippocampus.experiences[-1]
     noisy_var = _state_var(noisy, noisy_exp)
     assert noisy_var >= 0.5

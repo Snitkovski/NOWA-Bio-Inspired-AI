@@ -119,9 +119,13 @@ def test_agent_applies_cer_learning_rate_scale_to_value_layer():
 
     agent.step(["ctx:test"], reward=0.2, novelty=0.1, conflict=0.0)
 
-    assert "alpha" in captured
-    assert captured["alpha"] > base_alpha
-    assert abs(captured["alpha"] - (base_alpha * 1.7)) < 1e-9
+    # The CER scale used to multiply the waking stable alpha. That writer
+    # is closed; the outcome is a labile tag and the stable update is not called.
+    assert "alpha" not in captured
+    assert int(agent.value_layer.online_update_count) == 0
+    episode = agent.hippocampus.experiences[-1]
+    assert float(getattr(episode, "td_error_snapshot", 0.0)) != 0.0
+    _ = base_alpha
 
 
 def test_bg_cer_exploration_bonus_is_bounded_by_pressure_cap():

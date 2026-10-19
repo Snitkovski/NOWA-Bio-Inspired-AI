@@ -1,3 +1,13 @@
+
+import pytest
+from learning_guard import learning_allowed
+
+@pytest.fixture(autouse=True)
+def _allow_stable_writers_under_test():
+    """Direct tests of stable writers. Sleep opens the same guard."""
+    with learning_allowed():
+        yield
+
 #!/usr/bin/env python3
 """Быстрая проверка загрузки привычек"""
 
@@ -25,10 +35,11 @@ print("="*60)
 
 intent_memory = IntentMemory()
 
-# Record habits
-for habit in habits:
-    for _ in range(int(habit['strength'])):
-        intent_memory.record_trace(habit['context'], habit['action'])
+# Dataset seeding is host initialization, not waking learning.
+with learning_allowed():
+    for habit in habits:
+        for _ in range(int(habit['strength'])):
+            intent_memory.record_trace(habit['context'], habit['action'])
 
 print(f"\n✅ Записано {len(intent_memory.traces)} traces в IntentMemory")
 

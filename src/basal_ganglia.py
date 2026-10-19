@@ -14,6 +14,8 @@ import random
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
+from learning_guard import assert_learning_allowed
+
 
 NO_ACTION = "NO_ACTION"
 
@@ -71,6 +73,8 @@ class ActionChannel:
         return max(0.0, min(1.0, value))
 
     def update_weights(self, go_delta: float = 0.0, nogo_delta: float = 0.0, habit_delta: float = 0.0):
+        if not assert_learning_allowed("ActionChannel.update_weights"):
+            return
         self.go_weight = max(0.0, min(1.0, self.go_weight + float(go_delta)))
         self.nogo_weight = max(0.0, min(1.0, self.nogo_weight + float(nogo_delta)))
         self.habit_strength = max(0.0, min(1.0, self.habit_strength + float(habit_delta)))
@@ -538,6 +542,23 @@ class BasalGangliaLearning:
         self.learning_rate = max(0.01, min(0.2, float(learning_rate)))
 
     def apply_sleep_learning(
+        self,
+        channels: List[ActionChannel],
+        memories: Dict[str, List[Tuple[str, float]]],
+        neuromodulators,
+        forget_rate: float = 0.01,
+    ) -> List[ActionChannel]:
+        from learning_guard import learning_allowed
+
+        with learning_allowed():
+            return self._apply_sleep_learning_unlocked(
+                channels,
+                memories,
+                neuromodulators,
+                forget_rate=forget_rate,
+            )
+
+    def _apply_sleep_learning_unlocked(
         self,
         channels: List[ActionChannel],
         memories: Dict[str, List[Tuple[str, float]]],

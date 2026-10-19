@@ -60,6 +60,12 @@ def _core(actions=("rest", "eat", "hide", "play")) -> Agent:
 
 def _weights(agent: Agent, action: str) -> tuple[float, float, float, int]:
     channel = agent.bg_action_channels[action]
+    go, nogo = agent.labile.effective_channel(
+        action,
+        float(channel.go_weight),
+        float(channel.nogo_weight),
+        float(getattr(agent, "_host_clock_s", 0.0)),
+    )
     habit = 0.0
     signature = agent.intent_memory._compute_context_signature(
         list(getattr(agent, "_qa_context", []) or [])
@@ -68,8 +74,8 @@ def _weights(agent: Agent, action: str) -> tuple[float, float, float, int]:
     if trace is not None:
         habit = float(trace.strength)
     return (
-        float(channel.go_weight),
-        float(channel.nogo_weight),
+        float(go),
+        float(nogo),
         habit,
         len(agent.bg_sleep_memories.get(action, [])),
     )
@@ -113,7 +119,14 @@ def test_commit_credits_executed_action_and_repeated_feedback_is_a_noop():
     assert exp.override_source == "reflex:urgent_feed"
     assert exp.decided_action == decided
     assert float(exp.reward) == pytest.approx(1.0)
-    assert agent.bg_action_channels["eat"].go_weight > 0.5
+    eat_go, _eat_nogo = agent.labile.effective_channel(
+        "eat",
+        agent.bg_action_channels["eat"].go_weight,
+        agent.bg_action_channels["eat"].nogo_weight,
+        agent._host_clock_s,
+    )
+    assert eat_go > 0.5
+    assert agent.bg_action_channels["eat"].go_weight == pytest.approx(0.5)
     assert agent.bg_action_channels[decided].go_weight == pytest.approx(0.5) or decided == "eat"
 
     frozen = _weights(agent, "eat")
@@ -213,9 +226,12 @@ def test_habit_key_is_a_canonical_set_and_old_files_still_load():
     assert memory._compute_context_signature([]) == memory._compute_context_signature(["", "  "])
     assert memory._compute_context_signature(["hunger_high"]) == hashlib.md5(b"hunger_high").hexdigest()[:8]
 
-    for _ in range(25):
-        memory.apply_outcome(hungry, "eat", 1.0)
-        memory.apply_outcome(alarmed, "hide", 1.0)
+    from learning_guard import learning_allowed
+
+    with learning_allowed():
+        for _ in range(25):
+            memory.apply_outcome(hungry, "eat", 1.0)
+            memory.apply_outcome(alarmed, "hide", 1.0)
     hungry_key = memory._compute_context_signature(hungry)
     alarmed_key = memory._compute_context_signature(alarmed)
     assert memory.traces[f"eat:{hungry_key}"].strength > 0.9
@@ -226,8 +242,9 @@ def test_habit_key_is_a_canonical_set_and_old_files_still_load():
     habits = load_habits_from_dataset(str(Path(__file__).resolve().parents[1] / "datasets" / "habits.json"))
     loaded = IntentMemory()
     single = next(row for row in habits if row["context"] == ["user:привет"])
-    for _ in range(int(single["strength"])):
-        loaded.record_trace(single["context"], single["action"])
+    with learning_allowed():
+        for _ in range(int(single["strength"])):
+            loaded.record_trace(single["context"], single["action"])
     assert loaded._compute_context_signature(single["context"]) == hashlib.md5("user:привет".encode()).hexdigest()[:8]
     assert loaded.activate_by_context(["user:привет"]).get("сказать_привет", 0.0) > 0.0
     assert loaded.activate_by_context(["user:привет", "zone:floor"]).get("сказать_привет", 0.0) == 0.0

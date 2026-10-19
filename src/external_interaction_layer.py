@@ -536,8 +536,18 @@ class ExternalInteractionLayer:
         - drive update with decay, saturation and competition
         - strategy logits update + softmax normalization + weight decay
           with drive->policy coupling term
-        - Bayesian hypothesis recalibration
+        -         Bayesian hypothesis recalibration
         """
+        from learning_guard import assert_learning_allowed
+
+        if not assert_learning_allowed("ExternalInteractionLayer.apply_learning_hooks"):
+            return {
+                "reward_signal": 0.0,
+                "drive_updates": {},
+                "strategy_updates": {},
+                "hypothesis_posterior": None,
+                "skipped": True,
+            }
         fb = self._coerce_feedback(feedback)
         reward_signal = _clamp(fb.reward, -1.0, 1.0)
         alpha_v = max(0.0, _to_float(alpha, 0.1))

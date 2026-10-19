@@ -117,7 +117,7 @@ class CortexMemory:
 
 class SleepManager:
     """
-    Sleep consolidation - THE ONLY learning mechanism.
+    Sleep consolidation — the only writer of the stable tier.
     
     Process:
     1. Select experiences from hippocampus
@@ -254,13 +254,18 @@ class SleepManager:
     def sleep_cycle(self) -> dict:
         """
         Execute one sleep cycle.
-        
-        Consolidates hippocampal experiences to cortex and
-        refreshes intent_memory (degradation + strengthening).
-        
-        Returns:
-            Statistics about consolidation
+
+        Consolidates hippocampal experiences to cortex and refreshes
+        intent_memory. This is a stable-tier writer: the labile tier is
+        not consolidated here (that capture step is a later change).
         """
+        from learning_guard import learning_allowed
+
+        with learning_allowed():
+            return self._sleep_cycle_impl()
+
+    def _sleep_cycle_impl(self) -> dict:
+        """Body of ``sleep_cycle``. Callers use ``sleep_cycle``."""
         sleep_timestamp = time.time()
         stats = {
             "candidates": 0,
@@ -1402,6 +1407,13 @@ class SleepManager:
         return min(priority, priority_cap)
 
     def _apply_replay_td_bg(self, replay_sample: List, value_variance: Optional[float] = None) -> Dict[str, float]:
+        """Stable TD/BG replay. Opens the learning guard for direct callers."""
+        from learning_guard import learning_allowed
+
+        with learning_allowed():
+            return self._apply_replay_td_bg_unlocked(replay_sample, value_variance)
+
+    def _apply_replay_td_bg_unlocked(self, replay_sample: List, value_variance: Optional[float] = None) -> Dict[str, float]:
         value_layer = getattr(self, "value_layer", None)
         bg_channels = getattr(self, "bg_action_channels", None)
         bg_learning = getattr(self, "bg_learning", None)
@@ -2548,10 +2560,18 @@ class SleepManager:
     def _consolidate_bg_outcome_cache(self) -> None:
         """Apply the outcome cache once, then consolidate habits.
 
-        ``apply_sleep_learning(..., forget_rate>0)`` still shrinks toward 0
-        for direct callers. The sleep path passes forget_rate=0 and lets
-        ``_apply_bg_decay`` relax toward each channel's prior.
+        ``deep_sleep`` calls this beside ``sleep_cycle``, so the stable-tier
+        guard is opened here for that path and for direct callers.
         """
+        from learning_guard import learning_allowed, learning_is_open
+
+        if not learning_is_open():
+            with learning_allowed():
+                return self._consolidate_bg_outcome_cache()
+
+        # apply_sleep_learning(..., forget_rate>0) still shrinks toward 0
+        # for direct callers. The sleep path passes forget_rate=0 and lets
+        # _apply_bg_decay relax toward each channel's prior.
         channels = getattr(self, "bg_action_channels", None)
         learning = getattr(self, "bg_learning", None)
         if not isinstance(channels, dict) or not channels or learning is None:

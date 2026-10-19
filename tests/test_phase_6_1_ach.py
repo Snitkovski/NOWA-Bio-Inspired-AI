@@ -1,3 +1,13 @@
+
+import pytest
+from learning_guard import learning_allowed
+
+@pytest.fixture(autouse=True)
+def _allow_stable_writers_under_test():
+    """Direct tests of stable writers. Sleep opens the same guard."""
+    with learning_allowed():
+        yield
+
 import os
 
 import pytest
@@ -122,10 +132,9 @@ def test_novelty_spike_increases_ach_online_alpha_and_replay_priority():
     ach_after = float(agent.neuromodulators.acetylcholine)
     assert ach_after > ach_before
 
-    value_snapshot = agent.value_layer.snapshot()
-    assert float(value_snapshot.get("last_alpha_effective", 0.0)) > float(
-        agent.value_layer.alpha_online_default
-    )
+    # Waking no longer runs the stable online alpha. ACh still rises, and
+    # replay priority below still prefers the high-ACh snapshot.
+    assert int(agent.value_layer.online_update_count) == 0
 
     exp = agent.hippocampus.experiences[-1]
     exp.td_error_snapshot = 0.5

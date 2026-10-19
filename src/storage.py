@@ -302,6 +302,23 @@ class AgentStorage:
                     }
                 agent_state["bg_action_channels"] = channels_data
                 agent_state["bg_sleep_memories"] = dict(getattr(agent, "bg_sleep_memories", {}))
+                labile = getattr(agent, "labile", None)
+                if labile is not None and hasattr(labile, "to_dict"):
+                    agent_state["labile_layer"] = labile.to_dict()
+                plasticity = getattr(agent, "plasticity", None)
+                if plasticity is not None and hasattr(plasticity, "to_dict"):
+                    agent_state["plasticity_config"] = plasticity.to_dict()
+                try:
+                    agent_state["host_clock_s"] = float(getattr(agent, "_host_clock_s", 0.0))
+                except (TypeError, ValueError):
+                    agent_state["host_clock_s"] = 0.0
+                slots = getattr(agent, "_bg_outcome_slots", None)
+                if isinstance(slots, dict):
+                    agent_state["bg_outcome_slots"] = {
+                        str(episode_id): [str(slot[0]), int(slot[1])]
+                        for episode_id, slot in slots.items()
+                        if isinstance(slot, tuple) and len(slot) == 2
+                    }
                 agent_state["agent_lifetime"] = {
                     "created_ts": getattr(agent, "created_ts", None),
                     "simulated_sleep_seconds": getattr(agent, "_simulated_sleep_seconds", 0.0),
@@ -1014,6 +1031,33 @@ class AgentStorage:
         if agent is not None and "bg_sleep_memories" in agent_state:
             try:
                 agent.bg_sleep_memories = dict(agent_state.get("bg_sleep_memories", {}))
+            except Exception:
+                pass
+
+        if agent is not None:
+            try:
+                from labile_layer import LabileLayer, PlasticityConfig
+
+                if isinstance(agent_state.get("plasticity_config"), dict):
+                    agent.plasticity = PlasticityConfig.from_dict(agent_state.get("plasticity_config"))
+                if isinstance(agent_state.get("labile_layer"), dict):
+                    agent.labile = LabileLayer.from_dict(agent_state.get("labile_layer"))
+                    if getattr(agent, "plasticity", None) is not None:
+                        agent.labile.config = agent.plasticity
+                elif not isinstance(agent_state.get("labile_layer"), dict):
+                    # Saves written before the labile tier load as an empty layer.
+                    config = getattr(agent, "plasticity", None) or PlasticityConfig()
+                    agent.plasticity = config
+                    agent.labile = LabileLayer(config)
+                if "host_clock_s" in agent_state:
+                    agent._host_clock_s = float(agent_state.get("host_clock_s", 0.0))
+                raw_slots = agent_state.get("bg_outcome_slots")
+                if isinstance(raw_slots, dict):
+                    agent._bg_outcome_slots = {
+                        str(episode_id): (str(slot[0]), int(slot[1]))
+                        for episode_id, slot in raw_slots.items()
+                        if isinstance(slot, (list, tuple)) and len(slot) == 2
+                    }
             except Exception:
                 pass
 
