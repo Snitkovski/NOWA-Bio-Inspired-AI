@@ -1,11 +1,20 @@
+from __future__ import annotations
+
+import pytest
+from learning_guard import learning_allowed
+
+@pytest.fixture(autouse=True)
+def _allow_stable_writers_under_test():
+    """Direct tests of stable writers. Sleep opens the same guard."""
+    with learning_allowed():
+        yield
+
 """K03: habit keys are a canonical set, not the last event.
 
 Different situations that share a tail event must not share a key, and a
 permutation of the same events must. Old saves that stored only the legacy
 tail hash still load. Signatures use md5, not PYTHONHASHSEED-salted hash().
 """
-
-from __future__ import annotations
 
 import hashlib
 import time

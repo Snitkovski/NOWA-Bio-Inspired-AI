@@ -60,6 +60,18 @@ def _q(agent: Agent, context, action, intensity: float = 1.0) -> float:
     return float(agent.value_layer.get_value(snapshot))
 
 
+def _effective(agent: Agent, context, action, intensity: float = 1.0) -> float:
+    snapshot = agent._build_value_state_snapshot(
+        context_events=list(context),
+        action=action,
+        consequence=None,
+        intensity=intensity,
+        novelty=0.0,
+        conflict=0.0,
+    )
+    return float(agent.effective_action_value(snapshot, action))
+
+
 def _habit_strength(agent: Agent, context, action) -> float:
     memory = agent.intent_memory
     signature = memory._compute_context_signature(list(context))
@@ -102,15 +114,16 @@ def _run_bandit(
         if noise_kind in {"uniform", "gauss"}:
             episode = agent.hippocampus.get_experience(agent.last_episode_id)
             episode.reward = float(reward)
-            agent._apply_outcome_to_habits([context], action, float(reward))
-            agent._apply_outcome_to_channel(action, float(reward))
-            agent._apply_feedback_value_update(
-                exp=episode,
-                state_snapshot=episode.value_state_snapshot,
-                next_snapshot=episode.value_next_state_snapshot,
-                reward_signal=float(reward),
-                stability_index=None,
+            # Same labile writer as step()/feedback. Stable weights wait for sleep.
+            agent._record_known_outcome(
                 context_events=[context],
+                action_id=action,
+                outcome=float(reward),
+                episode=episode,
+                state_snapshot=getattr(episode, "value_state_snapshot", None),
+                next_state_snapshot=getattr(episode, "value_next_state_snapshot", None),
+                next_context_events=list(getattr(episode, "value_next_context_events", None) or [context]),
+                terminal=True,
             )
             return
         rating = 2 if reward > 0.0 else -2
@@ -129,6 +142,9 @@ def _run_bandit(
 
     for trial in range(train_trials):
         _episode(contexts[trial % len(contexts)], learn=True)
+        # Stable Q is learned only in sleep. The accuracy bar is unchanged.
+        if (trial + 1) % 20 == 0:
+            agent.sleep(cycles=3)
 
     per_context = {context: {"hits": 0, "total": 0} for context in contexts}
     hits = 0
@@ -400,8 +416,10 @@ def test_qa_empty_memory_missing_reward_and_zero_reward():
     known_zero = _build_agent(("only",), seed=4)
     zero_before = int(known_zero.value_layer.online_update_count)
     known_zero.step(["z"], reward=0.0, terminal=True)
-    assert int(known_zero.value_layer.online_update_count) == zero_before + 1
-    assert math.isfinite(_q(known_zero, ["z"], "only"))
+    assert int(known_zero.value_layer.online_update_count) == zero_before
+    stored_zero = known_zero.hippocampus.get_experience(known_zero.last_episode_id)
+    assert bool(getattr(stored_zero, "td_outcome_committed", False)) is True
+    assert math.isfinite(_effective(known_zero, ["z"], "only"))
 
     bad = _build_agent(("only",), seed=4)
     bad_before = int(bad.value_layer.online_update_count)
@@ -413,11 +431,12 @@ def test_qa_terminal_bootstrap_is_zero_and_one_update_per_known_reward():
     agent = _build_agent(("go",), seed=1, capacity=20)
     agent.step(["start"], reward=1.0, terminal=True)
     once = int(agent.value_layer.online_update_count)
-    terminal_q = _q(agent, ["start"], "go")
+    terminal_q = _effective(agent, ["start"], "go")
     assert math.isfinite(terminal_q)
     assert terminal_q > 0.0
+    assert _q(agent, ["start"], "go") == 0.0
 
-    # Same reward delivered again through feedback must not stack a second TD backup.
+    # Same reward delivered again through feedback must not stack a second backup.
     agent.apply_feedback_to_last_experience(
         2,
         context_events=["start"],
@@ -425,12 +444,14 @@ def test_qa_terminal_bootstrap_is_zero_and_one_update_per_known_reward():
         episode_id=agent.last_episode_id,
     )
     assert int(agent.value_layer.online_update_count) == once
-    assert abs(_q(agent, ["start"], "go") - terminal_q) < 1e-9
+    assert abs(_effective(agent, ["start"], "go") - terminal_q) < 1e-9
 
     successor = _build_agent(("go",), seed=1, capacity=30)
     for _ in range(30):
         action = successor.step(["goal"], reward=1.0, terminal=True)
-    assert _q(successor, ["goal"], action) > 0.5
+    assert _effective(successor, ["goal"], action) > 0.05
+    successor.sleep(cycles=3)
+    assert _q(successor, ["goal"], action) > 0.2
     open_loop = _build_agent(("go",), seed=1, capacity=30)
     open_loop.step(
         ["goal"],
@@ -446,9 +467,9 @@ def test_qa_revising_an_older_rating_must_not_clobber_later_updates():
     """C04: one backup per transition. A later correction of an old episode
     must not rewrite the shared Q cell back to that episode's original prior.
     """
-    agent = _build_agent(("go",), seed=0, capacity=30)
+    agent = _build_agent(("go",), seed=0, capacity=90)
     first_id = None
-    for index in range(8):
+    for index in range(70):
         action = agent.step(["bin"], terminal=True)
         episode_id = agent.last_episode_id
         if index == 0:
@@ -459,7 +480,7 @@ def test_qa_revising_an_older_rating_must_not_clobber_later_updates():
             action_id=action,
             episode_id=episode_id,
         )
-    learned = _q(agent, ["bin"], "go")
+    learned = _effective(agent, ["bin"], "go")
     assert learned > 0.15
     agent.apply_feedback_to_last_experience(
         -2,
@@ -467,7 +488,7 @@ def test_qa_revising_an_older_rating_must_not_clobber_later_updates():
         action_id="go",
         episode_id=first_id,
     )
-    revised = _q(agent, ["bin"], "go")
+    revised = _effective(agent, ["bin"], "go")
     assert revised > 0.05, (
         f"revising the first +1 episode collapsed Q from {learned:.4f} to {revised:.4f}. "
         "The backup is rewritten from that episode's original prior and drops later updates of the same Q(s, a)."
@@ -504,8 +525,16 @@ def test_qa_step_reward_teaches_habits_and_channel():
     agent.step(["bin"], reward=1.0, terminal=True)
     assert "go" in agent.bg_action_channels or agent.last_action in agent.bg_action_channels
     action = agent.last_action
-    assert float(agent.bg_action_channels[action].go_weight) > 0.5
-    assert _habit_strength(agent, ["bin"], action) > 0.0
+    channel = agent.bg_action_channels[action]
+    go_eff, _nogo_eff = agent.labile.effective_channel(
+        action,
+        channel.go_weight,
+        channel.nogo_weight,
+        agent._host_clock_s,
+    )
+    assert go_eff > 0.5
+    assert float(channel.go_weight) == pytest.approx(0.5)
+    assert _habit_strength(agent, ["bin"], action) == 0.0
     # The other channel is not the one that was just rewarded.
     other = "stop" if action == "go" else "go"
     if other in agent.bg_action_channels:
@@ -546,6 +575,7 @@ def test_qa_single_action_and_nogo_block():
         seen.append(action)
         single.apply_feedback_to_last_experience(2, context_events=["ctx"], action_id=action)
     assert seen == ["only"] * 10
+    single.sleep(cycles=3)
     assert _q(single, ["ctx"], "only") > 0.2
     assert 0.0 <= _habit_strength(single, ["ctx"], "only") <= 1.0
 

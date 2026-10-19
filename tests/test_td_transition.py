@@ -34,21 +34,46 @@ def _q(agent, context, action) -> float:
     return float(agent.value_layer.get_value(snapshot))
 
 
+def _effective(agent, context, action) -> float:
+    snapshot = agent._build_value_state_snapshot(
+        context_events=list(context),
+        action=action,
+        consequence=None,
+        intensity=1.0,
+        novelty=0.0,
+        conflict=0.0,
+    )
+    return float(agent.effective_action_value(snapshot, action))
+
+
 def test_feedback_commits_one_td_update_and_reaches_the_reward():
+    """One labile contribution per rating. Stable Q moves only in sleep.
+
+    The old online writer could climb past 0.8 in the same loop. The labile
+    amplitude clamp is 0.2, and one sleep's existing replay budget lands
+    near 0.22, so the stable assert is the movement that budget produces
+    (> 0.2) rather than the removed waking writer.
+    """
     agent = _build_agent(["go"])
     before = int(agent.value_layer.online_update_count)
     action = agent.step(["goal"], terminal=True)
     agent.apply_feedback_to_last_experience(2, context_events=["goal"], action_id=action)
-    once = int(agent.value_layer.online_update_count)
-    assert once == before + 1
+    assert int(agent.value_layer.online_update_count) == before
+    once = _effective(agent, ["goal"], "go")
+    assert once > 0.0
 
     agent.apply_feedback_to_last_experience(2, context_events=["goal"], action_id=action)
-    assert int(agent.value_layer.online_update_count) == once
+    assert _effective(agent, ["goal"], "go") == once
+    assert int(agent.value_layer.online_update_count) == before
 
     for _ in range(80):
         action = agent.step(["goal"], terminal=True)
         agent.apply_feedback_to_last_experience(2, context_events=["goal"], action_id=action)
-    assert _q(agent, ["goal"], "go") > 0.8
+    assert _q(agent, ["goal"], "go") == 0.0
+    assert _effective(agent, ["goal"], "go") > 0.15
+    assert _effective(agent, ["goal"], "go") <= 0.2 + 1e-9
+    agent.sleep(cycles=3)
+    assert _q(agent, ["goal"], "go") > 0.2
 
 
 def test_successor_value_is_the_real_next_state():
@@ -61,9 +86,12 @@ def test_successor_value_is_the_real_next_state():
             context_events=successor,
             action_id=action,
         )
-    assert _q(agent, successor, "go") > 0.8
+    agent.sleep(cycles=3)
+    assert _q(agent, successor, "go") > 0.2
 
     # Reward 0 on the way into a valuable successor must not stay at 0.
+    # The waking backup is labile and uses max_a Q_eff(s', a). Stable Q(s)
+    # stays 0 until a later sleep; this test's claim is the successor term.
     for _ in range(80):
         action = agent.step(
             ["start"],
@@ -71,4 +99,14 @@ def test_successor_value_is_the_real_next_state():
             reward=0.0,
             terminal=False,
         )
-    assert _q(agent, ["start"], action) > 0.4
+    learned = _effective(agent, ["start"], action)
+    assert _q(agent, ["start"], action) == 0.0
+    cold = _build_agent(["go"])
+    cold.step(
+        ["start"],
+        consequence=Event("arrived", event_type=EventType.CONSEQUENCE),
+        reward=0.0,
+        terminal=False,
+    )
+    assert learned > _effective(cold, ["start"], "go")
+    assert learned > 0.01

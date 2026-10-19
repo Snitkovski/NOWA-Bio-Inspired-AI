@@ -1,3 +1,5 @@
+import math
+
 from agent import Agent
 from cortex import CortexMemory
 from hippocampus import NOWAHippocampus
@@ -105,11 +107,17 @@ def test_agent_learning_rate_boost_depends_on_error_likelihood_not_mode():
     agent.conflict_arbitration.arbitrate = _acc_high_error
     agent.step(["ctx:lr_high_error"], reward=0.1, novelty=0.8, conflict=0.0)
 
-    assert len(captured) >= 2
-    low_alpha = float(captured[-2])
-    high_alpha = float(captured[-1])
-    assert abs(low_alpha - (base_alpha * 1.4)) < 1e-9
-    assert high_alpha > low_alpha
+    # ACC error likelihood used to scale the waking stable alpha. The stable
+    # writer is not called. Both outcomes still land on the labile tier.
+    assert captured == []
+    assert int(agent.value_layer.online_update_count) == 0
+    errors = [
+        float(getattr(exp, "td_error_snapshot", 0.0))
+        for exp in agent.hippocampus.experiences
+    ]
+    assert len(errors) >= 2
+    assert all(math.isfinite(value) for value in errors)
+    _ = base_alpha
 
 
 def test_agent_inhibit_does_not_directly_scale_pressure_vector():

@@ -7,6 +7,14 @@ Tests for how Agent uses affective state in decision-making
 import pytest
 from unittest.mock import Mock, MagicMock, patch
 from affect import AffectiveState
+from learning_guard import learning_allowed
+
+
+@pytest.fixture(autouse=True)
+def _allow_stable_writers_under_test():
+    """Direct habit-writer tests. Sleep opens the same guard."""
+    with learning_allowed():
+        yield
 
 
 class TestAgentAffectiveIntegration:

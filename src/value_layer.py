@@ -715,6 +715,21 @@ class ValueLayer:
               "state_key": str
             }
         """
+        # Waking callers must not reach this writer. Agent steps record the
+        # outcome on the labile tier. ``mode="online"`` remains the stable
+        # TD implementation used by sleep-scoped tests until expectation
+        # profiles move into replay.
+        from learning_guard import assert_learning_allowed
+
+        if not assert_learning_allowed("ValueLayer.update"):
+            return {
+                "value": self.last_value,
+                "td_error": self.last_td_error,
+                "state_key": self.last_state_key,
+                "mode": "skipped",
+                "skipped": True,
+            }
+
         mode_v = str(mode or "online").strip().lower()
         if mode_v not in {"online", "sleep"}:
             mode_v = "online"

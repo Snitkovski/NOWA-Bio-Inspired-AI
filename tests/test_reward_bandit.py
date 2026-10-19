@@ -100,6 +100,9 @@ def run_contextual_bandit(case: dict, seed: int = 0, train_trials: int = 240, ev
     for trial in range(train_trials):
         context = contexts[trial % len(contexts)]
         _episode(context)
+        # Stable values move only in sleep. The accuracy thresholds stay.
+        if (trial + 1) % 20 == 0:
+            agent.sleep(cycles=3)
 
     per_context = {context: {"hits": 0, "total": 0} for context in contexts}
     hits = 0

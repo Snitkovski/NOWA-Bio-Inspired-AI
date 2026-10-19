@@ -1,3 +1,13 @@
+
+import pytest
+from learning_guard import learning_allowed
+
+@pytest.fixture(autouse=True)
+def _allow_stable_writers_under_test():
+    """Direct tests of stable writers. Sleep opens the same guard."""
+    with learning_allowed():
+        yield
+
 import time
 from types import SimpleNamespace
 

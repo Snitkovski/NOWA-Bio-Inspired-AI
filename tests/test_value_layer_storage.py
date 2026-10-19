@@ -1,4 +1,14 @@
+import pytest
+
 from cortex import CortexMemory
+from learning_guard import learning_allowed
+
+
+@pytest.fixture(autouse=True)
+def _allow_stable_writers_under_test():
+    """Direct ValueLayer.update tests. Sleep opens the same guard."""
+    with learning_allowed():
+        yield
 from hippocampus import NOWAHippocampus
 from selector import ActionSelector
 from storage import AgentStorage
