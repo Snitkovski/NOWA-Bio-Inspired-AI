@@ -381,3 +381,43 @@ PR называет тождество 0.08 и что SHY идёт следом.
 
 7. Должен ли replay перестать писать Go/NoGo/привычку канала теперь, когда есть компенсированный шаг эпизода? Пока он пишет, одна ночь — это 0.08 плюс до 0.05 на replay, а не 0.08, и SHY лишь тянет эту сумму к prior.
 8. Должен ли `_apply_replay_td_bg` перестать сам открывать `learning_allowed()` для прямого вызова, как это уже сделано у `apply_sleep_learning`?
+
+---
+
+## Re-check
+
+Commit `70fc8e0` on `team/core-sleep-consolidation`. The three notes above are closed. Verdict of this pass: **PASS**.
+
+1. One terminal reward +1, `decay_rate_sleep = 0`. Go is 0.58 after `sleep(cycles=1)` and after `sleep(cycles=3)` (IEEE 0.50+0.08, within 1e-9). `total_bg_delta_sleep` and `total_weight_delta` are 0. Q is 0 after `sleep(cycles=0)` (no replay) and 0.075 / 0.225 after 1 / 3 cycles (3 and 9 replays). NoGo 0.46 and habit 0.20 stay at the once-pass values.
+2. A direct daytime `SleepManager._apply_replay_td_bg` raises `WakingLearningError` in strict mode. Fingerprint and Q stay put, and the episode is not marked. With `NOWA_STRICT_LEARNING=0` the call returns `replays_applied = 0`, logs `SleepManager._apply_replay_td_bg skipped` once, and leaves Q and the fingerprint unchanged.
+3. `stable_payload` now has `temporal_chains`. Each row is `signature`, `net_affect`, `stability`, `usage_count`. The chain object still stores `created_at` and `last_updated`; changing those does not change `stable_fingerprint`, changing `net_affect` does. One `sleep(cycles=1)` forms a chain and moves the fingerprint; an agent with no chains serializes `[]`.
+4. Audit of the tests touched in `70fc8e0`:
+
+| Test | Change | Verdict |
+| --- | --- | --- |
+| `test_replay_positive_strengthens_habit_and_value` | Channel coupling `total_bg_delta_sleep == total_weight_delta` became both exactly 0. Q still rises, Go still rises, `total_replays > 0`. | **justified-by-spec** (decision 7). A replay that writes channels again fails the zero delta; a missing capture fails `after_go > before_go`. |
+| `test_replay_negative_weakens_habit_without_negative_runaway` | Docstring only. Go still falls, NoGo still rises, weights stay in `[0, 1]`. | **equivalent** |
+| `test_credit_assignment_spec_011a` autouse `_replay_q_under_the_sleep_guard` | Module fixture holds `learning_allowed()` around direct `_apply_replay_td_bg` calls. Numeric asserts are unchanged. | **justified-by-spec** (decision 8). The daytime raise is covered by `test_direct_replay_does_not_open_the_learning_guard`. |
+
+5. `docs/specs/issue-13-two-tier-plasticity.md` ends with **Owner decisions after PR B (2026-10-19)** items 1–8 in English and **Решения владельца после PR B (2026-10-19)** items 1–8 in Russian. Items 7 and 8 are the answers to the questions this report added.
+
+`pytest tests -q`: **893 passed, 5 skipped**, 201.67s (891 before this commit; the two new checks in `test_issue13_two_tier.py` account for the difference). `pytest Demo -q`: **999 passed, 6 skipped**, 105.10s. The colony survival test did not fail on this run.
+
+## Повторная проверка
+
+Коммит `70fc8e0` на `team/core-sleep-consolidation`. Три замечания выше закрыты. Вердикт этого прохода: **PASS**.
+
+1. Одна терминальная награда +1, `decay_rate_sleep = 0`. Go равен 0.58 после `sleep(cycles=1)` и после `sleep(cycles=3)` (IEEE-сумма 0.50+0.08, в пределах 1e-9). `total_bg_delta_sleep` и `total_weight_delta` равны 0. Q равен 0 после `sleep(cycles=0)` (replay не было) и 0.075 / 0.225 после 1 / 3 циклов (3 и 9 replay). NoGo 0.46 и привычка 0.20 остаются на значениях однократного прохода.
+2. Прямой дневной `SleepManager._apply_replay_td_bg` в строгом режиме бросает `WakingLearningError`. Отпечаток и Q не меняются, эпизод не помечается. При `NOWA_STRICT_LEARNING=0` вызов возвращает `replays_applied = 0`, один раз пишет в лог `SleepManager._apply_replay_td_bg skipped` и не меняет Q и отпечаток.
+3. В `stable_payload` появился `temporal_chains`. Строка — это `signature`, `net_affect`, `stability`, `usage_count`. У объекта цепочки по-прежнему есть `created_at` и `last_updated`; их правка не меняет `stable_fingerprint`, правка `net_affect` меняет. Один `sleep(cycles=1)` создаёт цепочку и сдвигает отпечаток; агент без цепочек сериализует `[]`.
+4. Аудит тестов, затронутых в `70fc8e0`:
+
+| Тест | Изменение | Вердикт |
+| --- | --- | --- |
+| `test_replay_positive_strengthens_habit_and_value` | Связка `total_bg_delta_sleep == total_weight_delta` заменена на оба значения ровно 0. Q по-прежнему растёт, Go по-прежнему растёт, `total_replays > 0`. | **justified-by-spec** (решение 7). Replay, который снова пишет каналы, уронит нулевую дельту; пропавший захват уронит `after_go > before_go`. |
+| `test_replay_negative_weakens_habit_without_negative_runaway` | Только docstring. Go по-прежнему падает, NoGo растёт, веса в `[0, 1]`. | **equivalent** |
+| autouse `_replay_q_under_the_sleep_guard` в `test_credit_assignment_spec_011a` | Фикстура модуля держит `learning_allowed()` вокруг прямых вызовов `_apply_replay_td_bg`. Числовые ассерты не менялись. | **justified-by-spec** (решение 8). Дневной бросок закрыт тестом `test_direct_replay_does_not_open_the_learning_guard`. |
+
+5. `docs/specs/issue-13-two-tier-plasticity.md` заканчивается разделом **Owner decisions after PR B (2026-10-19)**, пункты 1–8 на английском, и **Решения владельца после PR B (2026-10-19)**, пункты 1–8 на русском. Пункты 7 и 8 — ответы на вопросы, которые добавил этот отчёт.
+
+`pytest tests -q`: **893 passed, 5 skipped**, 201.67 с (до коммита было 891; разница — две новые проверки в `test_issue13_two_tier.py`). `pytest Demo -q`: **999 passed, 6 skipped**, 105.10 с. Тест выживания колонии в этом прогоне не упал.
