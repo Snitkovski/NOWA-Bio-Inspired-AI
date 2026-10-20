@@ -6,13 +6,16 @@ Russian version: [ARCHITECTURE.ru.md](ARCHITECTURE.ru.md)
 
 ## System overview
 
-NOWA (Non-learning Waking Observer Agent) is a cognitive architecture that:
+NOWA is a general-purpose cognitive core that:
 
-- **Does not learn** during waking (only during sleep)
-- **Uses memory** (hippocampus & cortex) for behaviour
-- **Is regulated by affect** and by neuromodulators
-- **Selects actions** through the selector
-- **Consolidates experience** during sleep
+- **Writes stable parameters only in sleep** (`Agent.sleep()` under `learning_guard.learning_allowed()`)
+- **Writes a bounded labile layer while awake** (fast Q/Go/NoGo offsets that decay before consolidation)
+- **Uses memory** (hippocampus & cortex) for behaviour with effective stable + labile values
+- **Is regulated by affect** and by neuromodulators (fast state; slow affect statistics consolidate in sleep)
+- **Selects actions** through the selector and basal-ganglia gate
+- **Consolidates experience** in sleep (replay Q, capture channel tags, habit EMA, cortex, SHY)
+
+See [docs/architecture/two-tier-plasticity.en.md](../docs/architecture/two-tier-plasticity.en.md) and [SLEEP.en.md](SLEEP.en.md).
 
 ---
 
@@ -27,8 +30,8 @@ NOWA (Non-learning Waking Observer Agent) is a cognitive architecture that:
 │                                 │
 │  Hippocampus (Episodic)        │
 │  ├─ Stores recent experiences  │
-│  ├─ Fast learning surface       │
-│  └─ Immutable records           │
+│  ├─ Outcomes → labile tags      │
+│  └─ Episodes until consolidated │
 │                                 │
 │  Cortex (Semantic)             │
 │  ├─ Consolidated patterns       │
@@ -186,10 +189,12 @@ NOWA (Non-learning Waking Observer Agent) is a cognitive architecture that:
 │ strength: how often used     │
 │ affective valence: quality   │
 │                              │
+│ Waking: note_selection only  │
+│   (strength-0 traces)        │
 │ During sleep:                │
-│ ├─ Strengthen used habits    │
-│ ├─ Degrade unused ones       │
-│ └─ Reevaluate via affect     │
+│ ├─ Outcome-gated EMA         │
+│ ├─ Degrade unused (sleep)    │
+│ └─ Slow affect replay        │
 │                              │
 └──────────────────────────────┘
 ```
@@ -201,21 +206,18 @@ NOWA (Non-learning Waking Observer Agent) is a cognitive architecture that:
 │   Sleep Manager                    │
 ├────────────────────────────────────┤
 │                                    │
-│ ONLY learning mechanism           │
+│ ONLY stable-tier writer            │
 │                                    │
-│ Process:                           │
-│  1. Select candidates              │
-│  2. Cluster similar experiences    │
-│  3. Abstract → patterns            │
-│  4. Store in cortex                │
-│  5. Forget unstable traces         │
-│  6. Apply neuromodulator effects   │
-│     ├─ DA: enhance consolidation  │
-│     ├─ HT: stabilize traces       │
-│     ├─ NE: form chains            │
-│     └─ CORT: increase forgetting   │
+│ Two-tier pass (once per sleep):    │
+│  1. Capture κ of labile Go/NoGo   │
+│  2. Compensated η_eff channel step │
+│  3. Habit EMA + visit transfer     │
+│  4. Slow affect + external hooks   │
 │                                    │
-│ Key: NO LEARNING during waking     │
+│ Then per cycle: replay stable Q,   │
+│  cortex, SHY, chains, SAC, …     │
+│                                    │
+│ Waking: labile tags only           │
 │                                    │
 └────────────────────────────────────┘
 ```
@@ -263,9 +265,10 @@ NOWA (Non-learning Waking Observer Agent) is a cognitive architecture that:
                   ↓
 7. Store experience (immutable in hippocampus)
                   ↓
-8. Update affect & neuromodulators
+8. Update affect & neuromodulators (state)
                   ↓
-9. NO LEARNING happens yet
+9. Known outcomes → labile Q/Go/NoGo only
+   (host should pass dt for decay)
 ```
 
 ### Phase 2: Sleep
@@ -287,7 +290,8 @@ NOWA (Non-learning Waking Observer Agent) is a cognitive architecture that:
                   ↓
 6. Degrade unused habits
                   ↓
-7. ONLY NOW learning happens
+7. Stable tier updates (Q replay,
+   capture, habits, cortex, …)
 ```
 
 ---
@@ -309,7 +313,7 @@ AffectiveState ←→ Neuromodulators
               ↓
           Experience (stored)
               ↓
-           Sleep ← Only learning happens here
+           Sleep ← Stable learning + labile capture
               ↓
          Consolidation (modified by neuromodulators)
               ↓

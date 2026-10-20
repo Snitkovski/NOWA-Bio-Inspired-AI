@@ -29,7 +29,27 @@ English version: [API.en.md](API.en.md)
 - `src/wakefulness.py`
 - `src/storage.py`
 
-Последняя проверка: 27 марта 2026 г.
+Последняя проверка: 20 октября 2026 г. (двухуровневая пластичность, issue #13).
+
+---
+
+## Контракт с хостом и пластичность
+
+Ядро не решает, когда спать и с какой скоростью идёт время.
+
+| Обязанность | API |
+|------------|-----|
+| Средний интервал бодрствования между снами | `PlasticityConfig(expected_wake_interval_s=...)` при создании `Agent` |
+| Продвинуть часы хоста на тике | `step(..., dt=...)`, `commit_executed_transition(..., dt=...)`, `advance_time(dt)` |
+| Консолидировать стабильную память | `Agent.sleep(cycles=...)` (`learning_allowed()`) |
+| Новые каналы действий | `register_action_channel` (внутри `initializing()`) |
+| Посев после загрузки | `with initializing(): ...` |
+
+`PlasticityConfig` в `src/labile_layer.py`. Guard: `NOWA_STRICT_LEARNING`, `WakingLearningError`, `stable_fingerprint`, `labile_snapshot`. Текст: [two-tier-plasticity.ru.md](../docs/architecture/two-tier-plasticity.ru.md), [SLEEP.ru.md](SLEEP.ru.md).
+
+### Host contract and plasticity
+
+English table and parameter defaults: [API.en.md](API.en.md#host-contract-and-plasticity).
 
 ---
 

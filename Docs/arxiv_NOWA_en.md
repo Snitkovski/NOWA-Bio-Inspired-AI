@@ -21,7 +21,7 @@ Contemporary machine learning relies to a large extent on gradient descent: netw
 
 The NOWA architecture offers an alternative: local reward-based learning combined with evolutionary tuning of cognitive-architecture parameters. Its principles are as follows.
 
-First, waking and learning are separated. In the active phase the agent does not modify slow memory: it records episodes, activates habits, and selects actions. Consolidation takes place during sleep.
+First, waking and stable learning are separated. While awake the agent records episodes and writes only a bounded, decaying labile layer on Q and Go/NoGo; stable parameters (values, habits, channels, cortex, slow affect) change only in sleep. Consolidation takes place during sleep.
 
 Second, successful pathways are strengthened, not the entire network at once. Habits, the Go/No-Go channels of the basal ganglia, and cortical patterns are reinforced after positive outcomes; unstable traces weaken and are forgotten.
 

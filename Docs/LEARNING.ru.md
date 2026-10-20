@@ -4,6 +4,15 @@ English version: [LEARNING.en.md](LEARNING.en.md)
 
 **Статус (27 сентября 2026 г.).** Документ ядра. Актуальное научное изложение комплекса на русском и английском языках приведено в [SCIENTIFIC_DESCRIPTION.ru.md](SCIENTIFIC_DESCRIPTION.ru.md). Текст ниже сохраняет формулировки исходной редакции: это нормативный контракт модуля либо лабораторная запись.
 
+## Двухуровневая пластичность (актуальное ядро)
+
+В `src/` **лабильные метки** пишутся днём и затухают; **стабильные параметры** — только в `Agent.sleep()`. Выбор по stable + labile. Хост передаёт `dt` / `advance_time`, задаёт `expected_wake_interval_s` и вызывает `sleep()`.
+
+Справочник: [two-tier-plasticity.ru.md](../docs/architecture/two-tier-plasticity.ru.md), [SLEEP.ru.md](SLEEP.ru.md), [спека #13](../docs/specs/issue-13-two-tier-plasticity.md). Разделы ниже — устаревший tutorial по весам селектора, не контракт ядра.
+
+## Two-tier plasticity (current core)
+
+The `Agent` separates labile (waking) and stable (sleep-only) learning. See [two-tier-plasticity.en.md](../docs/architecture/two-tier-plasticity.en.md) and [SLEEP.en.md](SLEEP.en.md). Sections below are legacy GUI material.
 
 ## Как это работает?
 

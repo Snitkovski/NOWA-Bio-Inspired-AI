@@ -1,5 +1,9 @@
 # QA: PR #33 — обучение ядра на награде (C01–C06, C09)
 
+> **Superseded for core learning contract by issue #13 two-tier plasticity** (PR #37 labile layer, PR #40 sleep consolidation). Waking stable writes described here are no longer current; see `docs/specs/issue-13-two-tier-plasticity.md` and `docs/architecture/two-tier-plasticity.en.md`.
+>
+> **Заменено двухуровневой моделью #13** для контракта обучения ядра (PR #37, PR #40). Дневные записи в стабильный слой из этого отчёта устарели.
+
 Ветка: `team/issue-32-reward-learning`
 PR: https://github.com/burlakovmb/NOWA-Bio-Inspired-AI/pull/33
 Продуктовый код не менялся. Артефакты QA: этот отчёт и `tests/test_qa_issue32_reward_learning.py`.

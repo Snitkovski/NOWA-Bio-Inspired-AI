@@ -8,13 +8,16 @@ English version: [ARCHITECTURE.en.md](ARCHITECTURE.en.md)
 
 ## Обзор системы
 
-NOWA (агент-наблюдатель, не обучающийся в бодрствовании) — это когнитивная архитектура, которая:
+NOWA — универсальное когнитивное ядро, которое:
 
-- **НЕ учится** во время бодрствования (только во время сна)
-- **Использует память** (hippocampus & cortex) для поведения
-- **Регулируется аффектом** и нейромодуляторами
-- **Выбирает действия** через selector
-- **Консолидирует опыт** во время сна
+- **Пишет стабильные параметры только во сне** (`Agent.sleep()` под `learning_guard.learning_allowed()`)
+- **Пишет ограниченный лабильный слой днём** (быстрые добавки Q/Go/NoGo с затуханием)
+- **Использует память** (гиппокамп и кора) с эффективными стабильными + лабильными значениями
+- **Регулируется аффектом** и нейромодуляторами (быстрое состояние; медленная аффективная статистика — во сне)
+- **Выбирает действия** через selector и затвор базальных ганглиев
+- **Консолидирует опыт** во сне (replay Q, capture меток канала, EMA привычек, кора, SHY)
+
+См. [docs/architecture/two-tier-plasticity.ru.md](../docs/architecture/two-tier-plasticity.ru.md) и [SLEEP.ru.md](SLEEP.ru.md).
 
 ---
 
@@ -188,10 +191,12 @@ NOWA (агент-наблюдатель, не обучающийся в бодр
 │ strength: how often used     │
 │ affective valence: quality   │
 │                              │
-│ During sleep:                │
-│ ├─ Strengthen used habits    │
-│ ├─ Degrade unused ones       │
-│ └─ Reevaluate via affect     │
+│ Днём: только note_selection  │
+│   (следы силы 0)             │
+│ Во сне:                      │
+│ ├─ EMA по исходу             │
+│ ├─ degrade_unused (сон)      │
+│ └─ replay медленного аффекта │
 │                              │
 └──────────────────────────────┘
 ```
@@ -203,21 +208,18 @@ NOWA (агент-наблюдатель, не обучающийся в бодр
 │   Sleep Manager                    │
 ├────────────────────────────────────┤
 │                                    │
-│ ONLY learning mechanism           │
+│ Единственный писатель стабильного │
 │                                    │
-│ Process:                           │
-│  1. Select candidates              │
-│  2. Cluster similar experiences    │
-│  3. Abstract → patterns            │
-│  4. Store in cortex                │
-│  5. Forget unstable traces         │
-│  6. Apply neuromodulator effects   │
-│     ├─ DA: enhance consolidation  │
-│     ├─ HT: stabilize traces       │
-│     ├─ NE: form chains            │
-│     └─ CORT: increase forgetting   │
+│ Двухуровневый проход (раз за сон): │
+│  1. Capture κ лабильного Go/NoGo  │
+│  2. Компенсированный шаг η_eff    │
+│  3. EMA привычек + визиты         │
+│  4. Медленный аффект + внешние хуки│
 │                                    │
-│ Key: NO LEARNING during waking     │
+│ Затем циклы: replay стабильного Q, │
+│  кора, SHY, цепочки, SAC, …       │
+│                                    │
+│ Днём: только лабильные метки       │
 │                                    │
 └────────────────────────────────────┘
 ```
@@ -267,7 +269,8 @@ NOWA (агент-наблюдатель, не обучающийся в бодр
                   ↓
 8. Update affect & neuromodulators
                   ↓
-9. NO LEARNING happens yet
+9. Известный исход → только лабильный Q/Go/NoGo
+   (хосту нужен dt для затухания)
 ```
 
 ### Фаза 2: Сон (Sleep)
@@ -289,7 +292,8 @@ NOWA (агент-наблюдатель, не обучающийся в бодр
                   ↓
 6. Degrade unused habits
                   ↓
-7. ONLY NOW learning happens
+7. Обновление стабильного слоя (replay Q,
+   capture, привычки, кора, …)
 ```
 
 ---
@@ -311,7 +315,7 @@ AffectiveState ←→ Neuromodulators
               ↓
           Experience (stored)
               ↓
-           Sleep ← Only learning happens here
+           Sleep ← Стабильное обучение + capture
               ↓
          Consolidation (modified by neuromodulators)
               ↓

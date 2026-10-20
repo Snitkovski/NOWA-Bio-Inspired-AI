@@ -29,7 +29,31 @@ This document reflects the current implementation in:
 - `src/wakefulness.py`
 - `src/storage.py`
 
-Last verified: March 27, 2026.
+Last verified: October 20, 2026 (two-tier plasticity, issue #13).
+
+---
+
+## Host contract and plasticity
+
+The core does not choose when to sleep or how fast simulated time runs.
+
+| Obligation | API |
+|------------|-----|
+| Declare mean waking interval between sleeps | `PlasticityConfig(expected_wake_interval_s=...)` on `Agent(..., plasticity_config=...)` |
+| Advance host clock on each tick | `Agent.step(..., dt=seconds)` and/or `commit_executed_transition(..., dt=seconds)`, or `Agent.advance_time(dt)` |
+| Consolidate stable memory | `Agent.sleep(cycles=...)` (opens `learning_allowed()`) |
+| Register new action channels | `register_action_channel(action_id, ...)` — enters `initializing()` internally |
+| Seed stable weights after load | `with initializing(): ...` around direct writes |
+
+`PlasticityConfig` (`src/labile_layer.py`): defaults include `tau_labile_ratio=1.0`, `capture_kappa=0.5`, `eta_channel_sleep=0.08`, `eta_labile_channel=0.02`, `replay_priority_weights=(1.0, 0.5, 0.25, 0.25)`, `labile_epsilon=1e-6`. Resolved `η_L = 0.1 × alpha_reference` when `eta_labile_q` is unset.
+
+**Learning guard** (`src/learning_guard.py`): `NOWA_STRICT_LEARNING=1` (core tests) raises `WakingLearningError` on stable writes while awake; otherwise the write is skipped with a one-time log. `stable_fingerprint(agent)` hashes category-A parameters; `labile_snapshot(agent)` materializes labile offsets at `_host_clock_s`.
+
+Narrative: [docs/architecture/two-tier-plasticity.en.md](../docs/architecture/two-tier-plasticity.en.md), [SLEEP.en.md](SLEEP.en.md).
+
+### Контракт с хостом и пластичность
+
+Ядро не решает, когда спать и с какой скоростью идёт время. Таблица выше: `PlasticityConfig`, `dt` / `advance_time`, `sleep()`, `register_action_channel`, `initializing()`. Guard: `NOWA_STRICT_LEARNING`, `WakingLearningError`, `stable_fingerprint`, `labile_snapshot`. Текст: [two-tier-plasticity.ru.md](../docs/architecture/two-tier-plasticity.ru.md), [SLEEP.ru.md](SLEEP.ru.md).
 
 ---
 
@@ -44,41 +68,47 @@ def step(
     context_events: list,
     consequence: Event = None,
     intensity: float = 1.0,
-    reward: float = 0.0,
+    reward: Optional[float] = None,
     novelty: float = 0.0,
     conflict: float = 0.0,
     affective_inputs: dict = None,
+    decision_only: bool = False,
+    terminal: bool = False,
+    physiological_bias: dict = None,
+    dt: Optional[float] = None,
 ) -> str
 ```
 
 Behavior notes:
 1. Updates non-reward neuromodulator dynamics first (`update_from_signals(..., use_reward_for_dopamine=False)`).
-2. Uses current-step ACh for online ValueLayer update.
-3. Stores replay metadata in hippocampus experience:
+2. When `reward` is known, writes **labile** Q and Go/NoGo offsets only (`LabileLayer`); stable `ValueLayer` is unchanged until sleep. `reward=None` defers the labile write to feedback. `NaN` = unknown; `±inf` → `±1`.
+3. `dt` advances `_host_clock_s` and labile decay; if omitted, wall-clock fallback with a one-time warning.
+4. Does **not** use online `ValueLayer.update` while awake.
+5. Stores replay metadata in hippocampus experience:
    - `td_error_snapshot`
    - `replay_salience`
    - `replay_importance`
    - `acetylcholine_snapshot`
    - `encoding_strength`
-4. Dopamine is updated from TD delta after value update.
-5. Uses mandatory decision pipeline:
+6. Dopamine is updated from TD delta on effective values (labile path).
+7. Uses mandatory decision pipeline:
    - `ActionSelector.compute_pressures(...)`
    - `BasalGangliaGate.process(...)`
    - `ThalamicGate.select(...)`
-6. `ActionSelector.compute_pressures(...)` returns cortical/cognitive pressure only.
+8. `ActionSelector.compute_pressures(...)` returns cortical/cognitive pressure only.
    Affective and physiological modulation is applied in BG (single point of modulation).
-7. If all selector pressures are zero but context is non-empty, agent injects a tiny
+9. If all selector pressures are zero but context is non-empty, agent injects a tiny
    context bootstrap pressure (`0.12`) for one context-derived action candidate.
-8. `NO_ACTION` is valid when gated scores sum to zero (no random action fallback).
-9. ACC-like arbitration is applied between selector pressure and BG gating:
+10. `NO_ACTION` is valid when gated scores sum to zero (no random action fallback).
+11. ACC-like arbitration is applied between selector pressure and BG gating:
    - computes control mode and deltas from conflict/error metrics
    - modifies BG threshold/habit/exploration parameters only
    - never selects action directly
-10. Combined CER + ACC threshold shift is capped to prevent over-suppression resonance.
-11. Decision arbitration is applied after ACC and before BG selection:
+12. Combined CER + ACC threshold shift is capped to prevent over-suppression resonance.
+13. Decision arbitration is applied after ACC and before BG selection:
    - `DecisionArbitrator.arbitrate(...)` computes uncertainty and policy temperature
    - if mode is `DELIBERATIVE`, planning can re-shape pressure vector
-12. Deliberative planning contract:
+14. Deliberative planning contract:
     - uses similarity-filtered episodic memories for each action
     - computes memory rollout and imagined rollout, then blends by:
       `rollout_value = (1 - imagination_value_blend) * memory_rollout + imagination_value_blend * imagined_value`
@@ -89,7 +119,7 @@ Behavior notes:
     - exploration bonus is `planning_exploration_gain * (1 - confidence)`
     - action is skipped if `support < 0.05` or `confidence < planning_min_confidence`
     - planning modifies pressure vector only
-13. Hippocampal imagination contract:
+15. Hippocampal imagination contract:
     - global toggle: `imagination_enabled`
     - HIE-003 tree path: `Agent._generate_action_tree_imagination(...)` -> `HippocampalImagineEngine.generate_action_tree_imagination(...)`
     - HIE-002 structured fallback: `Agent._generate_structured_imagination(...)` -> `HippocampalImagineEngine.generate_structured_imagination(...)`
@@ -122,8 +152,15 @@ Behavior notes:
 def sleep(self, cycles: int = 3, sleep_duration_seconds: float = None) -> dict
 ```
 
-Delegates to `SleepManager.deep_sleep()` and returns aggregated sleep stats.
-If autonomous runtime is initialized, sleep also recovers autonomous energetic fatigue.
+Opens `learning_allowed()` and delegates to `SleepManager.deep_sleep()`. Stable-tier writers run here: two-tier capture/habits/visits/slow affect, then per-cycle replay of **stable Q**, cortex, SHY, SAC, etc. Returns aggregated stats (including `two_tier_consolidated` when present). If autonomous runtime is initialized, sleep also recovers autonomous energetic fatigue.
+
+### `Agent.advance_time(dt: float) -> float`
+
+Advances `_host_clock_s` and applies labile decay without a full `step`.
+
+### `Agent.register_action_channel(...)`
+
+Creates a basal-ganglia channel under `initializing()` (host seeding, not waking learning).
 
 ### `Agent.get_state() -> dict`
 Returns a combined snapshot. Diagnostics include:

@@ -4,6 +4,19 @@ Russian version: [LEARNING.ru.md](LEARNING.ru.md)
 
 **Status (27 September 2026).** A core document. The current scientific exposition of the complex, in Russian and in English, is [SCIENTIFIC_DESCRIPTION.en.md](SCIENTIFIC_DESCRIPTION.en.md). The text below retains the wording of its original drafting: a normative module contract or a laboratory record.
 
+## Two-tier plasticity (current core)
+
+The `Agent` in `src/` separates **fast labile tags** (written while awake, exponential decay) from **stable parameters** (Q/V, habits, Go/NoGo, cortex, slow affect — written only in `Agent.sleep()`). Selection uses effective values = stable + labile. The host passes `dt` (or calls `advance_time`) and `PlasticityConfig.expected_wake_interval_s`, and calls `sleep()` on its own schedule.
+
+Canonical reference: [docs/architecture/two-tier-plasticity.en.md](../docs/architecture/two-tier-plasticity.en.md). Sleep ordering: [SLEEP.en.md](SLEEP.en.md). Normative spec: [docs/specs/issue-13-two-tier-plasticity.md](../docs/specs/issue-13-two-tier-plasticity.md).
+
+Sections below describe an older selector-weight tutorial and the legacy GUI trainer; they do **not** define the core `Agent` learning contract after issue #13.
+
+## Двухуровневая пластичность (актуальное ядро)
+
+В `src/` **лабильные метки** пишутся днём и затухают; **стабильные параметры** — только в `Agent.sleep()`. Выбор по stable + labile. Хост передаёт `dt` / `advance_time`, задаёт `expected_wake_interval_s` и вызывает `sleep()`.
+
+Справочник: [two-tier-plasticity.ru.md](../docs/architecture/two-tier-plasticity.ru.md), [SLEEP.ru.md](SLEEP.ru.md), спека #13. Разделы ниже — устаревший tutorial по весам селектора, не контракт ядра.
 
 ## How does it work?
 
