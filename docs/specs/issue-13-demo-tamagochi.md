@@ -17,7 +17,8 @@ After load, `_bind_two_tier_host` constructs one core `Agent` (`self.nowa`) with
 
 - Every simulation tick supplies game `dt` on the host-clock contract.
 - Waking chain outcomes stay in the labile tier.
-- Stable parameters change only while a sleep behavior runs `SleepManager.deep_sleep` / `sleep_cycle` (both open `learning_allowed()`), plus the cage's own sleep writers, which are inside `learning_allowed()`.
+- Stable parameters change only while a sleep behavior runs `SleepManager.deep_sleep` / `sleep_cycle` (both open `learning_allowed()`). Go/NoGo and habit strength are written once, inside `deep_sleep`. The cage does not run a second BG step afterwards.
+- `SleepManager` is constructed with the cage `intent_memory`, and `_rewire_two_tier_host` sets that same object again. Capture's `apply_outcome` therefore updates the trace `note_selection` created.
 - Construction, JSON restore of channel weights, and registration of a new dynamic-chain channel run under `initializing()`.
 
 ## 2. Host time
@@ -53,11 +54,14 @@ Removed or redirected daytime stable writers:
 | --- | --- | --- |
 | `value_layer.update(mode="online")` on chain end | Stable Q. Production skipped it; strict mode raised `WakingLearningError` | Labile tag via `_record_known_outcome` |
 | `intent_memory.strengthen_trace` | Stable habit strength. Same skip / raise | `note_selection` (strength 0 until sleep) |
+| `intent_memory.record_trace` when a chain starts | Stable strength (`+= 1`). Strict mode raises `WakingLearningError`; the caller used to catch `Exception` and hide it | `note_selection` on the pre-chain context. That context is stored on the episode, so sleep `apply_outcome` updates the same trace. The call is not wrapped in `except Exception` |
 | `ActionChannel.update_weights` when `demo_training_mode` | Stable Go/NoGo/habit. Same skip / raise | Removed. The flag remains. The labile tag is the waking trace |
 | `eil.apply_learning_hooks` on an owner rating | Stable strategy weights. Same skip / raise | Rating is queued. `_flush_owner_feedback` runs inside `learning_allowed()` on the next light or deep sleep. Coefficients (`alpha=0.15`, `learning_rate=0.08`) are unchanged |
 | New dynamic-chain channel | New `ActionChannel` while awake | `nowa.register_action_channel`, which enters `initializing()` |
 
 `ActionChannel.record_outcome` still runs while awake. It updates selection counts, not `go_weight` / `nogo_weight` / `habit_strength`.
+
+After `deep_sleep` returns, the cage does not call `apply_sleep_learning` or `consolidate_habits`, and it does not replace channel objects. Those methods were a second Go/NoGo/habit step on the same night. Owner-rating flush still runs inside `learning_allowed()`. Intent traces are then modulated and `degrade_unused(0.85)` runs, after capture has already applied the outcome, so a strength-0 selection trace is not deleted before it is strengthened.
 
 Fast affect, neuromodulator levels, wakefulness, drives, and the scheduling cycles remain state and may move while awake.
 
@@ -76,13 +80,16 @@ Fast affect, neuromodulator levels, wakefulness, drives, and the scheduling cycl
 - `expected_wake_interval_s` is `10080`;
 - four waking `sim_step(1)` leave `stable_fingerprint(nowa)` unchanged, add `4` to `_host_clock_s`, and leave `_dt_warning_sent` false;
 - one waking chain outcome tags a channel offset and still does not change the fingerprint;
-- `_run_sleep_consolidation` changes the fingerprint.
+- `_run_sleep_consolidation` changes the fingerprint;
+- `sleep_manager.intent_memory` is the cage memory, and a strength-0 selection trace is still present with strength `> 0` after that sleep;
+- channel object identity and Go/NoGo/habit weights after `deep_sleep` match the weights after `_run_sleep_consolidation` returns;
+- starting a chain with `sim_step` does not raise `WakingLearningError`.
 
-The tamagochi suite under that variable must not raise `WakingLearningError`.
+An autouse fixture in that file counts `WakingLearningError` instances. If one was raised and caught, the test fails. The tamagochi suite under strict mode must not raise `WakingLearningError`.
 
 ## 6. Demo-specific (not a core requirement)
 
-- The cage does not subclass `Agent` and does not call `Agent.step` or `Agent.sleep`. `SleepManager.deep_sleep` is the stable writer, with the core agent attached as `_host_agent`, which is the path `deep_sleep` already uses for capture.
+- The cage does not subclass `Agent` and does not call `Agent.step` or `Agent.sleep`. `SleepManager.deep_sleep` is the only Go/NoGo and habit writer that night, with the core agent attached as `_host_agent` and the cage `intent_memory` on the manager.
 - Affective background, semantic emotions, emotional memory, emotional expectations, and conflict-arbitration outcome stats stay free-standing. `_stable_owner` is not set on them, so the guard does not treat them as the core stable tier. The live HUD and `test_additional_nowa_layers_update` still update them while awake. They are not part of `stable_fingerprint(nowa)` (that fingerprint reads the core agent's own copies, which the cage does not write).
 - `demo_training_mode` no longer changes stable weights during the day.
 - Owner ratings update strategy weights on the next sleep, not on the click.
@@ -98,9 +105,9 @@ The tamagochi suite under that variable must not raise `WakingLearningError`.
 
 1. Cage ticks pass game `dt` through `advance_time` and do not use the wall-clock fallback.
 2. `expected_wake_interval_s` is `10080`, not `3600`.
-3. Waking chain outcomes and owner ratings do not change `stable_fingerprint(nowa)`. Sleep through `_run_sleep_consolidation` does.
+3. Waking chain outcomes and owner ratings do not change `stable_fingerprint(nowa)`. Sleep through `_run_sleep_consolidation` does, once per night for Go/NoGo and habit, without replacing the channel object. The selection trace is strengthened by capture's `apply_outcome`.
 4. Channel restore and new channel registration run under `initializing()`.
-5. `pytest` of `Demo/Tamagochi Chinchilla` passes with and without `NOWA_STRICT_LEARNING=1`, with no `WakingLearningError`. `src/` is unchanged.
+5. `pytest` of `Demo/Tamagochi Chinchilla` passes with and without `NOWA_STRICT_LEARNING=1`. A swallowed `WakingLearningError` fails the host tests. `src/` is unchanged.
 
 ---
 
@@ -114,7 +121,8 @@ The tamagochi suite under that variable must not raise `WakingLearningError`.
 
 - Каждый тик симуляции передаёт игровой `dt` по контракту часов хоста.
 - Исход законченной цепочки остаётся в лабильном слое.
-- Стабильные параметры меняются только когда поведение сна вызывает `SleepManager.deep_sleep` / `sleep_cycle` (оба открывают `learning_allowed()`), плюс собственные писатели сна клетки, которые стоят внутри `learning_allowed()`.
+- Стабильные параметры меняются только когда поведение сна вызывает `SleepManager.deep_sleep` / `sleep_cycle` (оба открывают `learning_allowed()`). Go/NoGo и сила привычки пишутся один раз, внутри `deep_sleep`. Второго шага BG после этого клетка не делает.
+- `SleepManager` создаётся с `intent_memory` клетки, и `_rewire_two_tier_host` ставит тот же объект ещё раз. `apply_outcome` захвата поэтому обновляет след, который создал `note_selection`.
 - Создание, восстановление весов каналов из JSON и регистрация канала новой динамической цепочки идут под `initializing()`.
 
 ## 2. Время хоста
@@ -150,11 +158,14 @@ The tamagochi suite under that variable must not raise `WakingLearningError`.
 | --- | --- | --- |
 | `value_layer.update(mode="online")` в конце цепочки | Стабильное Q. В проде запись пропускалась; в строгом режиме — `WakingLearningError` | Лабильная метка через `_record_known_outcome` |
 | `intent_memory.strengthen_trace` | Стабильная сила привычки. То же пропускание / исключение | `note_selection` (сила 0 до сна) |
+| `intent_memory.record_trace` при старте цепочки | Стабильная сила (`+= 1`). В строгом режиме — `WakingLearningError`; вызывающий код ловил `Exception` и прятал его | `note_selection` по контексту до цепочки. Этот контекст пишется в эпизод, поэтому сонный `apply_outcome` обновляет тот же след. Вызов не обёрнут в `except Exception` |
 | `ActionChannel.update_weights` при `demo_training_mode` | Стабильные Go/NoGo/привычка. То же | Убрано. Флаг остаётся. Дневной след — лабильная метка |
 | `eil.apply_learning_hooks` на оценку владельца | Стабильные веса стратегий. То же | Оценка в очереди. `_flush_owner_feedback` внутри `learning_allowed()` на следующем лёгком или глубоком сне. Коэффициенты (`alpha=0.15`, `learning_rate=0.08`) те же |
 | Канал новой динамической цепочки | Новый `ActionChannel` днём | `nowa.register_action_channel`, он сам входит в `initializing()` |
 
 `ActionChannel.record_outcome` по-прежнему вызывается днём. Он обновляет счётчики выборов, не `go_weight` / `nogo_weight` / `habit_strength`.
+
+После возврата из `deep_sleep` клетка не вызывает `apply_sleep_learning` и `consolidate_habits` и не подменяет объекты каналов. Это был второй шаг Go/NoGo/привычки за ту же ночь. Сброс очереди оценок владельца по-прежнему внутри `learning_allowed()`. Следы намерения затем модулируются, и вызывается `degrade_unused(0.85)` — уже после того, как захват применил исход, поэтому след выбора с силой 0 не удаляется до усиления.
 
 Быстрый аффект, уровни нейромодуляторов, бодрствование, драйвы и циклы расписания остаются состоянием и могут меняться днём.
 
@@ -173,13 +184,16 @@ The tamagochi suite under that variable must not raise `WakingLearningError`.
 - `expected_wake_interval_s` равен `10080`;
 - четыре дневных `sim_step(1)` не меняют `stable_fingerprint(nowa)`, добавляют `4` к `_host_clock_s`, `_dt_warning_sent` остаётся ложным;
 - один дневной исход цепочки ставит канальную метку и всё ещё не меняет отпечаток;
-- `_run_sleep_consolidation` меняет отпечаток.
+- `_run_sleep_consolidation` меняет отпечаток;
+- `sleep_manager.intent_memory` — память клетки, и след выбора с силой 0 после этого сна имеет силу `> 0`;
+- идентичность объекта канала и веса Go/NoGo/привычки после `deep_sleep` совпадают с весами после возврата из `_run_sleep_consolidation`;
+- старт цепочки через `sim_step` не поднимает `WakingLearningError`.
 
-Набор тестов Tamagochi с этой переменной не должен поднимать `WakingLearningError`.
+Autouse-фикстура в этом файле считает экземпляры `WakingLearningError`. Если исключение подняли и поймали, тест падает. Набор Tamagochi в строгом режиме не должен поднимать `WakingLearningError`.
 
 ## 6. Специфика демо (не требование к ядру)
 
-- Клетка не наследует `Agent` и не вызывает `Agent.step` или `Agent.sleep`. Писатель стабильного слоя — `SleepManager.deep_sleep`, с ядерным агентом в `_host_agent`: этот путь `deep_sleep` уже использует для захвата.
+- Клетка не наследует `Agent` и не вызывает `Agent.step` или `Agent.sleep`. Единственный писатель Go/NoGo и привычки за эту ночь — `SleepManager.deep_sleep`, с ядерным агентом в `_host_agent` и `intent_memory` клетки на менеджере.
 - Аффективный фон, семантические эмоции, эмоциональная память, ожидания и статистика исходов арбитража конфликта остаются свободными слоями. `_stable_owner` на них не ставится, guard не считает их стабильным слоем ядра. Живой HUD и `test_additional_nowa_layers_update` по-прежнему обновляют их днём. В `stable_fingerprint(nowa)` их нет (отпечаток читает собственные копии ядерного агента, клетка их не пишет).
 - `demo_training_mode` больше не меняет стабильные веса днём.
 - Оценки владельца меняют веса стратегий на следующем сне, не по клику.
@@ -195,6 +209,6 @@ The tamagochi suite under that variable must not raise `WakingLearningError`.
 
 1. Тики клетки передают игровой `dt` через `advance_time` и не используют настенный fallback.
 2. `expected_wake_interval_s` равен `10080`, не `3600`.
-3. Дневные исходы цепочек и оценки владельца не меняют `stable_fingerprint(nowa)`. Сон через `_run_sleep_consolidation` меняет.
+3. Дневные исходы цепочек и оценки владельца не меняют `stable_fingerprint(nowa)`. Сон через `_run_sleep_consolidation` меняет Go/NoGo и привычку один раз за ночь, без подмены объекта канала. След выбора усиливает `apply_outcome` захвата.
 4. Восстановление каналов и регистрация нового канала идут под `initializing()`.
-5. `pytest` по `Demo/Tamagochi Chinchilla` проходит с `NOWA_STRICT_LEARNING=1` и без него, без `WakingLearningError`. `src/` не изменён.
+5. `pytest` по `Demo/Tamagochi Chinchilla` проходит с `NOWA_STRICT_LEARNING=1` и без него. Пойманный `WakingLearningError` роняет тесты хоста. `src/` не изменён.

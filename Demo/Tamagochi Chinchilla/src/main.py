@@ -529,6 +529,7 @@ class ChinchillaAgent:
         self.sleep_manager = SleepManager(
             hippocampus=self.hippocampus,
             cortex=self.cortex,
+            intent_memory=self.intent_memory,
             clustering_similarity_threshold=0.7,
             forget_stability_threshold=0.15,
         )
@@ -1051,6 +1052,8 @@ class ChinchillaAgent:
         setattr(sleep_manager, "labile", host.labile)
         setattr(sleep_manager, "plasticity", host.plasticity)
         setattr(sleep_manager, "_host_agent", host)
+        # Capture reads the manager, not the host, for habit EMA.
+        setattr(sleep_manager, "intent_memory", self.intent_memory)
 
     def _commit_waking_chain_outcome(
         self,
@@ -1072,8 +1075,10 @@ class ChinchillaAgent:
         if episode is not None:
             try:
                 episode.replay_action_id = action
-                if not getattr(episode, "context_events", None):
-                    episode.context_events = [action]
+                # Same context note_selection used, so sleep apply_outcome
+                # updates that trace instead of a second key.
+                context = list(getattr(self, "_chain_intent_context", None) or ["idle"])
+                episode.context_events = [str(item) for item in context]
             except Exception:
                 pass
         try:
@@ -1575,15 +1580,12 @@ class ChinchillaAgent:
             except Exception:
                 pass
 
-            # Selection only. Habit strength moves in sleep (apply_outcome).
-            try:
-                if hasattr(self.intent_memory, "note_selection"):
-                    self.intent_memory.note_selection(
-                        list(self._intent_context) or ["idle"],
-                        prev_chain,
-                    )
-            except Exception:
-                pass
+            # Same context as chain start. Strength stays 0 until sleep.
+            if hasattr(self.intent_memory, "note_selection"):
+                self.intent_memory.note_selection(
+                    list(getattr(self, "_chain_intent_context", None) or ["idle"]),
+                    prev_chain,
+                )
 
             # ── MemorySystem: record chain interaction ─────────────────
             try:
@@ -1818,15 +1820,11 @@ class ChinchillaAgent:
                 self.chain_start_affect = self.affect.get_state()
                 self._chain_value_state_before = self._collect_chain_state_snapshot(chain_name=chain)
 
-                # ── IntentMemory: record intent occurrence ────────────
-                try:
-                    self.intent_memory.record_trace(
-                        context=list(self._intent_context) or ["idle"],
-                        intent_type=chain,
-                    )
-                    self._intent_context = [chain]   # new context = current chain
-                except Exception:
-                    pass
+                # Selection only. record_trace would write stable strength.
+                context = list(self._intent_context) or ["idle"]
+                self._chain_intent_context = list(context)
+                self.intent_memory.note_selection(context, chain)
+                self._intent_context = [chain]
 
                 # ── MemorySystem: snapshot affect before chain ─────────
                 try:
@@ -3343,49 +3341,16 @@ class ChinchillaAgent:
                 source_experiences=count,
             )
 
-        # ── Task C: Adaptive BG learning rate via neuromodulators ────
-        lr_modifier     = self.neuromod.get_learning_rate_modifier()    # [0.5, 1.5]
-        forget_rate     = self.neuromod.get_forgetting_rate()           # [0.1, 0.9]
-        consolidation_s = self.neuromod.get_consolidation_strength()    # [0.5, 1.5]
-
-        adaptive_lr = max(0.01, min(0.15, 0.05 * lr_modifier))
-        adaptive_bg_learning = BasalGangliaLearning(learning_rate=adaptive_lr)
-
-        memories: Dict[str, List[Tuple[float, float, float, float]]] = {}
-        for chain, channel in self.bg_channels.items():
-            if channel.last_outcome is not None:
-                memories[chain] = [
-                    (
-                        float(channel.last_outcome),
-                        float(self.neuromod.dopamine),
-                        float(self.neuromod.cortisol),
-                        float(self.neuromod.serotonin),
-                    )
-                ]
-
-        # Sleep is the writer. apply_sleep_learning does not open the guard
-        # itself; this block does, so the night still learns. Owner ratings
-        # queued while awake land here too.
+        # Go/NoGo and habit strength are written once, inside deep_sleep.
+        # A second apply_sleep_learning would clone those channels and step
+        # them again. Owner ratings still need the sleep guard.
         from learning_guard import learning_allowed
 
         with learning_allowed():
             self._flush_owner_feedback()
-            updated = adaptive_bg_learning.apply_sleep_learning(
-                channels=list(self.bg_channels.values()),
-                memories=memories,
-                neuromodulators=self.neuromod,
-                forget_rate=max(0.001, min(0.05, forget_rate * 0.05)),
-            )
-            updated = adaptive_bg_learning.consolidate_habits(
-                updated,
-                self.neuromod.serotonin * consolidation_s,
-            )
-        for ch in updated:
-            self.bg_channels[ch.action_id] = ch
 
         self.logger.info(
-            f"[NOWA] Sleep: lr={adaptive_lr:.4f}(×{lr_modifier:.2f})  "
-            f"forget={forget_rate:.3f}  consolidation={consolidation_s:.2f}  "
+            f"[NOWA] Sleep: "
             f"DA={self.neuromod.dopamine:.2f} 5HT={self.neuromod.serotonin:.2f} "
             f"CORT={self.neuromod.cortisol:.2f}  "
             f"cortex_patterns={len(self.cortex.patterns)}"
