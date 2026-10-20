@@ -1,14 +1,55 @@
 # QA PR #44 — Tamagochi demo on two-tier plasticity
 
-Branch: `team/demo-tamagochi-two-tier` @ `bcf4f16` (code under review; this note is a later commit).
+Branch: `team/demo-tamagochi-two-tier`. Round 2 reviews `7442837`. Round 1 reviewed `bcf4f16`.
 PR: https://github.com/burlakovmb/NOWA-Bio-Inspired-AI/pull/44
 Base: `origin/main` @ `8971960`.
 Specs: `docs/specs/issue-13-two-tier-plasticity.md`, `docs/architecture/two-tier-plasticity.en.md`, `docs/specs/issue-13-demo-tamagochi.md`.
-Scope: one read of the diff, call-graph of the sleep guards, one daytime/sleep probe, and the pytest commands below. No full `Demo/` suite, no long sim, no seed loop. Product code was not edited.
 
-## Verdict
+## Round 2 — verdict
 
-**FAIL**
+**PASS**
+
+Commit `7442837` closes the three round-1 defects. Regression tests in `Demo/Tamagochi Chinchilla/tests/test_two_tier_host.py` fail if any of them comes back. `git diff --stat origin/main...HEAD -- src` is empty. Product code was not edited in this pass.
+
+### The three fixes
+
+1. Habit capture. `SleepManager` is constructed with the cage `intent_memory` (`main.py:532`) and `_rewire_two_tier_host` sets the same object (`:1056`). Probe: `sleep_manager.intent_memory is agent.intent_memory`. A strength-0 `note_selection(["idle"], "eating_and_grooming")` is still present after `_run_sleep_consolidation`, strength `0.0907` (floor is `0.08`). `test_sleep_capture_applies_intent_outcome` asserts the identity and `max(strength) > 0`.
+
+2. One channel write. `apply_sleep_learning` and `consolidate_habits` are gone (zero call sites). After `deep_sleep` the cage only flushes owner ratings (`:3344-3350`). Probe, channel `eating_and_grooming` from the committed save: before `(go 0.523348, nogo 0.454799, habit 0.046013)`; after `deep_sleep` and after `_run_sleep_consolidation` the same object and the same weights `(0.599256, 0.418173, 0.227433)`. Capture still moves the weights. `test_deep_sleep_is_the_only_channel_writer` asserts object id and the three weights are unchanged across that boundary.
+
+3. Waking `record_trace` is gone. Chain start calls `note_selection` (`:1823-1826`) and does not catch `Exception`. New traces stay at strength 0. `fail_if_waking_learning_error_was_caught` (`test_two_tier_host.py:17-40`) counts `WakingLearningError` even when a caller swallows it. `test_chain_start_does_not_write_stable_intent` starts a chain with `sim_step(0.1)`.
+
+No new daytime stable writer. Search of `main.py`: no `record_trace`, no `strengthen_trace`, no `update_weights`, no `value_layer.update(mode="online")` call. `apply_learning_hooks` remains only inside `_flush_owner_feedback`.
+
+### Consolidation still runs
+
+Owner rating 5 is queued by `_apply_training_feedback` and does not change logits or `stable_fingerprint` while awake. `_run_sleep_consolidation` clears the queue. `strategy_logits` move (sample `eating_and_grooming` logit `0.08`). Softmax weights stay uniform because every logit moves together. Channel habit still moves inside `deep_sleep` (0.046013 → 0.227433).
+
+### Both decays, one night
+
+`deep_sleep(cycles=2)` runs `degrade_unused(0.8)` twice, then the cage runs `degrade_unused(0.85)` (`:3296`) after capture. Measured after the whole night: new outcome trace `0.0907`, a trace seeded at `0.2` also `0.0907`, a trace seeded at `0.6` is `0.2722`. All stay above `0.08`. They are not deleted on that night.
+
+### Pytest
+
+Python 3.12.3, pytest 9.1.1, repo root.
+
+| Command | Result | Time |
+| --- | --- | --- |
+| `NOWA_STRICT_LEARNING=1 python3 -m pytest "Demo/Tamagochi Chinchilla" -q -p no:cacheprovider --tb=line` | **27 passed**, 15 warnings, exit 0 | 2.77 s |
+| `env -u NOWA_STRICT_LEARNING python3 -m pytest "Demo/Tamagochi Chinchilla" -q -p no:cacheprovider --tb=line` | **27 passed**, 15 warnings, exit 0 | 2.64 s |
+| `env -u NOWA_STRICT_LEARNING python3 -m pytest tests -q -p no:cacheprovider --tb=line` | **893 passed, 5 skipped**, 2 warnings, exit 0 | 194.57 s |
+
+No `WakingLearningError` in the Tamagochi output. The 15 warnings are the same pre-existing `PytestReturnNotNoneWarning`.
+
+### Remark
+
+A single rewarded outcome ends at `0.0907`. The next `_run_sleep_consolidation`, with that episode already consolidated, deletes it: the first `degrade_unused(0.8)` drops it under `0.08`. A trace seeded at `0.6` is not in that band. The host test only asserts strength `> 0` after one night.
+
+---
+
+## Round 1 — verdict
+
+**FAIL** at `bcf4f16`. Kept below as the record of that pass. Scope then: one read of the diff, the sleep-guard call graph, one daytime/sleep probe, and the pytest commands in this section. No full `Demo/` suite, no long sim, no seed loop. Product code was not edited.
 
 `src/` is unchanged. Game `dt` reaches the core once per `sim_step`. `expected_wake_interval_s` is `10080` and matches the cage pressure constants. The new host test passes, and both Tamagochi pytest modes exit 0.
 
@@ -161,15 +202,56 @@ The host test's four `sim_step(1)` calls run against the committed save (`tick_c
 
 # QA PR #44 — демо Tamagochi на двухуровневой пластичности
 
-Ветка: `team/demo-tamagochi-two-tier` @ `bcf4f16` (код под проверкой; эта заметка — следующий коммит).
+Ветка: `team/demo-tamagochi-two-tier`. Раунд 2 смотрит `7442837`. Раунд 1 смотрел `bcf4f16`.
 PR: https://github.com/burlakovmb/NOWA-Bio-Inspired-AI/pull/44
 База: `origin/main` @ `8971960`.
 Спеки: `docs/specs/issue-13-two-tier-plasticity.md`, `docs/architecture/two-tier-plasticity.en.md`, `docs/specs/issue-13-demo-tamagochi.md`.
-Объём: одно чтение diff, граф вызовов guard сна, один пробник дня и сна, и команды pytest ниже. Полного `Demo/` нет, длинной симуляции нет, перебора сидов нет. Продуктовый код не менялся.
 
-## Вердикт
+## Раунд 2 — вердикт
 
-**FAIL**
+**PASS**
+
+Коммит `7442837` закрывает три дефекта раунда 1. Регрессионные тесты в `Demo/Tamagochi Chinchilla/tests/test_two_tier_host.py` падают, если любой из них вернётся. `git diff --stat origin/main...HEAD -- src` пуст. Продуктовый код в этом проходе не менялся.
+
+### Три исправления
+
+1. Захват привычки. `SleepManager` создаётся с `intent_memory` клетки (`main.py:532`), `_rewire_two_tier_host` ставит тот же объект (`:1056`). Пробник: `sleep_manager.intent_memory is agent.intent_memory`. След `note_selection(["idle"], "eating_and_grooming")` с силой 0 после `_run_sleep_consolidation` на месте, сила `0.0907` (порог `0.08`). `test_sleep_capture_applies_intent_outcome` проверяет идентичность и `max(strength) > 0`.
+
+2. Одна запись канала. `apply_sleep_learning` и `consolidate_habits` убраны (ноль вызовов). После `deep_sleep` клетка только сбрасывает оценки владельца (`:3344-3350`). Пробник, канал `eating_and_grooming` из закоммиченного сохранения: до сна `(go 0.523348, nogo 0.454799, habit 0.046013)`; после `deep_sleep` и после `_run_sleep_consolidation` тот же объект и те же веса `(0.599256, 0.418173, 0.227433)`. Захват по-прежнему двигает веса. `test_deep_sleep_is_the_only_channel_writer` проверяет id объекта и три веса на этой границе.
+
+3. Дневного `record_trace` нет. Старт цепочки вызывает `note_selection` (`:1823-1826`) и не ловит `Exception`. Новые следы остаются с силой 0. `fail_if_waking_learning_error_was_caught` (`test_two_tier_host.py:17-40`) считает `WakingLearningError`, даже если вызывающий код его глотает. `test_chain_start_does_not_write_stable_intent` стартует цепочку через `sim_step(0.1)`.
+
+Новых дневных стабильных записей нет. Поиск по `main.py`: нет `record_trace`, нет `strengthen_trace`, нет `update_weights`, нет вызова `value_layer.update(mode="online")`. `apply_learning_hooks` остаётся только внутри `_flush_owner_feedback`.
+
+### Консолидация на месте
+
+Оценка 5 встаёт в очередь через `_apply_training_feedback` и днём не меняет логиты и `stable_fingerprint`. `_run_sleep_consolidation` очередь очищает. `strategy_logits` сдвигаются (пример: логит `eating_and_grooming` равен `0.08`). Веса softmax остаются равномерными, потому что все логиты сдвигаются вместе. Привычка канала по-прежнему двигается внутри `deep_sleep` (0.046013 → 0.227433).
+
+### Оба затухания за одну ночь
+
+`deep_sleep(cycles=2)` дважды вызывает `degrade_unused(0.8)`, затем клетка вызывает `degrade_unused(0.85)` (`:3296`) уже после захвата. После всей ночи: новый след исхода `0.0907`, след, посеянный на `0.2`, тоже `0.0907`, след, посеянный на `0.6`, равен `0.2722`. Все выше `0.08`. В эту ночь они не удаляются.
+
+### Pytest
+
+Python 3.12.3, pytest 9.1.1, корень репозитория.
+
+| Команда | Результат | Время |
+| --- | --- | --- |
+| `NOWA_STRICT_LEARNING=1 python3 -m pytest "Demo/Tamagochi Chinchilla" -q -p no:cacheprovider --tb=line` | **27 passed**, 15 предупреждений, код 0 | 2.77 с |
+| `env -u NOWA_STRICT_LEARNING python3 -m pytest "Demo/Tamagochi Chinchilla" -q -p no:cacheprovider --tb=line` | **27 passed**, 15 предупреждений, код 0 | 2.64 с |
+| `env -u NOWA_STRICT_LEARNING python3 -m pytest tests -q -p no:cacheprovider --tb=line` | **893 passed, 5 skipped**, 2 предупреждения, код 0 | 194.57 с |
+
+В выводе Tamagochi `WakingLearningError` нет. 15 предупреждений — прежний `PytestReturnNotNoneWarning`.
+
+### Замечание
+
+Один награждённый исход заканчивается на `0.0907`. Следующий `_run_sleep_consolidation`, когда эпизод уже консолидирован, этот след удаляет: первый `degrade_unused(0.8)` опускает его ниже `0.08`. След, посеянный на `0.6`, в этой полосе не оказывается. Тест хоста проверяет только силу `> 0` после одной ночи.
+
+---
+
+## Раунд 1 — вердикт
+
+**FAIL** на `bcf4f16`. Ниже — запись того прохода. Объём тогда: одно чтение diff, граф вызовов guard сна, один пробник дня и сна, и команды pytest в этом разделе. Полного `Demo/` нет, длинной симуляции нет, перебора сидов нет. Продуктовый код не менялся.
 
 `src/` не изменён. Игровой `dt` доходит до ядра один раз за `sim_step`. `expected_wake_interval_s` равен `10080` и совпадает с константами давления клетки. Новый тест хоста проходит, оба режима pytest Tamagochi завершаются с кодом 0.
 
