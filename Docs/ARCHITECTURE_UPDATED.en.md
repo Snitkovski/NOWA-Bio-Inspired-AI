@@ -668,17 +668,7 @@ Selected action = argmax(Net_pressure) via softmax
 
 ### Learning: Habit Strength
 
-Habits are learned ONLY during sleep through:
-
-```
-For successful actions:
-  habit_strength += 0.05 × dopamine × success_history
-
-For unsuccessful actions:
-  habit_strength × 0.95  (slow decay)
-```
-
-Maximum habit strength: 0.6 (intentional limit prevents over-specialization)
+Waking outcomes do not change habit trace strength (only `note_selection` may create strength-0 traces). During sleep, issue #13 consolidation applies outcome-gated EMA: `habit_delta = 0.20 × clamp(affect_gain_at_encoding, 0.25, 1.5) × (target − strength)` with `target ∈ {0,1}` from reward sign, plus `intent_memory.apply_outcome` for context habits. Stable Go/NoGo use κ capture of labile tags and a compensated step `η_eff = eta_channel_sleep − capture_kappa × eta_labile_channel` (defaults **0.07**). See [docs/architecture/two-tier-plasticity.en.md](../docs/architecture/two-tier-plasticity.en.md).
 
 ### Integration with Neuromodulators
 

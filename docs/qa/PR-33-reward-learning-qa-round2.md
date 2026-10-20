@@ -1,5 +1,7 @@
 # QA круг 2: PR #33 — повторная проверка исправлений
 
+> **Superseded by issue #13 two-tier plasticity** — see `docs/qa/PR-33-reward-learning-qa.md` header. / **Заменено #13** — см. заголовок `PR-33-reward-learning-qa.md`.
+
 Ветка: `team/issue-32-reward-learning` (после `2efdb6b`)
 PR: https://github.com/burlakovmb/NOWA-Bio-Inspired-AI/pull/33
 Продуктовый код не менялся. QA-файл `tests/test_qa_issue32_reward_learning.py` между `09c997e` и `HEAD` не отличается (`git diff` пустой): ассерты не ослаблялись.

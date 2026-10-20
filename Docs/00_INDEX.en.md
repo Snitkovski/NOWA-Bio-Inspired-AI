@@ -19,6 +19,8 @@ Russian version: [00_INDEX.ru.md](00_INDEX.ru.md)
 
 ### Architecture and Design
 - **[ARCHITECTURE.md](ARCHITECTURE.en.md)** - Overall system architecture
+- **[Two-tier plasticity](../docs/architecture/two-tier-plasticity.en.md)** - Labile vs stable learning (issue #13)
+- **[SLEEP.md](SLEEP.en.md)** - Sleep consolidation order and parameters
 - **[ARCHITECTURE_UPDATED.md](ARCHITECTURE_UPDATED.en.md)** - Current architecture map (EDPC + Phase 6)
 - **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.en.md)** - Project folder structure
 - **[EXECUTIVE_SUMMARY.md](EXECUTIVE_SUMMARY.en.md)** - High-level overview of the system
