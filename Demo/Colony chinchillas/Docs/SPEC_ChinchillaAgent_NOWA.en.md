@@ -4,6 +4,8 @@ Russian version: [SPEC_ChinchillaAgent_NOWA.ru.md](SPEC_ChinchillaAgent_NOWA.ru.
 
 Scientific account of the colony: [COLONY_SPEC.en.md](COLONY_SPEC.en.md).
 
+Two-tier plasticity for this demo (game `dt`, labile waking writes, stable writes only in `Agent.sleep`) is specified in [issue-13-demo-colony.md](../../../docs/specs/issue-13-demo-colony.md).
+
 This document describes the current implementation of `ChinchillaAgent`, which extends the base NOWA agent into an autonomous individual of the chinchilla colony. An instance joins the cognitive action-selection cycle to colony-specific social and reproductive behaviour, to the physiological constraints of hunger, thirst, and wakefulness, and to interaction with the cage's shared resources. Each individual is an agent in its own right, not an outer wrapper around a decision made elsewhere.
 
 The specification states the constructor contract, the composition of the hippocampal, cortical, action-selection, intention-memory, and sleep modules, and the loading of a behavioural profile. The order of `sim_step` carries perception and context events, reward evaluation, action selection by the NOWA stack, reflex and homeostatic override, zone interpretation, the social step, metabolism, ageing, reproduction, and the sleep-transition check. Critical needs force an action, and actions are blocked when the corresponding need is absent.

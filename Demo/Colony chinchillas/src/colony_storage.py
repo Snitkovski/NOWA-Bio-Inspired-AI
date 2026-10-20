@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 from agent_knowledge import HearsayItem, InteractionEpisode, KnownAgent
 from colony_agent import ChinchillaAgent
 from heat_cycle import HeatCycle
+from learning_guard import initializing
 from shared_resources import SharedResources
 from social_layer import PendingOffer
 
@@ -265,6 +266,20 @@ class ColonyStorage:
             position=str(runtime.get("position", "floor")),
         )
 
+        # Restoring a saved individual is host initialization, not waking learning.
+        with initializing():
+            self._restore_saved_agent(agent, runtime, affect, reproduction, payload, resources)
+        return agent
+
+    def _restore_saved_agent(
+        self,
+        agent: ChinchillaAgent,
+        runtime: dict[str, Any],
+        affect: dict[str, Any],
+        reproduction: dict[str, Any],
+        payload: dict[str, Any],
+        resources: SharedResources,
+    ) -> None:
         agent.sim_time = _f(runtime.get("sim_time", 0.0))
         agent.current_action = str(runtime.get("current_action", "idle"))
         agent.is_sleeping = bool(runtime.get("is_sleeping", False))
@@ -312,8 +327,6 @@ class ColonyStorage:
             str(key): self._deserialize_known(dict(item))
             for key, item in knowledge_payload.items()
         }
-
-        return agent
 
     def _serialize_pending_offer(self, pending: PendingOffer | None) -> dict[str, Any] | None:
         if pending is None:
