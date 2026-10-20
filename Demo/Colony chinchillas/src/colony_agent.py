@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import random
 import re
 import sys
@@ -25,10 +26,13 @@ from cortex import CortexMemory
 from genome import GenomeVector
 from hippocampus import NOWAHippocampus
 from intent_memory import IntentMemory, IntentTrace
+from labile_layer import PlasticityConfig
+from learning_guard import initializing
 from mortality import MortalitySystem
 from reproduction import ReproductiveSystem
 from selector import ActionSelector
 from sleep import SleepManager
+from wakefulness import WakefulnessState
 
 from agent_knowledge import (
     HearsayItem,
@@ -96,6 +100,33 @@ RESOURCE_MISSING_ENERGY_PENALTY_PER_S = 0.02
 WATER_MISSING_ENERGY_PENALTY_PER_S = 0.015
 
 
+def colony_expected_wake_interval_s() -> float:
+    """Mean simulation seconds awake between one sleep bout and the next.
+
+    Sleep starts at ``SLEEP_WAKEFULNESS_THRESHOLD`` and waking resumes at
+    that level times ``SLEEP_HYSTERESIS``. Each simulation second contributes
+    ``WAKEFULNESS_ACCUMULATION_FACTOR`` physiological seconds, and
+    physiological sleep pressure climbs at ``WakefulnessState.ACCUMULATION_RATE``.
+    The value uses the same seconds ``sim_step`` passes as ``dt``.
+    """
+    span = SLEEP_WAKEFULNESS_THRESHOLD * (1.0 - SLEEP_HYSTERESIS)
+    per_sim_second = WAKEFULNESS_ACCUMULATION_FACTOR * float(WakefulnessState.ACCUMULATION_RATE)
+    if per_sim_second <= 0.0:
+        return 3600.0
+    return span / per_sim_second
+
+
+def _host_dt(dt: float) -> float:
+    """Game seconds for one tick. Never omitted, so the core clock does not use the wall."""
+    try:
+        elapsed = float(dt)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(elapsed) or elapsed < 0.0:
+        return 0.0
+    return elapsed
+
+
 def _clamp(value: float, lower: float, upper: float) -> float:
     return max(lower, min(upper, value))
 
@@ -154,6 +185,9 @@ class ChinchillaAgent(Agent):
             sleep_manager=sleep_manager,
             intent_memory=intent_memory,
             rng_seed=rng_seed,
+            plasticity_config=PlasticityConfig(
+                expected_wake_interval_s=colony_expected_wake_interval_s(),
+            ),
         )
 
         # Ensure neuromodulator baselines exist (guard against zeroing by factories/loaders)
@@ -274,9 +308,10 @@ class ChinchillaAgent(Agent):
 
         if genome is not None:
             try:
-                AgentFactory(AgentConfig(actions=list(self.base_abilities)))._apply_genome_to_agent(
-                    self, genome.to_agent_params()
-                )
+                with initializing():
+                    AgentFactory(AgentConfig(actions=list(self.base_abilities)))._apply_genome_to_agent(
+                        self, genome.to_agent_params()
+                    )
             except Exception:
                 pass
 
@@ -434,6 +469,11 @@ class ChinchillaAgent(Agent):
         novelty = self._compute_novelty()
         conflict = self._compute_conflict()
         intensity = self._compute_intensity()
+        host_dt = _host_dt(dt)
+        # One game dt per tick. step() moves the host clock; the paired
+        # commit omits dt so the same tick is not counted twice. Ticks that
+        # do not call step() advance the clock explicitly.
+        advanced_by_step = False
         if self._should_continue_sleeping():
             # Mandatory recovery: the core is not asked, and the episode
             # records that the body kept sleep.
@@ -457,7 +497,9 @@ class ChinchillaAgent(Agent):
                 intensity=intensity,
                 decision_only=True,
                 physiological_bias=drive_bias or None,
+                dt=host_dt,
             )
+            advanced_by_step = True
             executed, overridden, override_source = self._resolve_executed_action(
                 str(decided_action or "idle"),
                 context_events,
@@ -467,6 +509,8 @@ class ChinchillaAgent(Agent):
         self._social_step()
         self._apply_sleep_recovery(dt)
         reward = self._compute_reward(before=before, executed_action=executed)
+        if not advanced_by_step:
+            self.advance_time(host_dt)
         self.commit_executed_transition(
             action=executed,
             reward=reward,
@@ -899,6 +943,11 @@ class ChinchillaAgent(Agent):
                 self.current_action = "rest"
 
     def _seed_habit_bootstrap(self) -> None:
+        """Dataset priors are host seeding, not a waking habit update."""
+        with initializing():
+            self._write_habit_bootstrap()
+
+    def _write_habit_bootstrap(self) -> None:
         intent_memory = getattr(self, "intent_memory", None)
         if intent_memory is None:
             return
@@ -1912,11 +1961,12 @@ class ChinchillaAgent(Agent):
                 from agent_factory import AgentConfig as LocalAgentConfig
                 from agent_factory import AgentFactory as LocalAgentFactory
 
-                LocalAgentFactory(
-                    LocalAgentConfig(actions=list(self.base_abilities))
-                )._apply_genome_to_agent(
-                    self, params
-                )
+                with initializing():
+                    LocalAgentFactory(
+                        LocalAgentConfig(actions=list(self.base_abilities))
+                    )._apply_genome_to_agent(
+                        self, params
+                    )
             except Exception:
                 pass
 
