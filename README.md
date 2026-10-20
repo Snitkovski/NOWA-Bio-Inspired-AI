@@ -208,6 +208,12 @@ Modification, redistribution and any commercial use require a separate commercia
 Commercial licensing: GitHub [@burlakovmb](https://github.com/burlakovmb).
 If you use this in research, see [CITATION.cff](CITATION.cff).
 
+### Contributing / Участие
+
+Contributions are accepted only by individual invitation from the maintainer. If invited, contribute via a public fork and pull request. Your contribution is governed by [CONTRIBUTOR_LICENSE.md](CONTRIBUTOR_LICENSE.md). The project’s source code remains licensed under [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0); see [LICENSE](LICENSE).
+
+Участие возможно только по индивидуальному приглашению от сопровождающего. Приглашённым контрибьюторам следует работать через публичный форк и pull request. Условия участия заданы в [CONTRIBUTOR_LICENSE.md](CONTRIBUTOR_LICENSE.md). Исходный код проекта по-прежнему распространяется по [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0); полный текст — в [LICENSE](LICENSE).
+
 ---
 
 <a id="ru"></a>
