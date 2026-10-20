@@ -24,6 +24,8 @@ def test_agent_updates_semantic_emotions():
     _make_deterministic(agent)
 
     agent.step(["ctx"], affective_inputs={"pleasure": 0.5, "arousal": 0.5})
+    # Semantic emotions are a slow statistic. The step records them; sleep writes them.
+    agent.sleep(cycles=1)
 
     assert hasattr(agent, "semantic_emotions")
     active = agent.semantic_emotions.snapshot()

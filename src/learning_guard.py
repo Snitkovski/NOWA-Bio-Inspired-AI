@@ -184,6 +184,37 @@ def _value_rows(agent: Any) -> dict:
     return {"values": value_rows, "expectation_memory": expectation_rows}
 
 
+def _temporal_chain_rows(agent: Any) -> list:
+    """Learned sleep chains. Wall-clock stamps are not part of the structure."""
+    sleep = getattr(agent, "sleep_manager", None)
+    memory = getattr(sleep, "chain_memory", None)
+    chains = getattr(memory, "chains", None)
+    if not isinstance(chains, dict):
+        return []
+    rows = []
+    for signature, chain in chains.items():
+        try:
+            sig = [str(item) for item in tuple(signature)]
+        except TypeError:
+            sig = [str(signature)]
+        try:
+            net_affect = float(getattr(chain, "net_affect", 0.0))
+            stability = float(getattr(chain, "stability", 0.0))
+            usage = int(getattr(chain, "usage_count", 0))
+        except (TypeError, ValueError):
+            continue
+        rows.append(
+            {
+                "signature": sig,
+                "net_affect": net_affect,
+                "stability": stability,
+                "usage_count": usage,
+            }
+        )
+    rows.sort(key=lambda row: row["signature"])
+    return rows
+
+
 def _cortex_rows(agent: Any) -> list:
     cortex = getattr(agent, "cortex", None)
     patterns = getattr(cortex, "patterns", None)
@@ -259,11 +290,94 @@ def _strategy_rows(agent: Any) -> dict:
     }
 
 
+def guard_owned_writer(layer: Any, writer: str) -> bool:
+    """Sleep-only check for a layer the agent has bound as stable.
+
+    A free-standing layer (unit tests, construction before bind) is not the
+    agent's stable tier and may run its update. Once ``_stable_owner`` is
+    set, the same method is a stable writer.
+    """
+    if getattr(layer, "_stable_owner", None) is None:
+        return True
+    return assert_learning_allowed(writer)
+
+
+def _slow_affect_rows(agent: Any) -> dict:
+    """Category A item 7. Fast affect position and regulation output stay out.
+
+    Wall-clock stamps are not parameters. Outcome statistics of conflict
+    arbitration are included; the per-step control mode is state.
+    """
+    background = getattr(agent, "affective_background", None)
+    semantic = getattr(agent, "semantic_emotions", None)
+    memory = getattr(agent, "emotional_memory", None)
+    expectations = getattr(agent, "emotional_expectations", None)
+    arbitration = getattr(agent, "conflict_arbitration", None)
+    background_rows = {}
+    if background is not None and hasattr(background, "snapshot"):
+        try:
+            background_rows = dict(background.snapshot() or {})
+        except Exception:
+            background_rows = {}
+    semantic_rows = []
+    if semantic is not None and hasattr(semantic, "snapshot"):
+        try:
+            for item in list(semantic.snapshot() or []):
+                if not isinstance(item, dict):
+                    continue
+                semantic_rows.append(
+                    {
+                        "emotion": str(item.get("emotion", "")),
+                        "activation": float(item.get("activation", 0.0)),
+                        "stability": float(item.get("stability", 0.0)),
+                        "obsessive": bool(item.get("obsessive", False)),
+                    }
+                )
+        except Exception:
+            semantic_rows = []
+    memory_rows = {}
+    if memory is not None and hasattr(memory, "snapshot"):
+        try:
+            raw = dict(memory.snapshot() or {})
+            raw.pop("last_update_ts", None)
+            memory_rows = raw
+        except Exception:
+            memory_rows = {}
+    expectation_rows = {}
+    if expectations is not None and hasattr(expectations, "snapshot"):
+        try:
+            raw = dict(expectations.snapshot() or {})
+            raw.pop("last_update_ts", None)
+            expectation_rows = raw
+        except Exception:
+            expectation_rows = {}
+    failure_rows = {}
+    if arbitration is not None:
+        try:
+            failure_rows = {
+                "recent_failure_rate": float(getattr(arbitration, "recent_failure_rate", 0.0)),
+                "recent_failures": [float(item) for item in list(getattr(arbitration, "recent_failures", []) or [])],
+                "error_history_window": [
+                    float(item) for item in list(getattr(arbitration, "error_history_window", []) or [])
+                ],
+            }
+        except Exception:
+            failure_rows = {}
+    return {
+        "affective_background": background_rows,
+        "semantic_emotions": semantic_rows,
+        "emotional_memory": memory_rows,
+        "emotional_expectations": expectation_rows,
+        "conflict_outcome_stats": failure_rows,
+    }
+
+
 def stable_payload(agent: Any) -> dict:
     """Canonical category-A payload.
 
-    Slow affective statistics stay out of this hash until sleep owns them
-    (core decision 3, consolidation PR). Waking still updates affect state.
+    Slow affective statistics are included. They change only inside sleep.
+    Fast affect position, valence/arousal, and regulation output stay out:
+    those are state and still move while awake.
     """
     return {
         "value_layer": _value_rows(agent),
@@ -271,7 +385,9 @@ def stable_payload(agent: Any) -> dict:
         "intent_strengths": _trace_strengths(agent),
         "channels": _channel_rows(agent),
         "cortex": _cortex_rows(agent),
+        "temporal_chains": _temporal_chain_rows(agent),
         "strategies": _strategy_rows(agent),
+        "slow_affect": _slow_affect_rows(agent),
     }
 
 

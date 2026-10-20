@@ -256,8 +256,9 @@ class SleepManager:
         Execute one sleep cycle.
 
         Consolidates hippocampal experiences to cortex and refreshes
-        intent_memory. This is a stable-tier writer: the labile tier is
-        not consolidated here (that capture step is a later change).
+        intent_memory. Capture, habit EMA and episode Go/NoGo run once
+        per ``deep_sleep``, not once per cycle. Replay may revisit a
+        transition inside that same sleep.
         """
         from learning_guard import learning_allowed
 
@@ -349,6 +350,10 @@ class SleepManager:
         # 1. Get candidates for consolidation
         min_reinforcement = max(1, int(getattr(self, "min_reinforcement_for_consolidation", 1)))
         candidates = self.hippocampus.get_candidates_for_sleep(min_reinforcement=min_reinforcement)
+        # An episode already consolidated (and not revised since) is not
+        # replayed again. The sleep that consolidates it has not marked it
+        # yet, so the cycles of that sleep still see it.
+        candidates = [exp for exp in list(candidates or []) if not self._consolidation_closed(exp)]
         stats["candidates"] = len(candidates)
         stats["total_episodes_examined"] = len(candidates)
         stats["mean_ach_during_cycle"] = float(self._estimate_mean_ach(candidates))
@@ -1262,7 +1267,11 @@ class SleepManager:
                 continue
 
             td_variance = self._episode_td_variance(exp)
-            if td_variance > td_variance_cap:
+            # A rating changed after consolidation is a fresh observation.
+            # The stored TD history still holds the previous reward, so its
+            # variance is not the noise of this correction.
+            revision_correction = bool(getattr(exp, "consolidated", False)) and not self._consolidation_closed(exp)
+            if td_variance > td_variance_cap and not revision_correction:
                 rejection_counts["rejected_due_to_td_variance"] += 1
                 continue
 
@@ -1404,19 +1413,46 @@ class SleepManager:
         priority *= (1.0 + (ach_gain * ach_effective * variance_gate))
 
         priority_cap = max(float(self.replay_priority_min), float(getattr(self, "replay_priority_cap", 3.0)))
-        return min(priority, priority_cap)
+        capped = min(priority, priority_cap)
+        # Decision 15 extends this score. The four-term priority is the
+        # consolidation order. It is not folded into the capped return:
+        # ACh and shock comparisons sit near the cap, and adding |δ| again
+        # would flatten them. ``consolidation_order`` reads the spec term.
+        try:
+            exp.two_tier_replay_priority = float(self.spec_replay_priority(exp))
+        except Exception:
+            pass
+        return capped
 
     def _apply_replay_td_bg(self, replay_sample: List, value_variance: Optional[float] = None) -> Dict[str, float]:
-        """Stable TD/BG replay. Opens the learning guard for direct callers."""
-        from learning_guard import learning_allowed
+        """Replay stable Q only. Does not open the learning guard.
 
-        with learning_allowed():
-            return self._apply_replay_td_bg_unlocked(replay_sample, value_variance)
+        ``Agent.sleep`` / ``sleep_cycle`` already hold the guard. A daytime
+        call raises in strict mode and skips the write in production.
+        Go/NoGo and habit-channel weights are not updated here (decision 13):
+        those move only in the once-per-sleep capture plus compensated step.
+        """
+        from learning_guard import assert_learning_allowed
+
+        if not assert_learning_allowed("SleepManager._apply_replay_td_bg"):
+            return {
+                "value_delta_total": 0.0,
+                "weight_delta_total": 0.0,
+                "total_value_delta_sleep": 0.0,
+                "total_bg_delta_sleep": 0.0,
+                "sleep_update_count": 0,
+                "replay_blocked": False,
+                "replays_applied": 0,
+                "sleep_update_l2_total": 0.0,
+                "mean_consolidation_score": 0.0,
+                "eligibility_trace_mean": 0.0,
+                "credit_window_usage": 0.0,
+                "replay_causality_mean": 0.0,
+            }
+        return self._apply_replay_td_bg_unlocked(replay_sample, value_variance)
 
     def _apply_replay_td_bg_unlocked(self, replay_sample: List, value_variance: Optional[float] = None) -> Dict[str, float]:
         value_layer = getattr(self, "value_layer", None)
-        bg_channels = getattr(self, "bg_action_channels", None)
-        bg_learning = getattr(self, "bg_learning", None)
         if value_layer is None:
             return {
                 "value_delta_total": 0.0,
@@ -1455,12 +1491,6 @@ class SleepManager:
         # value_variance is retained for callers. Replay no longer scales
         # updates by the spread of V across states.
         _ = value_variance
-
-        beta_online = float(getattr(bg_learning, "learning_rate", 0.05)) if bg_learning is not None else 0.05
-        beta_cap = max(0.0, beta_online - 1e-6)
-        decay_for_beta = max(0.0, min(0.2, float(getattr(self, "decay_rate_sleep", 0.0))))
-        beta_floor = min(beta_cap, decay_for_beta * 2.5)
-        beta_sleep = min(beta_cap, max(float(self.beta_sleep), beta_floor))
 
         value_delta_total = 0.0
         value_delta_sq_total = 0.0
@@ -1613,47 +1643,8 @@ class SleepManager:
             except Exception:
                 pass
 
-            # BG reinforcement from clipped TD with caps.
-            if isinstance(bg_channels, dict) and bg_channels:
-                action_id = self._extract_action_id(exp)
-                if action_id and action_id in bg_channels:
-                    channel = bg_channels[action_id]
-                    if td_error > 1e-12:
-                        go_scale = 1.15
-                        nogo_scale = 0.85
-                    elif td_error < -1e-12:
-                        go_scale = 0.85
-                        nogo_scale = 1.15
-                    else:
-                        go_scale = 1.0
-                        nogo_scale = 1.0
-
-                    go_delta = beta_sleep * go_scale * td_error
-                    nogo_delta = -beta_sleep * nogo_scale * td_error
-                    habit_delta = beta_sleep * td_error * 0.2
-                    for delta_name, delta_value in (
-                        ("go", go_delta),
-                        ("nogo", nogo_delta),
-                        ("habit", habit_delta),
-                    ):
-                        if abs(delta_value) > float(self.delta_weight_max_per_sleep):
-                            clipped = math.copysign(float(self.delta_weight_max_per_sleep), delta_value)
-                            if delta_name == "go":
-                                go_delta = clipped
-                            elif delta_name == "nogo":
-                                nogo_delta = clipped
-                            else:
-                                habit_delta = clipped
-                    delta_l1 = abs(go_delta) + abs(nogo_delta) + abs(habit_delta)
-                    remaining_weight_budget = max(0.0, float(self.weight_total_cap) - weight_delta_total)
-                    if delta_l1 > remaining_weight_budget and delta_l1 > 0.0:
-                        scale = remaining_weight_budget / delta_l1
-                        go_delta *= scale
-                        nogo_delta *= scale
-                        habit_delta *= scale
-                        delta_l1 = remaining_weight_budget
-                    channel.update_weights(go_delta=go_delta, nogo_delta=nogo_delta, habit_delta=habit_delta)
-                    weight_delta_total += delta_l1
+            # Channel Go/NoGo and habit weights are not part of replay.
+            # They move once per episode in the capture + compensated step.
             if value_delta_total >= global_sleep_update_budget - 1e-12:
                 replay_blocked = True
                 break
@@ -2558,16 +2549,15 @@ class SleepManager:
             live.habit_strength = max(0.0, min(1.0, float(channel.habit_strength)))
 
     def _consolidate_bg_outcome_cache(self) -> None:
-        """Apply the outcome cache once, then consolidate habits.
+        """Legacy cache writer. ``deep_sleep`` does not call this.
 
-        ``deep_sleep`` calls this beside ``sleep_cycle``, so the stable-tier
-        guard is opened here for that path and for direct callers.
+        Outcomes come from episodes (decision 5). The method does not open
+        the learning guard; a waking call does not change stable weights.
         """
-        from learning_guard import learning_allowed, learning_is_open
+        from learning_guard import learning_is_open
 
         if not learning_is_open():
-            with learning_allowed():
-                return self._consolidate_bg_outcome_cache()
+            return None
 
         # apply_sleep_learning(..., forget_rate>0) still shrinks toward 0
         # for direct callers. The sleep path passes forget_rate=0 and lets
@@ -2734,6 +2724,278 @@ class SleepManager:
         
         return before - len(kept)
     
+    def _consolidation_closed(self, exp) -> bool:
+        if not bool(getattr(exp, "consolidated", False)):
+            return False
+        try:
+            revision = int(getattr(exp, "outcome_revision", 0) or 0)
+        except (TypeError, ValueError):
+            revision = 0
+        done = getattr(exp, "consolidated_revision", None)
+        if done is None:
+            return True
+        try:
+            return int(done) == revision
+        except (TypeError, ValueError):
+            return True
+
+    def _episode_reward_known(self, exp) -> bool:
+        if not bool(getattr(exp, "td_outcome_committed", False)):
+            return False
+        raw = getattr(exp, "td_committed_reward", None)
+        if raw is None:
+            return False
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            return False
+        return math.isfinite(value)
+
+    def _spec_priority_weights(self) -> Tuple[float, float, float, float]:
+        host = getattr(self, "_host_agent", None)
+        plasticity = getattr(self, "plasticity", None)
+        if plasticity is None and host is not None:
+            plasticity = getattr(host, "plasticity", None)
+        raw = getattr(plasticity, "replay_priority_weights", None)
+        try:
+            weights = tuple(float(item) for item in tuple(raw))
+        except (TypeError, ValueError):
+            weights = (1.0, 0.5, 0.25, 0.25)
+        if len(weights) != 4:
+            return (1.0, 0.5, 0.25, 0.25)
+        return weights  # type: ignore[return-value]
+
+    def spec_replay_priority(self, exp) -> float:
+        """wδ·|δ_now| + wr·|r| + wn·novelty + we·emotional_salience.
+
+        δ_now is recomputed on the current stable table. Equal scores are
+        broken by episode_id in ``consolidation_order``.
+        """
+        w_delta, w_reward, w_novelty, w_emotion = self._spec_priority_weights()
+        delta = abs(float(self._replay_signed_td(exp)))
+        reward = abs(float(self._offline_reward(exp)))
+        try:
+            novelty = float(getattr(exp, "novelty", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            novelty = 0.0
+        try:
+            emotion = float(getattr(exp, "emotional_salience", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            emotion = 0.0
+        if not math.isfinite(novelty):
+            novelty = 0.0
+        if not math.isfinite(emotion):
+            emotion = 0.0
+        novelty = max(0.0, min(1.0, novelty))
+        emotion = max(0.0, min(1.0, emotion))
+        score = (w_delta * delta) + (w_reward * reward) + (w_novelty * novelty) + (w_emotion * emotion)
+        if not math.isfinite(score):
+            return 0.0
+        return float(score)
+
+    def consolidation_order(self, episodes: List) -> List:
+        """Highest spec priority first. Ties break by episode_id."""
+
+        def _key(exp):
+            try:
+                priority = float(self.spec_replay_priority(exp))
+            except Exception:
+                priority = 0.0
+            return (-priority, str(getattr(exp, "episode_id", "") or ""))
+
+        return sorted(list(episodes or []), key=_key)
+
+    def _select_two_tier_batch(self) -> List:
+        experiences = list(getattr(getattr(self, "hippocampus", None), "experiences", []) or [])
+        pending = [
+            exp
+            for exp in experiences
+            if self._episode_reward_known(exp) and not self._consolidation_closed(exp)
+        ]
+        return self.consolidation_order(pending)
+
+    def _episode_context_events(self, exp) -> List[str]:
+        stored = getattr(exp, "context_events", None)
+        if isinstance(stored, (list, tuple)) and stored:
+            return [str(item) for item in stored]
+        events = []
+        for event in list(getattr(getattr(exp, "path", None), "events", []) or []):
+            name = str(getattr(event, "name", "") or "")
+            if name and not name.startswith("action:"):
+                events.append(name)
+        return events
+
+    def _host_now(self) -> float:
+        host = getattr(self, "_host_agent", None)
+        try:
+            return float(getattr(host, "_host_clock_s", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    def _bounded_affect_gain(self, exp) -> float:
+        try:
+            gain = float(getattr(exp, "affect_gain_at_encoding", 1.0))
+        except (TypeError, ValueError):
+            gain = 1.0
+        if not math.isfinite(gain):
+            gain = 1.0
+        return max(0.25, min(1.5, gain))
+
+    def _apply_episode_channel_and_habit(self, exp) -> None:
+        """Capture κ of the channel tag, then the compensated Go/NoGo step and habit EMA.
+
+        Q is cleared with the tag and is not copied into the stable table.
+        The sleep rate is η_c_sleep − κ·η_Lc so an undecayed tag plus this
+        step totals η_c_sleep. g_DA stays 1: the step is not scaled by dopamine.
+        """
+        try:
+            reward = float(getattr(exp, "td_committed_reward", 0.0))
+        except (TypeError, ValueError):
+            return
+        if not math.isfinite(reward):
+            return
+        action_id = self._extract_action_id(exp)
+        host = getattr(self, "_host_agent", None)
+        plasticity = getattr(self, "plasticity", None)
+        if plasticity is None and host is not None:
+            plasticity = getattr(host, "plasticity", None)
+        kappa = 0.5
+        eta_sleep = 0.08
+        eta_labile = 0.02
+        if plasticity is not None:
+            try:
+                kappa = float(getattr(plasticity, "capture_kappa", 0.5))
+                eta_sleep = float(getattr(plasticity, "eta_channel_sleep", 0.08))
+                eta_labile = float(getattr(plasticity, "eta_labile_channel", 0.02))
+            except (TypeError, ValueError):
+                kappa, eta_sleep, eta_labile = 0.5, 0.08, 0.02
+        if not math.isfinite(kappa):
+            kappa = 0.5
+        kappa = max(0.0, min(1.0, kappa))
+        eta_eff = eta_sleep - (kappa * eta_labile)
+        if not math.isfinite(eta_eff) or eta_eff < 0.0:
+            eta_eff = 0.0
+
+        labile = getattr(self, "labile", None)
+        if labile is None and host is not None:
+            labile = getattr(host, "labile", None)
+        now = self._host_now()
+        go_tag = 0.0
+        nogo_tag = 0.0
+        episode_id = str(getattr(exp, "episode_id", "") or "")
+        if labile is not None and episode_id and hasattr(labile, "remaining_channel"):
+            try:
+                go_tag, nogo_tag = labile.remaining_channel(episode_id, now)
+            except Exception:
+                go_tag, nogo_tag = 0.0, 0.0
+            try:
+                labile.pop_contribution(episode_id, now)
+            except Exception:
+                pass
+
+        channels = getattr(self, "bg_action_channels", None)
+        channel = channels.get(str(action_id)) if isinstance(channels, dict) and action_id else None
+        if channel is not None and hasattr(channel, "update_weights"):
+            if abs(float(go_tag)) > 0.0 or abs(float(nogo_tag)) > 0.0:
+                channel.update_weights(
+                    go_delta=kappa * float(go_tag),
+                    nogo_delta=kappa * float(nogo_tag),
+                )
+            if reward > 1e-12:
+                channel.update_weights(
+                    go_delta=eta_eff * reward,
+                    nogo_delta=-0.5 * eta_eff * reward,
+                )
+            elif reward < -1e-12:
+                magnitude = abs(reward)
+                channel.update_weights(
+                    go_delta=-0.5 * eta_eff * magnitude,
+                    nogo_delta=eta_eff * magnitude,
+                )
+            if abs(reward) >= 1e-12:
+                gain = self._bounded_affect_gain(exp)
+                target = 1.0 if reward > 0.0 else 0.0
+                current = float(getattr(channel, "habit_strength", 0.0))
+                channel.update_weights(habit_delta=(0.20 * gain) * (target - current))
+
+        memory = getattr(self, "intent_memory", None)
+        if memory is not None and hasattr(memory, "apply_outcome") and action_id and abs(reward) >= 1e-12:
+            memory.apply_outcome(
+                self._episode_context_events(exp),
+                str(action_id),
+                float(reward),
+                affect_gain=self._bounded_affect_gain(exp),
+            )
+
+    def _transfer_labile_visits(self) -> None:
+        """Move waking visit counters into the stable counts and reset them."""
+        host = getattr(self, "_host_agent", None)
+        if host is None:
+            return
+        labile = getattr(host, "labile", None)
+        counts = getattr(host, "_action_visit_counts", None)
+        if labile is None or not hasattr(labile, "take_visits") or not isinstance(counts, dict):
+            return
+        for key, count in labile.take_visits().items():
+            if not isinstance(key, tuple) or len(key) != 2:
+                continue
+            try:
+                add = int(math.floor(float(count) + 1e-9))
+            except (TypeError, ValueError):
+                continue
+            if add <= 0:
+                continue
+            token = (str(key[0]), str(key[1]))
+            counts[token] = int(counts.get(token, 0)) + add
+
+    def _consolidate_two_tier_once(self) -> None:
+        """One pass per sleep: capture, habits, Go/NoGo, slow stats, visits.
+
+        REM affect reduction is off (core decision 10). Q is learned only by
+        the replay that follows this pass. The legacy ``bg_sleep_memories``
+        cache is not read.
+        """
+        host = getattr(self, "_host_agent", None)
+        labile = getattr(self, "labile", None)
+        if labile is None and host is not None:
+            labile = getattr(host, "labile", None)
+        if labile is not None and hasattr(labile, "decay_to"):
+            try:
+                labile.decay_to(self._host_now())
+            except Exception:
+                pass
+        batch = self._select_two_tier_batch()
+        self._two_tier_batch = list(batch)
+        for exp in batch:
+            self._apply_episode_channel_and_habit(exp)
+        if host is not None and hasattr(host, "_flush_external_learning"):
+            host._flush_external_learning()
+        if host is not None and hasattr(host, "_replay_slow_affect"):
+            host._replay_slow_affect()
+        self._transfer_labile_visits()
+
+    def _mark_two_tier_batch(self) -> int:
+        batch = list(getattr(self, "_two_tier_batch", []) or [])
+        self._two_tier_batch = []
+        marked = 0
+        for exp in batch:
+            try:
+                reward = float(getattr(exp, "td_committed_reward", 0.0))
+            except (TypeError, ValueError):
+                reward = 0.0
+            if not math.isfinite(reward):
+                reward = 0.0
+            try:
+                revision = int(getattr(exp, "outcome_revision", 0) or 0)
+            except (TypeError, ValueError):
+                revision = 0
+            exp.consolidated = True
+            exp.consolidated_reward = float(reward)
+            exp.consolidated_revision = int(revision)
+            marked += 1
+        self._two_tier_marked = marked
+        return marked
+
     def deep_sleep(self, cycles: int = 3) -> dict:
         """
         Extended sleep with multiple consolidation cycles.
@@ -2813,7 +3075,15 @@ class SleepManager:
         }
         consolidation_score_weighted_sum = 0.0
         
-        self._consolidate_bg_outcome_cache()
+        # Once per sleep, before the cycles replay Q and down-scale.
+        # Steps 5–7 of the two-tier order run here; replay inside the
+        # cycles may still revisit the same transitions. The batch is
+        # marked consolidated after the cycles so this night can replay
+        # and the next night cannot.
+        from learning_guard import learning_allowed
+
+        with learning_allowed():
+            self._consolidate_two_tier_once()
 
         for _ in range(cycles):
             stats = self.sleep_cycle()
@@ -2927,7 +3197,9 @@ class SleepManager:
                 total_stats["phase_distribution"],
                 key=lambda phase_name: int(total_stats["phase_distribution"][phase_name]),
             )
-        
+
+        marked = self._mark_two_tier_batch()
+        total_stats["two_tier_consolidated"] = int(marked)
         return total_stats
 
     def _estimate_mean_ach(self, experiences: Optional[List] = None) -> float:

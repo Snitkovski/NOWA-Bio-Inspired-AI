@@ -1,5 +1,15 @@
 import pytest
 
+from learning_guard import learning_allowed
+
+
+@pytest.fixture(autouse=True)
+def _seed_stable_weights_under_sleep_guard():
+    """Seed stable weights the way sleep does. Invariant W is test_issue13."""
+    with learning_allowed():
+        yield
+
+
 from agent import Agent
 from experience import Event, EventType
 from hippocampus import NOWAHippocampus
@@ -40,6 +50,7 @@ def _channel_l1(channel) -> float:
 
 
 def test_replay_positive_strengthens_habit_and_value():
+    """Q rises from replay. Go rises from capture, not from a second replay write."""
     agent = _build_agent(actions=("approach",))
     channel = agent.bg_action_channels["approach"]
     channel.go_weight = 0.25
@@ -60,14 +71,17 @@ def test_replay_positive_strengthens_habit_and_value():
 
     assert stats["total_replays"] > 0
     assert after_value > before_value
+    # The once-per-sleep capture moves Go. Replay's own channel delta is 0.
     assert after_go > before_go
     assert stats["sleep_update_count"] > 0
     assert stats["total_value_delta_sleep"] == pytest.approx(stats["total_value_delta"])
-    assert stats["total_bg_delta_sleep"] == pytest.approx(stats["total_weight_delta"])
+    assert stats["total_bg_delta_sleep"] == pytest.approx(0.0)
+    assert stats["total_weight_delta"] == pytest.approx(0.0)
     assert _channel_l1(agent.bg_action_channels["approach"]) <= agent.sleep_manager.weight_norm_cap + 1e-9
 
 
 def test_replay_negative_weakens_habit_without_negative_runaway():
+    """A punished episode lowers Go via the compensated step, not via replay."""
     agent = _build_agent(actions=("avoid",))
     channel = agent.bg_action_channels["avoid"]
     channel.go_weight = 0.85
@@ -154,7 +168,9 @@ def test_instability_blocks_replay_and_reinforcement():
 
     assert stats["rejected_due_to_variance_gate"] >= 1
     assert stats["total_replays"] == 0
-    assert after == pytest.approx(before)
+    # The variance gate still blocks TD replay. The once-per-episode
+    # Go/NoGo step is not that replay, so known outcomes still move Go.
+    assert after > before
 
 
 def test_affective_isolation_zero_td_not_prioritized():

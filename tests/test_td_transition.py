@@ -49,10 +49,11 @@ def _effective(agent, context, action) -> float:
 def test_feedback_commits_one_td_update_and_reaches_the_reward():
     """One labile contribution per rating. Stable Q moves only in sleep.
 
-    The old online writer could climb past 0.8 in the same loop. The labile
-    amplitude clamp is 0.2, and one sleep's existing replay budget lands
-    near 0.22, so the stable assert is the movement that budget produces
-    (> 0.2) rather than the removed waking writer.
+    The old online writer could climb past 0.8 in the same loop. Stable Q
+    is replay-only, and the PR #35 per-cycle value budget (left unchanged)
+    lands at 0.225 after sleep(cycles=3) whether the loop is 10 or 80
+    episodes. 0.8 is not reachable without raising that cap. > 0.22 fails
+    if a cycle of replay is missing.
     """
     agent = _build_agent(["go"])
     before = int(agent.value_layer.online_update_count)
@@ -73,7 +74,7 @@ def test_feedback_commits_one_td_update_and_reaches_the_reward():
     assert _effective(agent, ["goal"], "go") > 0.15
     assert _effective(agent, ["goal"], "go") <= 0.2 + 1e-9
     agent.sleep(cycles=3)
-    assert _q(agent, ["goal"], "go") > 0.2
+    assert _q(agent, ["goal"], "go") > 0.22
 
 
 def test_successor_value_is_the_real_next_state():
@@ -87,7 +88,7 @@ def test_successor_value_is_the_real_next_state():
             action_id=action,
         )
     agent.sleep(cycles=3)
-    assert _q(agent, successor, "go") > 0.2
+    assert _q(agent, successor, "go") > 0.22
 
     # Reward 0 on the way into a valuable successor must not stay at 0.
     # The waking backup is labile and uses max_a Q_eff(s', a). Stable Q(s)
@@ -109,4 +110,7 @@ def test_successor_value_is_the_real_next_state():
         terminal=False,
     )
     assert learned > _effective(cold, ["start"], "go")
+    # Reward is 0, so the replay salience/TD filters do not write stable Q.
+    # The labile step is 0.1·α, so this cannot reach the old waking Q > 0.4.
+    # It must still beat a cold agent and clear a non-zero bootstrap.
     assert learned > 0.01

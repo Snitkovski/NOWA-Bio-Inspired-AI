@@ -224,7 +224,7 @@ def test_feedback_idempotency_replacement_and_unknown_id():
     assert _q_rows(labile_snapshot(once)) == pytest.approx(
         _q_rows(labile_snapshot(repeated)), abs=1e-12, rel=0
     )
-    assert len(repeated.bg_sleep_memories.get("go", [])) == 1
+    assert len(labile_snapshot(repeated)["contributions"]) == 1
     snap_before = labile_snapshot(repeated)
     again = repeated.apply_feedback_to_last_experience(
         2, context_events=["bin"], action_id="go", episode_id=repeated.last_episode_id

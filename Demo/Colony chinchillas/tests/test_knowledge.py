@@ -20,12 +20,16 @@ def _link_known(observer: ChinchillaAgent, target: ChinchillaAgent, *, familiari
 
 def test_tc02_first_meeting_of_strangers() -> None:
     runner = SimulationRunner()
-    a0 = ChinchillaAgent(sex="F", position="floor")
-    a1 = ChinchillaAgent(sex="M", position="floor")
+    a0 = ChinchillaAgent(sex="F", position="floor", rng_seed=1)
+    a1 = ChinchillaAgent(sex="M", position="floor", rng_seed=2)
     runner.add_agent(a0)
     runner.add_agent(a1)
 
-    runner.run_for(10.0, dt=1.0)
+    # The test checks the first meeting, not wandering.
+    for _ in range(10):
+        a0._set_position("floor")
+        a1._set_position("floor")
+        runner.tick(1.0)
 
     assert a1.agent_id in a0.knowledge
     known = a0.knowledge[a1.agent_id]

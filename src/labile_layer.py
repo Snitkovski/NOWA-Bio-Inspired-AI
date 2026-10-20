@@ -5,7 +5,8 @@ offsets, the host time of each entry, and the applied contribution of each
 episode so a revised rating can replace that episode instead of stacking.
 
 ``capture_kappa`` and ``replay_priority_weights`` are part of the config
-block. Consolidation (capture, prioritized replay) does not run here.
+block. Sleep reads them. This layer stores the tags and can report the
+decayed remainder of one episode; it does not write the stable tier.
 """
 
 from __future__ import annotations
@@ -51,7 +52,8 @@ class PlasticityConfig:
     labile_amp_clamp_q: float = 0.2
     eta_labile_channel: float = 0.02
     labile_amp_clamp_channel: float = 0.1
-    # Used by sleep consolidation (later PR). Stored so save/load is stable.
+    # Sleep consolidation. κ of the decayed channel tag is captured;
+    # the sleep Go/NoGo step uses eta_channel_sleep - κ * eta_labile_channel.
     capture_kappa: float = 0.5
     eta_channel_sleep: float = 0.08
     replay_priority_weights: Tuple[float, float, float, float] = (1.0, 0.5, 0.25, 0.25)
@@ -261,6 +263,25 @@ class LabileLayer:
         self._go[action] = go
         self._nogo[action] = nogo
         self._channel_time[action] = float(now)
+
+    def remaining_channel(self, episode_id: str, now: float) -> Tuple[float, float]:
+        """Decayed Go/NoGo tag still attributed to this episode. Does not remove it."""
+        contrib = self._contributions.get(str(episode_id or ""))
+        if not isinstance(contrib, dict):
+            return 0.0, 0.0
+        t0 = _finite(contrib.get("channel_time", now), now)
+        go = self._remaining(_finite(contrib.get("go_delta", 0.0)), t0, now)
+        nogo = self._remaining(_finite(contrib.get("nogo_delta", 0.0)), t0, now)
+        return float(go), float(nogo)
+
+    def take_visits(self) -> Dict[_VisitKey, float]:
+        """Hand the waking visit counters to sleep and reset them.
+
+        The counters do not decay. Sleep adds them into the stable counts.
+        """
+        rows = dict(self._visits)
+        self._visits.clear()
+        return rows
 
     def pop_contribution(self, episode_id: str, now: float) -> dict:
         """Remove one episode's decayed contribution. Unknown ids are a no-op."""

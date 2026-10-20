@@ -3186,16 +3186,21 @@ class ChinchillaAgent:
                     )
                 ]
 
-        updated = adaptive_bg_learning.apply_sleep_learning(
-            channels=list(self.bg_channels.values()),
-            memories=memories,
-            neuromodulators=self.neuromod,
-            forget_rate=max(0.001, min(0.05, forget_rate * 0.05)),
-        )
-        updated = adaptive_bg_learning.consolidate_habits(
-            updated,
-            self.neuromod.serotonin * consolidation_s,
-        )
+        # Sleep is the writer. apply_sleep_learning does not open the guard
+        # itself; this block does, so the night still learns.
+        from learning_guard import learning_allowed
+
+        with learning_allowed():
+            updated = adaptive_bg_learning.apply_sleep_learning(
+                channels=list(self.bg_channels.values()),
+                memories=memories,
+                neuromodulators=self.neuromod,
+                forget_rate=max(0.001, min(0.05, forget_rate * 0.05)),
+            )
+            updated = adaptive_bg_learning.consolidate_habits(
+                updated,
+                self.neuromod.serotonin * consolidation_s,
+            )
         for ch in updated:
             self.bg_channels[ch.action_id] = ch
 
@@ -3329,20 +3334,23 @@ class ChinchillaAgent:
                     self.tick_count = int(state.get("tick_count", self.tick_count))
                 except Exception:
                     pass
-            for name, vals in (state.get("bg_channels") or {}).items():
-                if name in self.bg_channels:
-                    ch = self.bg_channels[name]
-                    ch.go_weight = float(vals.get("go_weight", 0.5))
-                    ch.nogo_weight = float(vals.get("nogo_weight", 0.5))
-                    ch.habit_strength = float(vals.get("habit_strength", 0.0))
-                    ch.selection_count = int(vals.get("selection_count", 0))
-                    ch.success_count = int(vals.get("success_count", 0))
-                    ch.failure_count = int(vals.get("failure_count", getattr(ch, "failure_count", 0)))
-                    if "last_outcome" in vals:
-                        try:
-                            ch.last_outcome = float(vals.get("last_outcome", 0.0))
-                        except Exception:
-                            pass
+            from learning_guard import initializing
+
+            with initializing():
+                for name, vals in (state.get("bg_channels") or {}).items():
+                    if name in self.bg_channels:
+                        ch = self.bg_channels[name]
+                        ch.go_weight = float(vals.get("go_weight", 0.5))
+                        ch.nogo_weight = float(vals.get("nogo_weight", 0.5))
+                        ch.habit_strength = float(vals.get("habit_strength", 0.0))
+                        ch.selection_count = int(vals.get("selection_count", 0))
+                        ch.success_count = int(vals.get("success_count", 0))
+                        ch.failure_count = int(vals.get("failure_count", getattr(ch, "failure_count", 0)))
+                        if "last_outcome" in vals:
+                            try:
+                                ch.last_outcome = float(vals.get("last_outcome", 0.0))
+                            except Exception:
+                                pass
             vl_data = state.get("value_layer")
             if isinstance(vl_data, dict) and hasattr(ValueLayer, "from_dict"):
                 try:

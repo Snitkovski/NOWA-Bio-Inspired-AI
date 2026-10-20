@@ -62,6 +62,10 @@ class EmotionalExpectationsLayer:
         """
         Update expectations from emotional memory + semantic emotions.
         """
+        from learning_guard import guard_owned_writer
+
+        if not guard_owned_writer(self, "EmotionalExpectationsLayer.update"):
+            return self.snapshot()
         ts = float(timestamp) if timestamp is not None else time.time()
         self.last_update_ts = ts
         background = background or {}

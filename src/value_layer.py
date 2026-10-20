@@ -1289,12 +1289,15 @@ class ValueLayer:
         if isinstance(values_data, dict):
             values_data = list(values_data.items())
 
-        for item in values_data:
-            if not isinstance(item, (list, tuple)) or len(item) != 2:
-                continue
-            state_key = str(item[0])
-            value = _clamp(_safe_float(item[1]), -1.0, 1.0)
-            inst._set_value(state_key, value)
+        from learning_guard import initializing
+
+        with initializing():
+            for item in values_data:
+                if not isinstance(item, (list, tuple)) or len(item) != 2:
+                    continue
+                state_key = str(item[0])
+                value = _clamp(_safe_float(item[1]), -1.0, 1.0)
+                inst._set_value(state_key, value)
         expectation_data = raw.get("expectation_memory") or []
         if isinstance(expectation_data, Mapping):
             expectation_data = list(expectation_data.items())
@@ -1955,6 +1958,10 @@ class ValueLayer:
         return 0.0
 
     def _set_value(self, state_key: str, value: float) -> None:
+        from learning_guard import assert_learning_allowed
+
+        if not assert_learning_allowed("ValueLayer._set_value"):
+            return
         self.values[state_key] = _clamp(_safe_float(value), -1.0, 1.0)
         self.values.move_to_end(state_key)
         while len(self.values) > self.max_states:

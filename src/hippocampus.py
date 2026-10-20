@@ -482,6 +482,7 @@ class NOWAHippocampus:
 
     def _enforce_capacity(self, protect_id: Optional[str] = None) -> None:
         if len(self.experiences) <= self.max_experiences:
+            self.last_evicted = []
             return
 
         scored = []
@@ -512,6 +513,8 @@ class NOWAHippocampus:
             kept.extend(overflow[:room])
         else:
             kept = scored[: self.max_experiences]
+        kept_ids = {id(item[1]) for item in kept}
+        self.last_evicted = [item[1] for item in scored if id(item[1]) not in kept_ids]
         self.experiences = [item[1] for item in kept]
         self.signatures = [item[2] for item in kept]
         self._sync_episode_index()

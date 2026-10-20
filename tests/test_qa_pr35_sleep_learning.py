@@ -11,6 +11,16 @@ import pickle
 
 import pytest
 
+from learning_guard import learning_allowed
+
+
+@pytest.fixture(autouse=True)
+def _seed_stable_weights_under_sleep_guard():
+    """Seed stable weights the way sleep does. Invariant W is test_issue13."""
+    with learning_allowed():
+        yield
+
+
 from agent import Agent
 from experience import Event, EventType, Experience, Path
 from hippocampus import NOWAHippocampus
@@ -383,6 +393,7 @@ def test_sleep_normalizes_only_the_channel_over_its_own_cap():
 
 
 def test_one_positive_record_is_read_in_sleep_and_cache_is_cleared():
+    """One known episode is consolidated once. The legacy outcome cache is not the source."""
     agent = _agent()
     channel = agent.bg_action_channels["act"]
     channel.go_weight = 0.50
@@ -390,24 +401,22 @@ def test_one_positive_record_is_read_in_sleep_and_cache_is_cleared():
     agent.neuromodulators.dopamine = 0.40
     agent.sleep_manager.decay_rate_sleep = 0.0
     agent.sleep_manager.weight_norm_cap = 10.0
-    seen = {}
-    original = agent.bg_learning.apply_sleep_learning
-
-    def _spy(channels, memories, neuromodulators, forget_rate=0.01):
-        seen["memories"] = {key: list(value) for key, value in dict(memories or {}).items()}
-        seen["forget_rate"] = float(forget_rate)
-        return original(channels, memories, neuromodulators, forget_rate=forget_rate)
-
-    agent.bg_learning.apply_sleep_learning = _spy
-    agent.record_action_outcome("act", 1.0)
-    assert agent.bg_sleep_memories["act"]
+    agent.commit_executed_transition(
+        action="act",
+        reward=1.0,
+        context_events=["ctx"],
+        decided_action="act",
+        terminal=True,
+        dt=0.0,
+    )
 
     agent.sleep(cycles=1)
 
-    assert seen["forget_rate"] == pytest.approx(0.0)
-    assert seen["memories"]["act"][0][0] == pytest.approx(1.0)
-    assert agent.bg_action_channels["act"].go_weight > 0.50
+    learned = float(agent.bg_action_channels["act"].go_weight)
+    assert learned > 0.50
     assert agent.bg_sleep_memories == {}
+    agent.sleep(cycles=1)
+    assert agent.bg_action_channels["act"].go_weight == pytest.approx(learned)
 
 
 def test_zero_outcome_is_not_a_sleep_punishment():
@@ -427,7 +436,14 @@ def test_zero_outcome_is_not_a_sleep_punishment():
         agent.sleep_manager.decay_rate_sleep = 0.0
         agent.sleep_manager.weight_norm_cap = 10.0
         agent.hippocampus.experiences.clear()
-    punished.record_action_outcome("act", 0.0)
+    punished.commit_executed_transition(
+        action="act",
+        reward=0.0,
+        context_events=["ctx"],
+        decided_action="act",
+        terminal=True,
+        dt=0.0,
+    )
     punished.sleep(cycles=1)
     control.sleep(cycles=1)
 
@@ -445,12 +461,14 @@ def test_same_feedback_does_not_append_the_sleep_cache_twice():
     action = agent.step(["ctx"], reward=None, intensity=1.0)
     episode_id = agent.last_episode_id
     first = agent.apply_feedback_to_last_experience(2, ["ctx"], action, episode_id)
-    after_first = len(agent.bg_sleep_memories.get(action, []))
+    from learning_guard import labile_snapshot
+
+    after_first = len(labile_snapshot(agent)["contributions"])
     go_after_first = agent.bg_action_channels[action].go_weight
     second = agent.apply_feedback_to_last_experience(2, ["ctx"], action, episode_id)
     assert first["updated"] is True
     assert second["updated"] is True
-    assert len(agent.bg_sleep_memories.get(action, [])) == after_first == 1
+    assert len(labile_snapshot(agent)["contributions"]) == after_first == 1
     assert agent.bg_action_channels[action].go_weight == pytest.approx(go_after_first)
 
     later = agent.step(["other"], reward=None, intensity=1.0)

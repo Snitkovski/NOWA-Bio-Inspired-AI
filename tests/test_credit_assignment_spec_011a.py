@@ -1,6 +1,18 @@
 import math
 from types import SimpleNamespace
 
+import pytest
+
+from learning_guard import learning_allowed
+
+
+@pytest.fixture(autouse=True)
+def _replay_q_under_the_sleep_guard():
+    """These cases call the Q replay writer directly. The sleep path holds the guard."""
+    with learning_allowed():
+        yield
+
+
 from decision_arbitrator import DecisionArbitrator
 from experience import Event, EventType, Experience, Path
 from sleep import SleepManager

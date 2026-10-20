@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pytest
 
+from learning_guard import learning_allowed
+
 from agent import Agent
 from basal_ganglia import NO_ACTION
 from cortex import CortexMemory
@@ -451,7 +453,9 @@ def test_qa_terminal_bootstrap_is_zero_and_one_update_per_known_reward():
         action = successor.step(["goal"], reward=1.0, terminal=True)
     assert _effective(successor, ["goal"], action) > 0.05
     successor.sleep(cycles=3)
-    assert _q(successor, ["goal"], action) > 0.2
+    # Three replay cycles spend the existing value budget (0.225). See
+    # test_td_transition for why this is not the old waking Q > 0.8.
+    assert _q(successor, ["goal"], action) > 0.22
     open_loop = _build_agent(("go",), seed=1, capacity=30)
     open_loop.step(
         ["goal"],
@@ -576,15 +580,17 @@ def test_qa_single_action_and_nogo_block():
         single.apply_feedback_to_last_experience(2, context_events=["ctx"], action_id=action)
     assert seen == ["only"] * 10
     single.sleep(cycles=3)
-    assert _q(single, ["ctx"], "only") > 0.2
-    assert 0.0 <= _habit_strength(single, ["ctx"], "only") <= 1.0
+    assert _q(single, ["ctx"], "only") > 0.22
+    habit = _habit_strength(single, ["ctx"], "only")
+    assert 0.0 < habit <= 1.0
 
     blocked = _build_agent(("a", "b"), seed=1)
     blocked.step(["ctx"], decision_only=True)
     for name in ("a", "b"):
         channel = blocked.bg_action_channels[name]
-        channel.go_weight = 0.0
-        channel.nogo_weight = 1.0
+        with learning_allowed():
+            channel.go_weight = 0.0
+            channel.nogo_weight = 1.0
         blocked._record_action_visit(["ctx"], name)
     blocked.neuromodulators.cortisol = 1.0
     choices = [blocked.step(["ctx"], decision_only=True) for _ in range(15)]
@@ -667,13 +673,17 @@ def test_qa_habits_stay_in_unit_interval_across_affect_and_sleep():
         assert 0.0 <= float(channel.go_weight) <= 1.0
         assert 0.0 <= float(channel.nogo_weight) <= 1.0
     q_before = _q(agent, ["ctx"], "go")
-    agent.sleep_manager.deep_sleep(cycles=1)
+    assert q_before == pytest.approx(0.0)
+    agent.sleep(cycles=3)
     for trace in agent.intent_memory.traces.values():
         assert 0.0 <= float(trace.strength) <= 1.0
         assert math.isfinite(float(trace.strength))
-    assert math.isfinite(_q(agent, ["ctx"], "go"))
-    # Sleep may replay (#9 is out of scope) but must not destroy a learned sign.
-    assert _q(agent, ["ctx"], "go") > 0.0 or q_before <= 0.0
+    q_after = _q(agent, ["ctx"], "go")
+    assert math.isfinite(q_after)
+    # Sleep must consolidate the rewarded sign. The old `or q_before <= 0`
+    # was true for every waking agent and did not check the writer.
+    assert q_after > 0.0
+    assert any(float(trace.strength) > 0.0 for trace in agent.intent_memory.traces.values())
 
 
 def test_qa_episode_id_survives_a_sequence_reset_like_reload():

@@ -65,6 +65,10 @@ class AffectiveBackgroundField:
             lifetime_progress: [0..1] affects dynamics only
             time_elapsed: logical steps since last update
         """
+        from learning_guard import guard_owned_writer
+
+        if not guard_owned_writer(self, "AffectiveBackgroundField.update"):
+            return dict(self.background)
         wakefulness = _clamp(wakefulness, 0.0, 1.0)
         lifetime_progress = _clamp(lifetime_progress, 0.0, 1.0)
         steps = max(1.0, float(time_elapsed or 1.0))

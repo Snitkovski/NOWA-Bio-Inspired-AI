@@ -4,6 +4,16 @@ import pickle
 
 import pytest
 
+from learning_guard import learning_allowed
+
+
+@pytest.fixture(autouse=True)
+def _seed_stable_weights_under_sleep_guard():
+    """Seed stable weights the way sleep does. Invariant W is test_issue13."""
+    with learning_allowed():
+        yield
+
+
 from agent import Agent
 from basal_ganglia import ActionChannel
 from hippocampus import NOWAHippocampus
@@ -79,7 +89,14 @@ def test_repeated_positive_evidence_outruns_decay():
         sleep.weight_norm_cap = 10.0
         for _ in range(12):
             if with_memory:
-                agent.bg_sleep_memories = {"act": [(1.0, 0.4, 0.1, 0.2)]}
+                agent.commit_executed_transition(
+                    action="act",
+                    reward=1.0,
+                    context_events=["day"],
+                    decided_action="act",
+                    terminal=True,
+                    dt=0.0,
+                )
             agent.sleep(cycles=1)
         return float(agent.bg_action_channels["act"].go_weight)
 
@@ -97,7 +114,14 @@ def test_outcome_cache_is_applied_before_it_is_cleared():
     channel.success_count = 25
     before_go = float(channel.go_weight)
     before_habit = float(channel.habit_strength)
-    agent.bg_sleep_memories = {"act": [(1.0, 1.0, 0.2, 0.8)]}
+    agent.commit_executed_transition(
+        action="act",
+        reward=1.0,
+        context_events=["ctx"],
+        decided_action="act",
+        terminal=True,
+        dt=0.0,
+    )
     agent.sleep_manager.decay_rate_sleep = 0.02
     agent.sleep_manager.weight_norm_cap = 10.0
 
