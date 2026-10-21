@@ -1,0 +1,6 @@
+- `src/` is a general-purpose cognitive core. Never tune it to a demo, a host, or a dataset.
+- Two-tier plasticity. Stable learned parameters change only during sleep consolidation (`Agent.sleep()`, `learning_allowed()`). Waking learning writes only the bounded, time-decaying labile layer (`LabileLayer`). `NOWA_STRICT_LEARNING=1` makes a waking stable-tier write raise `WakingLearningError` (`src/learning_guard.py`). The core test suite sets that flag in `tests/conftest.py`.
+- Each demo creature is its own `Agent` instance. Do not share one agent object across colony members, employees, or other bodies.
+- Simulations must stay correct at any time acceleration, including 1x and 10x. Advance by simulated `dt`, not by wall-clock frames. Colony GUI speeds are `SIM_SPEED_LEVELS` (includes 1 and 10); the frame hook is `tick(real_dt * speed)`.
+- Specs for an issue go under `docs/specs/`.
+- Map of the other memories: `mem:core`.

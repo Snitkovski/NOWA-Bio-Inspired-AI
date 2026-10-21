@@ -1,0 +1,4 @@
+- Core change: `python -m pytest -q tests` with dev dependencies installed. `tests/conftest.py` sets `NOWA_STRICT_LEARNING=1`, so a waking stable-tier write fails the run.
+- Demo change: run that demo's tests as well, for example `python -m pytest -q "Demo/Colony chinchillas/tests"`.
+- A change that touches collection or shared fixtures: `python -m pytest -q` for the full suite.
+- Do not add a formatter or type checker as a drive-by. There is no committed one.

@@ -1,0 +1,6 @@
+- One agent, no extra packages: `python3 tools/sixty_seconds.py`
+- Core tests, from the repo root after `pip install -r requirements-dev.txt`: `python -m pytest -q tests`
+- Full suite, core plus demos: `python -m pytest -q`
+- One demo tree, example: `python -m pytest -q "Demo/Colony chinchillas/tests"`
+- Colony headless: `PYTHONPATH="Demo/Colony chinchillas/src" python3 -m colony_gui --headless --agents 4 --duration 2`
+- Quote paths that contain spaces. GUI tests skip when Tk or a display is missing. Headless pygame needs `SDL_VIDEODRIVER=dummy`.

@@ -1,0 +1,6 @@
+- Core modules are flat scripts under `src/`, imported by module name (`from learning_guard import WakingLearningError`), not as a package.
+- New core behavior stays host-agnostic. Sleep schedule, bodies, and world time live in the demo. Do not import `Demo/` from `src/`.
+- UI copy is bilingual. English is the default; `NOWA_LANG=ru` or `--lang ru` switches. `--lang` wins.
+- Issue specs: `docs/specs/<topic>.md`. Longer scientific writeups live in `Docs/` (capital D) and are not the issue-spec slot.
+- No committed formatter or type checker. Match the surrounding file.
+- Pull requests are bilingual (English, then Russian) and include the CLA checkboxes from `.github/pull_request_template.md`.

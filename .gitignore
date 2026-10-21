@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Serena local state. `.serena/project.yml` and `.serena/memories/` stay tracked.
+.serena/cache/
+.serena/logs/
+.serena/project.local.yml
