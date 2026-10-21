@@ -1,0 +1,5 @@
+- Python 3.10+. The cognitive core is the standard library only (`requirements.txt`).
+- Full test extra: `requirements-dev.txt` (pytest, plus demo libraries from `requirements-demo.txt`: numpy, pygame, PyYAML).
+- CI: `.github/workflows/tests.yml`, Python 3.12, `python -m pytest -q`, `SDL_VIDEODRIVER=dummy`.
+- Pytest: `pytest.ini` sets `--import-mode=importlib` because several demos each ship a `test_integration.py`.
+- Cloud agents: `.cursor/install.sh` installs uv and `serena-agent` on Python 3.13. MCP registration is `.cursor/mcp.json`, context `ide`.
