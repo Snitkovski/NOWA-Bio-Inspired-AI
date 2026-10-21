@@ -15,6 +15,7 @@ FIXES vs original:
 """
 
 import logging
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -265,6 +266,40 @@ class _ChainSelectorAdapter:
         self.action_metadata[str(action_id)] = dict(metadata or {})
 
 
+# Bedtime preference in ``_build_candidate_chains`` once sleep pressure
+# exceeds this level. Pressure 0 is full rest.
+_SLEEP_ONSET_PRESSURE = 0.7
+# Demo wakefulness: full deprivation after 4 host hours. Same units as ``sim_step(dt)``.
+_WAKE_PRESSURE_RATE = 1.0 / (4.0 * 60.0 * 60.0)
+
+
+def tamagochi_expected_wake_interval_s() -> float:
+    """Host seconds from full rest to the bedtime preference.
+
+    ``sim_step`` advances sleep pressure by ``dt / (4 h)`` while the
+    chinchilla is not in a sleep behavior. Bedtime is boosted once that
+    pressure exceeds 0.7. The configured wake is that climb from pressure
+    0, i.e. ``0.7 * 4 * 3600 = 10080`` seconds. The first session starts
+    at 0.1, so its first climb is shorter. The 1200 s circadian tint only
+    biases suggestions; it does not open the stable writer. The core
+    fallback of 3600 s is not used.
+    """
+    if _WAKE_PRESSURE_RATE <= 0.0:
+        return 3600.0
+    return _SLEEP_ONSET_PRESSURE / _WAKE_PRESSURE_RATE
+
+
+def _host_dt(dt: float) -> float:
+    """Elapsed host seconds. Non-finite or negative input is an explicit 0."""
+    try:
+        value = float(dt)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(value) or value < 0.0:
+        return 0.0
+    return value
+
+
 # ============================================================================
 # CHINCHILLA AGENT
 # ============================================================================
@@ -278,13 +313,15 @@ class ChinchillaAgent:
     The render loop runs at RENDER_FPS (60) for smooth visuals.
     Simulation logic (chain/action selection) runs at SIM_FPS (10).
     Each simulation tick advances the organism by SIM_DT seconds.
+    That same ``dt`` is the host clock of the core agent (``self.nowa``):
+    one ``advance_time(dt)`` per tick, never the wall clock.
 
-    action_remaining_s  — real seconds left before the current action
-                          is considered "done" and the next one may begin.
-                          Decremented by actual elapsed wall-clock time,
-                          not by sim ticks.  This means durations in config
-                          (e.g. eat_pellets: 10-30 s) map directly to
-                          wall-clock seconds.
+    action_remaining_s  — seconds left before the current action is done.
+                          Decremented by the same sim ``dt``. Durations in
+                          config (e.g. eat_pellets: 10-30 s) are in those
+                          seconds. The loop feeds wall time through a
+                          fixed ``SIM_DT`` accumulator, so one realtime
+                          second is one host second while the loop keeps up.
     """
 
     RENDER_FPS = 60       # Hz — only affects display smoothness
@@ -492,6 +529,7 @@ class ChinchillaAgent:
         self.sleep_manager = SleepManager(
             hippocampus=self.hippocampus,
             cortex=self.cortex,
+            intent_memory=self.intent_memory,
             clustering_similarity_threshold=0.7,
             forget_stability_threshold=0.15,
         )
@@ -503,8 +541,11 @@ class ChinchillaAgent:
         setattr(self.sleep_manager, "bg_learning", self.bg_learning)
         self._sleep_consolidation_pending: bool = False
 
-        # Demo-only: enable lightweight online BG updates for visible training
+        # Kept for callers. Waking ticks do not write stable BG weights;
+        # a finished chain tags the core labile tier instead.
         self.demo_training_mode = bool(demo_training_mode)
+        self._pending_owner_feedback: List[Dict[str, Any]] = []
+        self.nowa = None
 
         # modulation caches (set each tick)
         self._last_chain_reward: float = 0.0
@@ -564,6 +605,8 @@ class ChinchillaAgent:
         self.load_nowa_state()
         # Load full session if present (overrides NOWA state)
         self._load_session_if_exists()
+        # After load, so the host points at the restored Q table and channels.
+        self._bind_two_tier_host()
 
         self.logger.info("ChinchillaAgent ready")
 
@@ -921,6 +964,138 @@ class ChinchillaAgent:
                 count += 1
         self.logger.info(f"Preloaded {count} animations")
 
+    def _bind_two_tier_host(self) -> None:
+        """Attach a core ``Agent`` as the plasticity host.
+
+        The cage keeps its own value table, channels, hippocampus and
+        sleep manager. The core agent shares those objects and owns the
+        labile tier plus the host clock. Daytime outcomes go through
+        ``Agent._record_known_outcome``. ``Agent.sleep`` is not the cage
+        loop; ``SleepManager.deep_sleep`` reads this host.
+        """
+        from agent import Agent
+        from labile_layer import PlasticityConfig
+
+        interval = tamagochi_expected_wake_interval_s()
+        host = Agent(
+            hippocampus=self.hippocampus,
+            cortex=self.cortex,
+            selector=self.chain_selector,
+            sleep_manager=None,
+            intent_memory=self.intent_memory,
+            external_interaction_layer=self.eil,
+            plasticity_config=PlasticityConfig(expected_wake_interval_s=interval),
+        )
+        self.nowa = host
+        self._rewire_two_tier_host()
+
+    def _rewire_two_tier_host(self) -> None:
+        """Point the core host at the cage's stable objects after load."""
+        host = getattr(self, "nowa", None)
+        if host is None:
+            return
+
+        # Old session pickles stored ``bg_action_channels`` as {} because the
+        # cage used ``bg_channels``. An empty table is not a restore.
+        loaded_channels = getattr(self, "bg_action_channels", None)
+        if (
+            isinstance(loaded_channels, dict)
+            and loaded_channels
+            and loaded_channels is not self.bg_channels
+        ):
+            self.bg_channels = loaded_channels
+        host.bg_action_channels = self.bg_channels
+        self.bg_action_channels = self.bg_channels
+
+        host.value_layer = self.value_layer
+        host.bg_learning = self.bg_learning
+        host.neuromodulators = self.neuromod
+        host.intent_memory = self.intent_memory
+        host.external_interaction_layer = self.eil
+        host.selector = self.chain_selector
+        host.hippocampus = self.hippocampus
+        host.cortex = self.cortex
+        host.sleep_manager = self.sleep_manager
+
+        plasticity = getattr(self, "plasticity", None)
+        if plasticity is None:
+            plasticity = host.plasticity
+        if getattr(plasticity, "expected_wake_interval_s", None) is None:
+            plasticity.expected_wake_interval_s = tamagochi_expected_wake_interval_s()
+        host.plasticity = plasticity
+        self.plasticity = plasticity
+
+        labile = getattr(self, "labile", None)
+        if labile is None:
+            labile = host.labile
+        try:
+            labile.config = plasticity
+        except Exception:
+            pass
+        host.labile = labile
+        self.labile = labile
+
+        if "_host_clock_s" in self.__dict__:
+            try:
+                host._host_clock_s = float(self.__dict__["_host_clock_s"])
+            except (TypeError, ValueError):
+                pass
+            del self.__dict__["_host_clock_s"]
+
+        sleep_manager = self.sleep_manager
+        setattr(sleep_manager, "value_layer", self.value_layer)
+        setattr(sleep_manager, "stability_monitor", self.stability_monitor)
+        setattr(sleep_manager, "selector", self.chain_selector)
+        setattr(sleep_manager, "bg_action_channels", self.bg_channels)
+        setattr(sleep_manager, "bg_learning", self.bg_learning)
+        setattr(sleep_manager, "neuromodulators", self.neuromod)
+        setattr(sleep_manager, "labile", host.labile)
+        setattr(sleep_manager, "plasticity", host.plasticity)
+        setattr(sleep_manager, "_host_agent", host)
+        # Capture reads the manager, not the host, for habit EMA.
+        setattr(sleep_manager, "intent_memory", self.intent_memory)
+
+    def _commit_waking_chain_outcome(
+        self,
+        chain_name: str,
+        reward: float,
+        state_before: Dict[str, Any],
+        state_after: Dict[str, Any],
+        episode: Any = None,
+    ) -> Dict[str, Any]:
+        """Tag one finished chain on the core labile tier.
+
+        Stable Q, Go/NoGo and habit strength are not written. Sleep
+        capture reads ``replay_action_id`` and the committed reward.
+        """
+        host = getattr(self, "nowa", None)
+        if host is None or not hasattr(host, "_record_known_outcome"):
+            return {}
+        action = str(chain_name or "")
+        if episode is not None:
+            try:
+                episode.replay_action_id = action
+                # Same context note_selection used, so sleep apply_outcome
+                # updates that trace instead of a second key.
+                context = list(getattr(self, "_chain_intent_context", None) or ["idle"])
+                episode.context_events = [str(item) for item in context]
+            except Exception:
+                pass
+        try:
+            result = host._record_known_outcome(
+                context_events=[action],
+                action_id=action,
+                outcome=float(reward),
+                episode=episode,
+                state_snapshot=dict(state_before or {}),
+                next_state_snapshot=dict(state_after or {}),
+                next_context_events=[action],
+                terminal=True,
+            )
+        except Exception:
+            return {}
+        return dict(result or {})
+
     # ------------------------------------------------------------------
     # SIMULATION STEP
     # ------------------------------------------------------------------
@@ -939,6 +1114,10 @@ class ChinchillaAgent:
 
         self.tick_count      += 1
         self.total_sim_time  += dt
+        # One game dt per tick. The core clock does not read the wall.
+        host = getattr(self, "nowa", None)
+        if host is not None and hasattr(host, "advance_time"):
+            host.advance_time(_host_dt(dt))
 
         # ── Timers ────────────────────────────────────────────────────
         self.action_remaining_s = max(0.0, self.action_remaining_s - dt)
@@ -1261,33 +1440,31 @@ class ChinchillaAgent:
             value_state_after = self._collect_chain_state_snapshot(chain_name=prev_chain)
             stored_experience = None
 
-            # Phase 5: online ValueLayer update on completed chain outcome.
+            events = [
+                Event(name=prev_chain, event_type=EventType.ACTION)
+            ]
             try:
-                stability_index = float(
-                    (self._last_stability_snapshot or {}).get("stability_index", 1.0)
+                before_count = len(getattr(self.hippocampus, 'experiences', []) or [])
+                stored_experience = self.hippocampus.store(
+                    path=ExperiencePath(events=events),
+                    consequence=None,
+                    reward=self._last_chain_reward,
+                    intensity=abs(self._last_chain_reward) + 0.1,
                 )
-            except Exception:
-                stability_index = 1.0
+                after_count = len(getattr(self.hippocampus, 'experiences', []) or [])
+                self.logger.debug(f"Hippocampus.store called for {prev_chain}: before={before_count} after={after_count} reward={self._last_chain_reward}")
+            except Exception as e:
+                self.logger.exception(f"hippocampus.store failed: {e}")
+
+            # Waking outcome tags the core labile tier. ValueLayer.update(mode="online")
+            # is a stable writer and is skipped (or raises) while awake.
             try:
-                self._last_value_update = self.value_layer.update(
-                    state_snapshot=value_state_before,
+                self._last_value_update = self._commit_waking_chain_outcome(
+                    chain_name=prev_chain,
                     reward=float(self._last_chain_reward),
-                    next_state_snapshot=value_state_after,
-                    gamma=float(getattr(self.value_layer, "gamma_default", 0.95)),
-                    alpha=float(
-                        getattr(
-                            self.value_layer,
-                            "alpha_online_default",
-                            getattr(self.value_layer, "alpha_default", 0.03),
-                        )
-                    ),
-                    timestamp=float(self.total_sim_time),
-                    stability_index=stability_index,
-                    mode="online",
-                    acetylcholine=float(getattr(self.neuromod, "acetylcholine", 0.1)),
-                    acetylcholine_baseline=float(getattr(self.neuromod, "ach_baseline", 0.1)),
-                    cer_stress_level=float(getattr(self.neuromod, "cortisol", 0.0)),
-                    exploration_baseline=float(self.neuromod.get_exploration_level()),
+                    state_before=value_state_before,
+                    state_after=value_state_after,
+                    episode=stored_experience,
                 )
                 self._update_chain_value_statistics(
                     chain_name=prev_chain,
@@ -1311,22 +1488,6 @@ class ChinchillaAgent:
 
             if prev_chain in self.bg_channels:
                 self.bg_channels[prev_chain].record_outcome(self._last_chain_reward)
-
-            events = [
-                Event(name=prev_chain, event_type=EventType.ACTION)
-            ]
-            try:
-                before_count = len(getattr(self.hippocampus, 'experiences', []) or [])
-                stored_experience = self.hippocampus.store(
-                    path=ExperiencePath(events=events),
-                    consequence=None,
-                    reward=self._last_chain_reward,
-                    intensity=abs(self._last_chain_reward) + 0.1,
-                )
-                after_count = len(getattr(self.hippocampus, 'experiences', []) or [])
-                self.logger.debug(f"Hippocampus.store called for {prev_chain}: before={before_count} after={after_count} reward={self._last_chain_reward}")
-            except Exception as e:
-                self.logger.exception(f"hippocampus.store failed: {e}")
 
             # Record outcome on BG gate (so gate-level APIs see it)
             try:
@@ -1419,21 +1580,12 @@ class ChinchillaAgent:
             except Exception:
                 pass
 
-            # ── IntentMemory: strengthen trace on positive outcome ─────
-            try:
-                _factor = 1.4 if self._last_chain_reward > 0.1 else 1.0
-                self.intent_memory.strengthen_trace(
-                    context=list(self._intent_context) or ["idle"],
-                    intent_type=prev_chain,
-                    factor=_factor,
+            # Same context as chain start. Strength stays 0 until sleep.
+            if hasattr(self.intent_memory, "note_selection"):
+                self.intent_memory.note_selection(
+                    list(getattr(self, "_chain_intent_context", None) or ["idle"]),
+                    prev_chain,
                 )
-                self.intent_memory.consolidate_with_affect_profile(
-                    context=list(self._intent_context) or ["idle"],
-                    intent_type=prev_chain,
-                    affect_profile=self.affect.get_state(),
-                )
-            except Exception:
-                pass
 
             # ── MemorySystem: record chain interaction ─────────────────
             try:
@@ -1457,21 +1609,6 @@ class ChinchillaAgent:
                     conflict=0.0,
                     stable_repetition=stable_rep,
                 )
-            except Exception:
-                pass
-
-            # Demo mode: apply a small online BG weight update so training is visible interactively
-            try:
-                if getattr(self, 'demo_training_mode', False) and abs(self._last_chain_reward) > 0.05:
-                    ch = self.bg_channels.get(prev_chain)
-                    if ch is not None:
-                        da = float(getattr(self.neuromod, 'dopamine', 0.0))
-                        ht = float(getattr(self.neuromod, 'serotonin', 0.0))
-                        lr = 0.03
-                        if self._last_chain_reward > 0:
-                            ch.update_weights(go_delta=da * lr, habit_delta=ht * lr * 0.1)
-                        else:
-                            ch.update_weights(nogo_delta=float(getattr(self.neuromod, 'cortisol', 0.0)) * lr)
             except Exception:
                 pass
 
@@ -1569,6 +1706,10 @@ class ChinchillaAgent:
             self._sleep_consolidation_pending = True
             try:
                 setattr(self.sleep_manager, "neuromodulators", self.neuromod)
+                from learning_guard import learning_allowed
+
+                with learning_allowed():
+                    self._flush_owner_feedback()
                 _sc_stats = self.sleep_manager.sleep_cycle()
                 self.logger.debug(
                     f"[SLEEP/light] sleep_cycle: "
@@ -1679,15 +1820,11 @@ class ChinchillaAgent:
                 self.chain_start_affect = self.affect.get_state()
                 self._chain_value_state_before = self._collect_chain_state_snapshot(chain_name=chain)
 
-                # ── IntentMemory: record intent occurrence ────────────
-                try:
-                    self.intent_memory.record_trace(
-                        context=list(self._intent_context) or ["idle"],
-                        intent_type=chain,
-                    )
-                    self._intent_context = [chain]   # new context = current chain
-                except Exception:
-                    pass
+                # Selection only. record_trace would write stable strength.
+                context = list(self._intent_context) or ["idle"]
+                self._chain_intent_context = list(context)
+                self.intent_memory.note_selection(context, chain)
+                self._intent_context = [chain]
 
                 # ── MemorySystem: snapshot affect before chain ─────────
                 try:
@@ -1810,6 +1947,7 @@ class ChinchillaAgent:
                 conflict_arbitration=self.conflict_arb,
                 agent=self,
             )
+            self._rewire_two_tier_host()
             self.logger.info(f"[LOAD] session loaded from {filepath}")
         except Exception as _e:
             self.logger.warning(f"[LOAD] failed: {_e}")
@@ -1837,12 +1975,11 @@ class ChinchillaAgent:
 
     def _apply_training_feedback(self, rating: int) -> None:
         """
-        Convert a 1-5 owner rating into a full NOWA learning event.
-        1. EIL apply_learning_hooks: drives + strategy logits update
-        2. DA spike via neuromod.apply_dopamine_delta
-        3. hippocampus.reinforce on last episode
-        4. bg_channels + bg_gate record_outcome
-        5. affect_space.step with external valence impulse
+        Convert a 1-5 owner rating into a NOWA learning event.
+
+        Strategy weights are stable. ``apply_learning_hooks`` runs on the
+        next sleep, from the queued rating. Dopamine, the hippocampal
+        trace, outcome counts and fast affect still move immediately.
         """
         reward = self._RATING_REWARD.get(rating, 0.0)
         self._training_feedback_count += 1
@@ -1886,46 +2023,74 @@ class ChinchillaAgent:
         except Exception:
             pass
 
-        # 4. EIL apply_learning_hooks
-        try:
+        # Strategy weights wait for sleep. The rating itself is state.
+        pending = getattr(self, "_pending_owner_feedback", None)
+        if not isinstance(pending, list):
+            pending = []
+            self._pending_owner_feedback = pending
+        pending.append(
+            {
+                "rating": int(rating),
+                "reward": float(reward),
+                "chain": str(self.last_chain_name or ""),
+            }
+        )
+        self.logger.info(
+            f"[TRAIN] rating={rating} reward={reward:+.2f} "
+            f"chain='{self.last_chain_name or ''}' queued for sleep"
+        )
+
+    def _flush_owner_feedback(self) -> None:
+        """Apply queued owner ratings. Caller holds the sleep guard."""
+        pending = list(getattr(self, "_pending_owner_feedback", None) or [])
+        self._pending_owner_feedback = []
+        if not pending:
+            return
+        for _dname in DYNAMIC_CHAINS:
+            if _dname not in self.eil.strategy_logits:
+                self.eil.register_strategy(_dname, 0.0)
+        _drives_dict = {
+            name: {
+                "current": self.drives.drives.get(name, 0.0),
+                "set": lambda v, n=name: self.drives.set_drive(n, v),
+            }
+            for name in list(self.drives.drives.keys())
+        }
+        _strategies_dict = {
+            name: {
+                "logit": self.eil.strategy_logits.get(name, 0.0),
+                "set_weight": None,
+                "set_logit": None,
+            }
+            for name in list(self.eil.strategy_logits.keys())
+        }
+        for item in pending:
+            if not isinstance(item, dict):
+                continue
+            try:
+                reward = float(item.get("reward", 0.0))
+            except (TypeError, ValueError):
+                reward = 0.0
             fb = EILFeedback(
                 reward=reward,
                 success_probability=max(0.0, reward),
-                signal={"rating": rating, "chain": self.last_chain_name or ""},
+                signal={
+                    "rating": item.get("rating"),
+                    "chain": str(item.get("chain", "") or ""),
+                },
             )
-            _drives_dict = {
-                name: {
-                    "current": self.drives.drives.get(name, 0.0),
-                    "set":     lambda v, n=name: self.drives.set_drive(n, v),
-                }
-                for name in list(self.drives.drives.keys())
-            }
-            for _dname in DYNAMIC_CHAINS:
-                if _dname not in self.eil.strategy_logits:
-                    self.eil.register_strategy(_dname, 0.0)
-            _strategies_dict = {
-                name: {"logit": self.eil.strategy_logits.get(name, 0.0),
-                       "set_weight": None, "set_logit": None}
-                for name in list(self.eil.strategy_logits.keys())
-            }
-            _eil_result = self.eil.apply_learning_hooks(
-                fb,
-                drives=_drives_dict,
-                strategies=_strategies_dict,
-                alpha=0.15,
-                learning_rate=0.08,
-                strategy_temperature=0.8,
-                strategy_weight_decay=0.005,
-            )
-            # get_strategy_weights: expose normalized weights for snapshot
-            _strat_weights = self.eil.get_strategy_weights() if hasattr(self.eil, 'get_strategy_weights') else {}
-            self.logger.info(
-                f"[TRAIN] rating={rating} reward={reward:+.2f} "
-                f"chain='{self.last_chain_name or ''}' "
-                f"EIL_strats={len(_eil_result.get('strategy_updates', {}))}"
-            )
-        except Exception as _e:
-            self.logger.debug(f"[TRAIN] EIL error: {_e}")
+            try:
+                self.eil.apply_learning_hooks(
+                    fb,
+                    drives=_drives_dict,
+                    strategies=_strategies_dict,
+                    alpha=0.15,
+                    learning_rate=0.08,
+                    strategy_temperature=0.8,
+                    strategy_weight_decay=0.005,
+                )
+            except Exception as _e:
+                self.logger.debug(f"[TRAIN] sleep EIL error: {_e}")
 
         # 2. Phasic DA spike
         try:
@@ -2291,8 +2456,15 @@ class ChinchillaAgent:
         for dname in DYNAMIC_CHAINS:
             pressure_vector.setdefault(dname, 0.05)
             if dname not in self.bg_channels:
-                from basal_ganglia import ActionChannel
-                self.bg_channels[dname] = ActionChannel(action_id=dname)
+                host = getattr(self, "nowa", None)
+                if host is not None and hasattr(host, "register_action_channel"):
+                    host.register_action_channel(dname)
+                else:
+                    from basal_ganglia import ActionChannel
+                    from learning_guard import initializing
+
+                    with initializing():
+                        self.bg_channels[dname] = ActionChannel(action_id=dname)
                 self.logger.info(f"[DYN] registered new BG channel: {dname}")
             if update_runtime:
                 self.chain_selector.register_action(dname)
@@ -3117,8 +3289,11 @@ class ChinchillaAgent:
         try:
             _affect_proxy = self._sm_agent.affect_state
             _hab_mod = self.intent_memory.get_habit_affect_modulation(_affect_proxy)
-            self.intent_memory.apply_habit_affect_modulation(_hab_mod)
-            self.intent_memory.degrade_unused(decay_factor=0.85)
+            from learning_guard import learning_allowed
+
+            with learning_allowed():
+                self.intent_memory.apply_habit_affect_modulation(_hab_mod)
+                self.intent_memory.degrade_unused(decay_factor=0.85)
             self.logger.debug(
                 f"[INTENT] sleep: modulated {len(_hab_mod)} traces, "
                 f"remaining {len(self.intent_memory.traces)}"
@@ -3166,47 +3341,16 @@ class ChinchillaAgent:
                 source_experiences=count,
             )
 
-        # ── Task C: Adaptive BG learning rate via neuromodulators ────
-        lr_modifier     = self.neuromod.get_learning_rate_modifier()    # [0.5, 1.5]
-        forget_rate     = self.neuromod.get_forgetting_rate()           # [0.1, 0.9]
-        consolidation_s = self.neuromod.get_consolidation_strength()    # [0.5, 1.5]
-
-        adaptive_lr = max(0.01, min(0.15, 0.05 * lr_modifier))
-        adaptive_bg_learning = BasalGangliaLearning(learning_rate=adaptive_lr)
-
-        memories: Dict[str, List[Tuple[float, float, float, float]]] = {}
-        for chain, channel in self.bg_channels.items():
-            if channel.last_outcome is not None:
-                memories[chain] = [
-                    (
-                        float(channel.last_outcome),
-                        float(self.neuromod.dopamine),
-                        float(self.neuromod.cortisol),
-                        float(self.neuromod.serotonin),
-                    )
-                ]
-
-        # Sleep is the writer. apply_sleep_learning does not open the guard
-        # itself; this block does, so the night still learns.
+        # Go/NoGo and habit strength are written once, inside deep_sleep.
+        # A second apply_sleep_learning would clone those channels and step
+        # them again. Owner ratings still need the sleep guard.
         from learning_guard import learning_allowed
 
         with learning_allowed():
-            updated = adaptive_bg_learning.apply_sleep_learning(
-                channels=list(self.bg_channels.values()),
-                memories=memories,
-                neuromodulators=self.neuromod,
-                forget_rate=max(0.001, min(0.05, forget_rate * 0.05)),
-            )
-            updated = adaptive_bg_learning.consolidate_habits(
-                updated,
-                self.neuromod.serotonin * consolidation_s,
-            )
-        for ch in updated:
-            self.bg_channels[ch.action_id] = ch
+            self._flush_owner_feedback()
 
         self.logger.info(
-            f"[NOWA] Sleep: lr={adaptive_lr:.4f}(×{lr_modifier:.2f})  "
-            f"forget={forget_rate:.3f}  consolidation={consolidation_s:.2f}  "
+            f"[NOWA] Sleep: "
             f"DA={self.neuromod.dopamine:.2f} 5HT={self.neuromod.serotonin:.2f} "
             f"CORT={self.neuromod.cortisol:.2f}  "
             f"cortex_patterns={len(self.cortex.patterns)}"
@@ -3275,6 +3419,26 @@ class ChinchillaAgent:
             "hippocampus_size": len(getattr(self.hippocampus, "experiences", []) or []),
             "total_sim_time": self.total_sim_time,
             "tick_count": self.tick_count,
+            "plasticity": (
+                self.plasticity.to_dict()
+                if hasattr(getattr(self, "plasticity", None), "to_dict")
+                else {}
+            ),
+            "labile": (
+                self.labile.to_dict()
+                if hasattr(getattr(self, "labile", None), "to_dict")
+                else {}
+            ),
+            "host_clock_s": float(getattr(getattr(self, "nowa", None), "_host_clock_s", 0.0) or 0.0),
+            "pending_owner_feedback": [
+                {
+                    "rating": int(item.get("rating", 0)),
+                    "reward": float(item.get("reward", 0.0)),
+                    "chain": str(item.get("chain", "") or ""),
+                }
+                for item in list(getattr(self, "_pending_owner_feedback", []) or [])
+                if isinstance(item, dict)
+            ],
         }
         with open(saves_dir / "nowa_state.json", "w", encoding="utf-8") as f:
             json.dump(state, f, indent=2, ensure_ascii=False)
@@ -3429,6 +3593,43 @@ class ChinchillaAgent:
                     self._last_planning_stats = dict(planning_data.get("last", self._last_planning_stats) or {})
                 except Exception:
                     pass
+            from labile_layer import LabileLayer, PlasticityConfig
+
+            plasticity_data = state.get("plasticity")
+            if isinstance(plasticity_data, dict) and plasticity_data:
+                try:
+                    self.plasticity = PlasticityConfig.from_dict(plasticity_data)
+                except Exception:
+                    pass
+            labile_data = state.get("labile")
+            if isinstance(labile_data, dict) and labile_data:
+                try:
+                    self.labile = LabileLayer.from_dict(labile_data)
+                except Exception:
+                    pass
+            if "host_clock_s" in state:
+                try:
+                    self._host_clock_s = float(state.get("host_clock_s", 0.0))
+                except (TypeError, ValueError):
+                    pass
+            pending = state.get("pending_owner_feedback")
+            if isinstance(pending, list):
+                restored_pending = []
+                for item in pending:
+                    if not isinstance(item, dict):
+                        continue
+                    try:
+                        restored_pending.append(
+                            {
+                                "rating": int(item.get("rating", 0)),
+                                "reward": float(item.get("reward", 0.0)),
+                                "chain": str(item.get("chain", "") or ""),
+                            }
+                        )
+                    except (TypeError, ValueError):
+                        continue
+                self._pending_owner_feedback = restored_pending
+            self._rewire_two_tier_host()
             self.logger.info("[NOWA] State loaded")
             return True
         except Exception as e:
