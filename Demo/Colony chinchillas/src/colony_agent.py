@@ -78,6 +78,10 @@ SLEEP_RECOVERY_DURATION_FACTOR = 22.0
 SLEEP_CONSOLIDATION_INTERVAL_S = 900.0
 SLEEP_MAX_CONSOLIDATION_CYCLES_PER_TICK = 2
 WAKEFULNESS_ACCUMULATION_FACTOR = 30.0
+# UI speed 1 uses this step (colony_gui.app.SIM_BASE_STEP_S). A faster
+# setting stretches one decision over a longer dt. The body still
+# integrates in these slices, so rest and cost stay on the 1x clock.
+COLONY_BODY_STEP_S = 1.0 / 12.0
 STUCK_MOVE_TIMEOUT_S = 10.0
 MIN_ACTION_MOVE_INTERVAL_S = 1.25
 RESOURCE_BLOCK_FEEDBACK_COOLDOWN_S = 4.0
@@ -525,8 +529,7 @@ class ChinchillaAgent(Agent):
         self._resource_metabolism_step(dt)
         self._apply_unmet_need_cost(dt)
 
-        if (not self.is_sleeping) and getattr(self, "autonomous_runtime", None) is not None:
-            self.autonomous_tick(dt)
+        self._advance_autonomous_body(dt)
 
         self._age_step(dt)
 
@@ -908,9 +911,42 @@ class ChinchillaAgent(Agent):
         safe_dt = max(0.0, float(dt))
         return max(SLEEP_MIN_RECOVERY_DURATION_S, safe_dt * SLEEP_RECOVERY_DURATION_FACTOR)
 
+    def _advance_autonomous_body(self, dt: float) -> None:
+        """Integrate the body in base steps so UI speed does not change metabolism.
+
+        ``autonomous_tick`` spends cost in proportion to ``dt`` but rests once
+        per call. One long 10x tick therefore spends the bout down while a 1x
+        run rests on every short tick. Slices match speed 1. While asleep the
+        bout itself restores energy, and a waking tick must not run the body.
+        """
+        if self.is_sleeping or getattr(self, "autonomous_runtime", None) is None:
+            return
+        remaining = _host_dt(dt)
+        if remaining <= 0.0:
+            return
+        step = COLONY_BODY_STEP_S
+        # 0.25 s * speed 10 is 2.5 s, thirty slices. The cap only bounds a
+        # runaway dt; the tail is still applied so time is not dropped.
+        for _ in range(48):
+            if remaining <= 1e-9:
+                return
+            this = step if remaining > step else remaining
+            self.autonomous_tick(this)
+            remaining -= this
+        if remaining > 1e-9:
+            self.autonomous_tick(remaining)
+
     def _apply_sleep_recovery(self, dt: float) -> None:
-        if (self.current_action != "sleep") and (not self._should_sleep_now()) and (not self._should_continue_sleeping()):
-            if self._should_wake_now():
+        # A chosen "sleep" before Process S reaches onset is quiet rest.
+        # Running recovery here discharges the drive. Below the resume
+        # threshold the same tick then wakes, so the night never starts.
+        # At speed 1 that cancels accumulation entirely. Onset and an
+        # ongoing bout still enter below.
+        if not (self._should_continue_sleeping() or self._should_sleep_now()):
+            if self.current_action == "sleep":
+                self.is_sleeping = False
+                self.current_action = "rest"
+            elif self._should_wake_now():
                 self.is_sleeping = False
             return
 
