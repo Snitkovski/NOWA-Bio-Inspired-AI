@@ -14,11 +14,11 @@ English version: [SPEC_AgentInspector_DeathRegistry_LineageTree_v1.1.en.md](SPEC
 
 Оверлей родословной и вкладка «Геном» инспектора для колонии с зерном генератора 11. Живые узлы цветные, умершие основатели серые. Полная галерея — [Эволюция в действии](../../../README.md#evolyutsiya-v-deystvii).
 
-![Родословная четырёх поколений](../../../docs/media/ru/evolution-lineage.png)
+![Родословная четырёх поколений](../../../Docs/media/ru/evolution-lineage.png)
 
 | Основатель `G0A4SM` | Потомок `G3A1SF` |
 |---|---|
-| ![Геном основателя](../../../docs/media/ru/evolution-founder.png) | ![Геном потомка](../../../docs/media/ru/evolution-descendant.png) |
+| ![Геном основателя](../../../Docs/media/ru/evolution-founder.png) | ![Геном потомка](../../../Docs/media/ru/evolution-descendant.png) |
 
 # Спецификация: DeathRegistry + AgentInspector + LineageOverlay
 

@@ -15,7 +15,7 @@ NOWA is a general-purpose cognitive core that:
 - **Selects actions** through the selector and basal-ganglia gate
 - **Consolidates experience** in sleep (replay Q, capture channel tags, habit EMA, cortex, SHY)
 
-See [docs/architecture/two-tier-plasticity.en.md](../docs/architecture/two-tier-plasticity.en.md) and [SLEEP.en.md](SLEEP.en.md).
+See [Docs/architecture/two-tier-plasticity.en.md](../Docs/architecture/two-tier-plasticity.en.md) and [SLEEP.en.md](SLEEP.en.md).
 
 ---
 

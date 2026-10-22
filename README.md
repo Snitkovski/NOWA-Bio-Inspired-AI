@@ -9,7 +9,7 @@
 Source-available, not open source. Free for research and other non-commercial use under the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0). Redistribution, modification, and commercial use need a separate license from the author ([@burlakovmb](https://github.com/burlakovmb)).
 
 <p align="center">
-  <img src="docs/media/en/colony.gif" alt="Six NOWA agents in the chinchilla colony, each with its own memory, moving through a shared cage" width="760">
+  <img src="Docs/media/en/colony.gif" alt="Six NOWA agents in the chinchilla colony, each with its own memory, moving through a shared cage" width="760">
 </p>
 
 ### Why it's interesting
@@ -61,7 +61,7 @@ Demo windows and the core observation window open in English. `NOWA_LANG=ru` or 
 
 | Colony | Tamagotchi | Family tree |
 |---|---|---|
-| ![Colony still](docs/media/en/colony.png) | ![Tamagotchi](docs/media/en/tamagotchi.gif) | ![Lineage](docs/media/en/lineage.png) |
+| ![Colony still](Docs/media/en/colony.png) | ![Tamagotchi](Docs/media/en/tamagotchi.gif) | ![Lineage](Docs/media/en/lineage.png) |
 
 The family tree is the colony lineage overlay: founders, offspring, living agents in color, dead agents in grey.
 
@@ -71,32 +71,32 @@ The family tree is the colony lineage overlay: founders, offspring, living agent
 
 One colony, generator seed 11, three birth waves through the colony runner. Display names are the colony ids (`G0A1SF` and the rest). The status strip is five checkpoints of that run: 8 founders, then 15, 20, and 25 living, then 22 after three founder deaths (17 births, 3 deaths).
 
-![Colony status over the run](docs/media/en/evolution-colony.gif)
+![Colony status over the run](Docs/media/en/evolution-colony.gif)
 
 Final frame of that strip: 22 living, 17 births, 3 deaths.
 
-![Final colony status](docs/media/en/evolution-colony.png)
+![Final colony status](Docs/media/en/evolution-colony.png)
 
 The same pedigree in the lineage overlay. Living nodes are colored, dead founders are grey, and the clip moves the tooltip across the tree.
 
 | Tree | Tooltip moving across the tree |
 |---|---|
-| ![Four-generation lineage](docs/media/en/evolution-lineage.png) | ![Lineage clip](docs/media/en/evolution-lineage.gif) |
+| ![Four-generation lineage](Docs/media/en/evolution-lineage.png) | ![Lineage clip](Docs/media/en/evolution-lineage.gif) |
 
 Swarm analytics on the final colony: the current slice, per-generation bars, gene tracks, and the forecast.
 
 | State | Generations |
 |---|---|
-| ![Swarm state](docs/media/en/evolution-swarm.png) | ![Generation bars](docs/media/en/evolution-generations.png) |
-| ![Gene tracks](docs/media/en/evolution-genomes.png) | ![Forecast](docs/media/en/evolution-forecast.png) |
+| ![Swarm state](Docs/media/en/evolution-swarm.png) | ![Generation bars](Docs/media/en/evolution-generations.png) |
+| ![Gene tracks](Docs/media/en/evolution-genomes.png) | ![Forecast](Docs/media/en/evolution-forecast.png) |
 
 Genome tab for a living founder and for `G3A1SF`, a generation-3 descendant. The descendant lists parents back to the founders. The third frame is that same descendant scrolled to gene changes: each figure is the child's value minus the parental midpoint, the shift introduced by crossover and mutation. Those shifts are the genome the birth path copied into the offspring. A bounded set of traces already consolidated can pass as well; that contract is [Docs/SPEC_B_EpigenomeSnapshot.en.md](Docs/SPEC_B_EpigenomeSnapshot.en.md).
 
 | Founder `G0A4SM` | Descendant `G3A1SF` |
 |---|---|
-| ![Founder genome](docs/media/en/evolution-founder.png) | ![Descendant genome](docs/media/en/evolution-descendant.png) |
+| ![Founder genome](Docs/media/en/evolution-founder.png) | ![Descendant genome](Docs/media/en/evolution-descendant.png) |
 
-![Gene changes from the parental midpoint](docs/media/en/evolution-mutations.png)
+![Gene changes from the parental midpoint](Docs/media/en/evolution-mutations.png)
 
 [English](#en) · [Русский](#ru)
 
@@ -148,7 +148,7 @@ Reading order: [Docs/START_HERE_NEW.en.md](Docs/START_HERE_NEW.en.md).
 
 ### Subject
 
-During waking the agent records episodes, activates memory, and selects an action using stable plus labile effective values. The host passes elapsed time (`dt` or `advance_time`) and calls `sleep()` when its schedule requires consolidation; stable parameters do not change between sleeps. Neuromodulators modulate state and sleep replay. The genome encodes inheritable coefficients of the subsystems; the epigenome carries a bounded set of traces already consolidated. Host contract and plasticity parameters: [docs/architecture/two-tier-plasticity.en.md](docs/architecture/two-tier-plasticity.en.md). The cognitive core does not import the protocol of external tools.
+During waking the agent records episodes, activates memory, and selects an action using stable plus labile effective values. The host passes elapsed time (`dt` or `advance_time`) and calls `sleep()` when its schedule requires consolidation; stable parameters do not change between sleeps. Neuromodulators modulate state and sleep replay. The genome encodes inheritable coefficients of the subsystems; the epigenome carries a bounded set of traces already consolidated. Host contract and plasticity parameters: [Docs/architecture/two-tier-plasticity.en.md](Docs/architecture/two-tier-plasticity.en.md). The cognitive core does not import the protocol of external tools.
 
 ### Repository layout
 
@@ -187,11 +187,11 @@ python src/gui.py
 
 `--lang en|ru` and `NOWA_LANG` select the language. EN and RU in the title bar switch it, and the active button is highlighted.
 
-![NOWA cognitive interface in English](docs/media/en/core-gui.png)
+![NOWA cognitive interface in English](Docs/media/en/core-gui.png)
 
 The inspector opens from Actions:
 
-![Agent state inspector in English](docs/media/en/core-inspector.png)
+![Agent state inspector in English](Docs/media/en/core-inspector.png)
 
 Subsystem verification protocols are given in [Docs/TESTING.en.md](Docs/TESTING.en.md). Platform commands are given in the English scientific accounts linked from [Docs/INDEX.en.md](Docs/INDEX.en.md).
 
@@ -230,7 +230,7 @@ Contributions are accepted only by individual invitation from Mikhail Burlakov, 
 
 | Колония | Тамагочи | Родословная |
 |---|---|---|
-| ![Колония](docs/media/ru/colony.png) | ![Тамагочи](docs/media/ru/tamagotchi.gif) | ![Родословная](docs/media/ru/lineage.png) |
+| ![Колония](Docs/media/ru/colony.png) | ![Тамагочи](Docs/media/ru/tamagotchi.gif) | ![Родословная](Docs/media/ru/lineage.png) |
 
 Родословная — оверлей колонии: основатели, потомки, живые в цвете, умершие серым.
 
@@ -240,32 +240,32 @@ Contributions are accepted only by individual invitation from Mikhail Burlakov, 
 
 Одна колония, зерно генератора 11, три волны рождений через бегунок колонии. Имена на экране — идентификаторы колонии (`G0A1SF` и далее). Полоса состояния — пять срезов этого прогона: 8 основателей, затем 15, 20 и 25 живых, затем 22 после смерти трёх основателей (17 рождений, 3 смерти).
 
-![Состояние колонии по ходу прогона](docs/media/ru/evolution-colony.gif)
+![Состояние колонии по ходу прогона](Docs/media/ru/evolution-colony.gif)
 
 Последний кадр этой полосы: 22 живых, 17 рождений, 3 смерти.
 
-![Финальное состояние колонии](docs/media/ru/evolution-colony.png)
+![Финальное состояние колонии](Docs/media/ru/evolution-colony.png)
 
 Та же родословная. Живые узлы цветные, умершие основатели серые, ролик ведёт подсказку по дереву.
 
 | Дерево | Подсказка по дереву |
 |---|---|
-| ![Родословная четырёх поколений](docs/media/ru/evolution-lineage.png) | ![Ролик родословной](docs/media/ru/evolution-lineage.gif) |
+| ![Родословная четырёх поколений](Docs/media/ru/evolution-lineage.png) | ![Ролик родословной](Docs/media/ru/evolution-lineage.gif) |
 
 Аналитика роя на финальной колонии: текущий срез, столбцы по поколениям, треки генов и прогноз.
 
 | Состояние | Поколения |
 |---|---|
-| ![Состояние роя](docs/media/ru/evolution-swarm.png) | ![Столбцы поколений](docs/media/ru/evolution-generations.png) |
-| ![Треки генов](docs/media/ru/evolution-genomes.png) | ![Прогноз](docs/media/ru/evolution-forecast.png) |
+| ![Состояние роя](Docs/media/ru/evolution-swarm.png) | ![Столбцы поколений](Docs/media/ru/evolution-generations.png) |
+| ![Треки генов](Docs/media/ru/evolution-genomes.png) | ![Прогноз](Docs/media/ru/evolution-forecast.png) |
 
 Вкладка «Геном» у живого основателя и у `G3A1SF`, потомка третьего поколения. Потомок перечисляет родителей до основателей. Третий кадр — тот же потомок, прокрученный к изменениям генов: каждая величина есть значение ребёнка минус середина родителей, сдвиг от кроссовера и мутации. Эти сдвиги — геном, который путь рождения скопировал потомку. Ограниченный набор уже консолидированных следов тоже может перейти; этот контракт описан в [Docs/SPEC_B_EpigenomeSnapshot.ru.md](Docs/SPEC_B_EpigenomeSnapshot.ru.md).
 
 | Основатель `G0A4SM` | Потомок `G3A1SF` |
 |---|---|
-| ![Геном основателя](docs/media/ru/evolution-founder.png) | ![Геном потомка](docs/media/ru/evolution-descendant.png) |
+| ![Геном основателя](Docs/media/ru/evolution-founder.png) | ![Геном потомка](Docs/media/ru/evolution-descendant.png) |
 
-![Изменения генов относительно середины родителей](docs/media/ru/evolution-mutations.png)
+![Изменения генов относительно середины родителей](Docs/media/ru/evolution-mutations.png)
 
 Когнитивная архитектура автономного агента с раздельными фазами бодрствования и сна, каноническим восьмимерным аффективным пространством, локальным обучением по ошибке предсказания награды и эволюционной настройкой параметров модулей.
 
@@ -311,7 +311,7 @@ NOWA — программная модель агента, который жив
 
 ### Предмет
 
-В бодрствовании агент записывает эпизоды, активирует память и выбирает действие по эффективным (стабильным + лабильным) значениям. Хост передаёт прошедшее время (`dt` или `advance_time`) и вызывает `sleep()` по своему расписанию; стабильные параметры между снами не меняются. Нейромодуляторы модулируют состояние и replay во сне. Геном кодирует наследуемые коэффициенты подсистем; эпигеном переносит ограниченный набор уже консолидированных следов. Контракт с хостом: [docs/architecture/two-tier-plasticity.ru.md](docs/architecture/two-tier-plasticity.ru.md). Когнитивное ядро не импортирует протокол внешних инструментов.
+В бодрствовании агент записывает эпизоды, активирует память и выбирает действие по эффективным (стабильным + лабильным) значениям. Хост передаёт прошедшее время (`dt` или `advance_time`) и вызывает `sleep()` по своему расписанию; стабильные параметры между снами не меняются. Нейромодуляторы модулируют состояние и replay во сне. Геном кодирует наследуемые коэффициенты подсистем; эпигеном переносит ограниченный набор уже консолидированных следов. Контракт с хостом: [Docs/architecture/two-tier-plasticity.ru.md](Docs/architecture/two-tier-plasticity.ru.md). Когнитивное ядро не импортирует протокол внешних инструментов.
 
 ### Состав репозитория
 
@@ -350,11 +350,11 @@ python src/gui.py
 
 `--lang en|ru` и `NOWA_LANG` задают язык. Кнопки EN и RU в заголовке переключают его, активная подсвечена.
 
-![Когнитивный интерфейс NOWA по-русски](docs/media/ru/core-gui.png)
+![Когнитивный интерфейс NOWA по-русски](Docs/media/ru/core-gui.png)
 
 Инспектор открывается из блока «Действия»:
 
-![Инспектор состояния агента по-русски](docs/media/ru/core-inspector.png)
+![Инспектор состояния агента по-русски](Docs/media/ru/core-inspector.png)
 
 Протоколы проверки подсистем приведены в [Docs/TESTING.ru.md](Docs/TESTING.ru.md). Команды установок — в русских научных описаниях, на которые ведёт [Docs/INDEX.ru.md](Docs/INDEX.ru.md).
 

@@ -12,9 +12,9 @@ English version: [COLONY_SPEC.en.md](COLONY_SPEC.en.md)
 
 Колония с зерном генератора 11, выведенная через этот бегунок и снятая существующими оверлеями. Имена — идентификаторы колонии. Полные галереи на английском и русском — в разделе README [Эволюция в действии](../../../README.md#evolyutsiya-v-deystvii).
 
-![Родословная четырёх поколений](../../../docs/media/ru/evolution-lineage.png)
+![Родословная четырёх поколений](../../../Docs/media/ru/evolution-lineage.png)
 
-![Столбцы поколений](../../../docs/media/ru/evolution-generations.png)
+![Столбцы поколений](../../../Docs/media/ru/evolution-generations.png)
 
 Теоретическое описание ядра и разбор колонии в препринте: [arxiv_NOWA_ru.md](../../../Docs/arxiv_NOWA_ru.md). Реализованное состояние модулей: [IMPLEMENTATION_DESCRIPTION.ru.md](IMPLEMENTATION_DESCRIPTION.ru.md). Контракты подсистем остаются в файлах `SPEC_*.md` настоящего каталога.
 

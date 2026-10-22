@@ -17,7 +17,7 @@ NOWA — универсальное когнитивное ядро, котор�
 - **Выбирает действия** через selector и затвор базальных ганглиев
 - **Консолидирует опыт** во сне (replay Q, capture меток канала, EMA привычек, кора, SHY)
 
-См. [docs/architecture/two-tier-plasticity.ru.md](../docs/architecture/two-tier-plasticity.ru.md) и [SLEEP.ru.md](SLEEP.ru.md).
+См. [Docs/architecture/two-tier-plasticity.ru.md](../Docs/architecture/two-tier-plasticity.ru.md) и [SLEEP.ru.md](SLEEP.ru.md).
 
 ---
 

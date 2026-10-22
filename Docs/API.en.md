@@ -49,11 +49,11 @@ The core does not choose when to sleep or how fast simulated time runs.
 
 **Learning guard** (`src/learning_guard.py`): `NOWA_STRICT_LEARNING=1` (core tests) raises `WakingLearningError` on stable writes while awake; otherwise the write is skipped with a one-time log. `stable_fingerprint(agent)` hashes category-A parameters; `labile_snapshot(agent)` materializes labile offsets at `_host_clock_s`.
 
-Narrative: [docs/architecture/two-tier-plasticity.en.md](../docs/architecture/two-tier-plasticity.en.md), [SLEEP.en.md](SLEEP.en.md).
+Narrative: [Docs/architecture/two-tier-plasticity.en.md](../Docs/architecture/two-tier-plasticity.en.md), [SLEEP.en.md](SLEEP.en.md).
 
 ### Контракт с хостом и пластичность
 
-Ядро не решает, когда спать и с какой скоростью идёт время. Таблица выше: `PlasticityConfig`, `dt` / `advance_time`, `sleep()`, `register_action_channel`, `initializing()`. Guard: `NOWA_STRICT_LEARNING`, `WakingLearningError`, `stable_fingerprint`, `labile_snapshot`. Текст: [two-tier-plasticity.ru.md](../docs/architecture/two-tier-plasticity.ru.md), [SLEEP.ru.md](SLEEP.ru.md).
+Ядро не решает, когда спать и с какой скоростью идёт время. Таблица выше: `PlasticityConfig`, `dt` / `advance_time`, `sleep()`, `register_action_channel`, `initializing()`. Guard: `NOWA_STRICT_LEARNING`, `WakingLearningError`, `stable_fingerprint`, `labile_snapshot`. Текст: [two-tier-plasticity.ru.md](../Docs/architecture/two-tier-plasticity.ru.md), [SLEEP.ru.md](SLEEP.ru.md).
 
 ---
 

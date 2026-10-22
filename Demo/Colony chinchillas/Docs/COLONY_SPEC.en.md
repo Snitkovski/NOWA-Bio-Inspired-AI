@@ -12,9 +12,9 @@ The platform models a population in which each individual is an autonomous NOWA 
 
 A seeded colony (generator seed 11) bred through this runner, drawn with the existing overlays. Names are colony ids. The full English and Russian galleries are in the README section [Evolution in action](../../../README.md#evolution-in-action).
 
-![Four-generation lineage](../../../docs/media/en/evolution-lineage.png)
+![Four-generation lineage](../../../Docs/media/en/evolution-lineage.png)
 
-![Generation bars](../../../docs/media/en/evolution-generations.png)
+![Generation bars](../../../Docs/media/en/evolution-generations.png)
 
 The theoretical account of the core and the colony analysis in the preprint: [arxiv_NOWA_en.md](../../../Docs/arxiv_NOWA_en.md). The implemented state of the modules: [IMPLEMENTATION_DESCRIPTION.en.md](IMPLEMENTATION_DESCRIPTION.en.md). Subsystem contracts remain in the `SPEC_*.md` files of this directory.
 

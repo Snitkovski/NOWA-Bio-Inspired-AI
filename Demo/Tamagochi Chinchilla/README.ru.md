@@ -12,7 +12,7 @@ python src/main.py --lang ru
 
 Окно по умолчанию английское. `--lang ru` или `NOWA_LANG=ru` включает русский; в окне — клавиша `G` или отдельные кнопки EN и RU. Активный язык подсвечен. Проверки: `python -m pytest -q tests` из каталога `Demo/Tamagochi Chinchilla`.
 
-![Тамагочи](../../docs/media/ru/tamagotchi.gif)
+![Тамагочи](../../Docs/media/ru/tamagotchi.gif)
 
 Документы `Docs/PHASE2_MEMORY_SYSTEM.md`, `Docs/PHASE3_SCHEDULING_SYSTEM.md`, `Docs/NOWA_INTEGRATION_SPEC.md` и `Docs/IMPLEMENTATION_SPEC.md` являются нормативными и историческими протоколами. Актуальное состояние сборки — одновременное присутствие модулей ядра и локального этологического слоя, включая `scheduling_system.py` и `DriveSystem`.
 

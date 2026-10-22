@@ -427,7 +427,7 @@ NOWA-Cognitive/
 │   ├── realizations_*.json
 │   └── test.json
 │
-├── docs/                           # Documentation (this folder)
+├── Docs/                           # Documentation (this folder)
 │   ├── ARCHITECTURE.md             # System overview
 │   ├── API.md                      # API reference
 │   ├── TESTING.ru.md                  # Test guide
@@ -565,7 +565,7 @@ deactivate
 ## Поддержка
 
 - **Сообщения об ошибках:** открыть issue на GitHub
-- **Документация:** каталог `docs/`
+- **Документация:** каталог `Docs/`
 - **Тесты:** выполнить `pytest tests/ -v`
 - **Пример:** каталог `Demo/`
 

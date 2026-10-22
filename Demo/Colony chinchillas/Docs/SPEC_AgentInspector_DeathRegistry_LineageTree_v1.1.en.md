@@ -14,11 +14,11 @@ In the multi-agent NOWA installation, the specification establishes a longitudin
 
 Lineage overlay and inspector genome tab from a seeded colony (generator seed 11). Living nodes are colored, dead founders are grey. The full gallery is [Evolution in action](../../../README.md#evolution-in-action).
 
-![Four-generation lineage](../../../docs/media/en/evolution-lineage.png)
+![Four-generation lineage](../../../Docs/media/en/evolution-lineage.png)
 
 | Founder `G0A4SM` | Descendant `G3A1SF` |
 |---|---|
-| ![Founder genome](../../../docs/media/en/evolution-founder.png) | ![Descendant genome](../../../docs/media/en/evolution-descendant.png) |
+| ![Founder genome](../../../Docs/media/en/evolution-founder.png) | ![Descendant genome](../../../Docs/media/en/evolution-descendant.png) |
 
 # Specification: DeathRegistry + AgentInspector + LineageOverlay
 

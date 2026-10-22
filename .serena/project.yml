@@ -122,8 +122,8 @@ ls_additional_workspace_folders: []
 # Demo/ source stays indexed: the team adapts the demos.
 # Ignored entries are generated output, caches, and binary assets.
 ignored_paths:
-  - "docs/media/**"
-  - "docs/_build/**"
+  - "Docs/media/**"
+  - "Docs/_build/**"
   - "Demo/**/sprites/**"
   - "Demo/**/sfx/**"
   - "Demo/**/Datasets/**"

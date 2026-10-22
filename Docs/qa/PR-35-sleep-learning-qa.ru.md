@@ -1,6 +1,6 @@
 # QA круг 1: PR #35 — sleep value replay, BG sleep, neuromodulator fixed points
 
-> **Superseded in part by issue #13** (two-tier plasticity, PR #37–#40). Sleep replay and BG decay remain; episode capture, exactly-once habits/Go/NoGo, and labile/stable split are documented in `docs/specs/issue-13-two-tier-plasticity.md`.
+> **Superseded in part by issue #13** (two-tier plasticity, PR #37–#40). Sleep replay and BG decay remain; episode capture, exactly-once habits/Go/NoGo, and labile/stable split are documented in `Docs/specs/issue-13-two-tier-plasticity.ru.md`.
 >
 > **Частично заменено issue #13** (PR #37–#40). Replay и SHY из PR #35 сохранены; capture и разделение labile/stable — в спеке #13.
 
