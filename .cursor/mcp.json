@@ -2,16 +2,13 @@
   "mcpServers": {
     "serena": {
       "type": "stdio",
-      "command": "serena",
+      "command": "bash",
       "args": [
-        "start-mcp-server",
-        "--context",
-        "ide",
-        "--agent-interface",
-        "tools",
-        "--project",
-        "${workspaceFolder}"
-      ]
+        "${workspaceFolder}/.cursor/serena-mcp.sh"
+      ],
+      "env": {
+        "SERENA_PROJECT_ROOT": "${workspaceFolder}"
+      }
     }
   }
 }
