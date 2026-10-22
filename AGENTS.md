@@ -2,7 +2,9 @@
 
 ## Serena
 
-Serena (`serena-agent`) is installed by `.cursor/install.sh` and registered in `.cursor/mcp.json` (`serena start-mcp-server --context ide --project ${workspaceFolder}`).
+Serena (`serena-agent`) is installed by `.cursor/install.sh` (Cloud Agent **Build** `install`) and started via `.cursor/serena-mcp.sh` / `.cursor/mcp.json` for the IDE.
+
+**Cloud Agents:** repo `mcp.json` is not loaded automatically. Link `.cursor/environment.json` in the Cloud Agents dashboard, trigger a Build, then add stdio MCP `serena` pointing at `/workspace/.cursor/serena-mcp.sh`. See [Docs/specs/serena-cloud-agent.en.md](Docs/specs/serena-cloud-agent.en.md).
 
 At the start of a task, read the project memories under `.serena/memories/`. Start with `critical_info` (also inlined when the project activates) and `core`, then the memories `core` points at.
 

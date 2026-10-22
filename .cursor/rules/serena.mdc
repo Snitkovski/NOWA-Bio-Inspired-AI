@@ -3,7 +3,7 @@ description: Use Serena symbolic tools and read Serena project memories first
 alwaysApply: true
 ---
 
-Serena is the MCP coding toolkit for this repo. The server is `serena` in `.cursor/mcp.json` (context `ide`, agent interface `tools`). `.cursor/install.sh` installs `uv` and `serena-agent`.
+Serena is the MCP coding toolkit for this repo. The server is `serena` in `.cursor/mcp.json` (wrapper `.cursor/serena-mcp.sh`, context `ide`, agent interface `tools`). `.cursor/install.sh` installs `uv` and `serena-agent` during Cloud Agent Builds.
 
 At the start of a task, read `.serena/memories/`, beginning with `critical_info` and `core`, then the memories `core` references.
 
