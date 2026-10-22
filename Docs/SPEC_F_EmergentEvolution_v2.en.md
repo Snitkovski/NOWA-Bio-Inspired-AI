@@ -36,9 +36,9 @@ Swarm analytics from a four-generation colony (generator seed 11): per-generatio
 
 | Generations | Gene tracks |
 |---|---|
-| ![Generation bars](../docs/media/en/evolution-generations.png) | ![Gene tracks](../docs/media/en/evolution-genomes.png) |
+| ![Generation bars](../Docs/media/en/evolution-generations.png) | ![Gene tracks](../Docs/media/en/evolution-genomes.png) |
 
-![Forecast](../docs/media/en/evolution-forecast.png)
+![Forecast](../Docs/media/en/evolution-forecast.png)
 
 ---
 

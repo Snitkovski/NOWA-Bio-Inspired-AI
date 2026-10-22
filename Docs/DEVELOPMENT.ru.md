@@ -78,7 +78,7 @@ python -m pytest tests/ -v
 
 ```bash
 # Stage changes
-git add src/ tests/ docs/
+git add src/ tests/ Docs/
 
 # Commit with clear message
 git commit -m "feat: add new feature to neuromodulators

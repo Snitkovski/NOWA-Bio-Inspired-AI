@@ -4,7 +4,7 @@ Russian version: [SPEC_ChinchillaAgent_NOWA.ru.md](SPEC_ChinchillaAgent_NOWA.ru.
 
 Scientific account of the colony: [COLONY_SPEC.en.md](COLONY_SPEC.en.md).
 
-Two-tier plasticity for this demo (game `dt`, labile waking writes, stable writes only in `Agent.sleep`) is specified in [issue-13-demo-colony.md](../../../docs/specs/issue-13-demo-colony.md).
+Two-tier plasticity for this demo (game `dt`, labile waking writes, stable writes only in `Agent.sleep`) is specified in [issue-13-demo-colony.md](../../../Docs/specs/issue-13-demo-colony.en.md).
 
 This document describes the current implementation of `ChinchillaAgent`, which extends the base NOWA agent into an autonomous individual of the chinchilla colony. An instance joins the cognitive action-selection cycle to colony-specific social and reproductive behaviour, to the physiological constraints of hunger, thirst, and wakefulness, and to interaction with the cage's shared resources. Each individual is an agent in its own right, not an outer wrapper around a decision made elsewhere.
 

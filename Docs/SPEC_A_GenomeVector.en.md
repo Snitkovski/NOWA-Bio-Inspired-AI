@@ -29,9 +29,9 @@ Inspector genome tab from a four-generation colony (generator seed 11). The desc
 
 | Founder `G0A4SM` | Descendant `G3A1SF` |
 |---|---|
-| ![Founder genome](../docs/media/en/evolution-founder.png) | ![Descendant genome](../docs/media/en/evolution-descendant.png) |
+| ![Founder genome](../Docs/media/en/evolution-founder.png) | ![Descendant genome](../Docs/media/en/evolution-descendant.png) |
 
-![Gene changes from the parental midpoint](../docs/media/en/evolution-mutations.png)
+![Gene changes from the parental midpoint](../Docs/media/en/evolution-mutations.png)
 
 ---
 

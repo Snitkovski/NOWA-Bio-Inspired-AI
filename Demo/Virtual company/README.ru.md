@@ -12,15 +12,15 @@ python src/nowa_sandbox/run_sandbox.py --config configs/default_world.yaml --sta
 
 Лаборатория песочницы: `python -m nowa_sandbox.gui_app --lang ru` (либо `run_gui.bat`).
 
-![Лаборатория песочницы закупок по-русски](../../docs/media/ru/sandbox-lab.png)
+![Лаборатория песочницы закупок по-русски](../../Docs/media/ru/sandbox-lab.png)
 
 Лаборатория тела: `python -m nowa_body.gui_app --lang ru` (либо `run_body_gui.bat`).
 
-![Лаборатория слоя «тело» по-русски](../../docs/media/ru/body-lab.png)
+![Лаборатория слоя «тело» по-русски](../../Docs/media/ru/body-lab.png)
 
 Конфигуратор ролей: `python -m nowa_body.gui_configurator --lang ru` (либо `run_role_configurator.bat`).
 
-![Конфигуратор ролей по-русски](../../docs/media/ru/role-configurator.png)
+![Конфигуратор ролей по-русски](../../Docs/media/ru/role-configurator.png)
 
 В каждой лаборатории две кнопки, EN и RU, и активная подсвечена. Выбор запоминается. `--lang en|ru` перекрывает сохранённое предпочтение на один запуск; иначе действует `NOWA_LANG`, а если её нет — сохранённый выбор. По умолчанию английский.
 

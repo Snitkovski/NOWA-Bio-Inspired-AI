@@ -45,7 +45,7 @@ English version: [API.en.md](API.en.md)
 | Новые каналы действий | `register_action_channel` (внутри `initializing()`) |
 | Посев после загрузки | `with initializing(): ...` |
 
-`PlasticityConfig` в `src/labile_layer.py`. Guard: `NOWA_STRICT_LEARNING`, `WakingLearningError`, `stable_fingerprint`, `labile_snapshot`. Текст: [two-tier-plasticity.ru.md](../docs/architecture/two-tier-plasticity.ru.md), [SLEEP.ru.md](SLEEP.ru.md).
+`PlasticityConfig` в `src/labile_layer.py`. Guard: `NOWA_STRICT_LEARNING`, `WakingLearningError`, `stable_fingerprint`, `labile_snapshot`. Текст: [two-tier-plasticity.ru.md](../Docs/architecture/two-tier-plasticity.ru.md), [SLEEP.ru.md](SLEEP.ru.md).
 
 ### Host contract and plasticity
 

@@ -10,3 +10,5 @@ At the start of a task, read `.serena/memories/`, beginning with `critical_info`
 Prefer Serena symbolic tools (`get_symbols_overview`, `find_symbol`, `find_referencing_symbols`, `replace_symbol_body`, insert before or after a symbol) for navigation and code edits. Use a line-based edit only when there is no symbol to address.
 
 Do not pass `--context ide-assistant`. That name is retired in current Serena and is not the Cursor context.
+
+Documentation: write only under `Docs/` (capital D) as `.en.md` / `.ru.md` pairs (`Docs/specs/`, `Docs/qa/`). Link to the matching language suffix.

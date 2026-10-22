@@ -2,7 +2,7 @@
 
 Russian: [SLEEP.ru.md](SLEEP.ru.md)
 
-Overview of tiers and the host contract: [docs/architecture/two-tier-plasticity.en.md](../docs/architecture/two-tier-plasticity.en.md).
+Overview of tiers and the host contract: [Docs/architecture/two-tier-plasticity.en.md](../Docs/architecture/two-tier-plasticity.en.md).
 
 `Agent.sleep(cycles=...)` is the **only** entry that opens `learning_allowed()` for stable-tier writers. Implementation: `src/agent.py` (`sleep`), `src/sleep.py` (`SleepManager.deep_sleep`, `_consolidate_two_tier_once`).
 

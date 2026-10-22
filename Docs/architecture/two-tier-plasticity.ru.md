@@ -2,7 +2,7 @@
 
 English: [two-tier-plasticity.en.md](two-tier-plasticity.en.md)
 
-Нормативная спецификация: [docs/specs/issue-13-two-tier-plasticity.md](../specs/issue-13-two-tier-plasticity.md).  
+Нормативная спецификация: [Docs/specs/issue-13-two-tier-plasticity.ru.md](../specs/issue-13-two-tier-plasticity.ru.md).  
 Порядок сна: [Docs/SLEEP.ru.md](../../Docs/SLEEP.ru.md).  
 API: [Docs/API.ru.md](../../Docs/API.ru.md).
 

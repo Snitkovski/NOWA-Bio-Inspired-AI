@@ -2,7 +2,7 @@
 
 English: [SLEEP.en.md](SLEEP.en.md)
 
-Обзор уровней и контракт с хостом: [docs/architecture/two-tier-plasticity.ru.md](../docs/architecture/two-tier-plasticity.ru.md).
+Обзор уровней и контракт с хостом: [Docs/architecture/two-tier-plasticity.ru.md](../Docs/architecture/two-tier-plasticity.ru.md).
 
 `Agent.sleep(cycles=...)` — единственная точка входа, открывающая `learning_allowed()` для записи в стабильный слой. Код: `src/agent.py`, `src/sleep.py` (`deep_sleep`, `_consolidate_two_tier_once`).
 

@@ -28,9 +28,9 @@ English version: [SPEC_A_GenomeVector.en.md](SPEC_A_GenomeVector.en.md)
 
 | Основатель `G0A4SM` | Потомок `G3A1SF` |
 |---|---|
-| ![Геном основателя](../docs/media/ru/evolution-founder.png) | ![Геном потомка](../docs/media/ru/evolution-descendant.png) |
+| ![Геном основателя](../Docs/media/ru/evolution-founder.png) | ![Геном потомка](../Docs/media/ru/evolution-descendant.png) |
 
-![Изменения генов относительно середины родителей](../docs/media/ru/evolution-mutations.png)
+![Изменения генов относительно середины родителей](../Docs/media/ru/evolution-mutations.png)
 
 ---
 

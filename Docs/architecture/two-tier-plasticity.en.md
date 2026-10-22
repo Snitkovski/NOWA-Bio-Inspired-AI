@@ -2,7 +2,7 @@
 
 Russian: [two-tier-plasticity.ru.md](two-tier-plasticity.ru.md)
 
-Normative detail: [docs/specs/issue-13-two-tier-plasticity.md](../specs/issue-13-two-tier-plasticity.md).  
+Normative detail: [Docs/specs/issue-13-two-tier-plasticity.en.md](../specs/issue-13-two-tier-plasticity.en.md).  
 Sleep cycle ordering: [Docs/SLEEP.en.md](../../Docs/SLEEP.en.md).  
 API surface: [Docs/API.en.md](../../Docs/API.en.md).
 

@@ -35,9 +35,9 @@ English version: [SPEC_F_EmergentEvolution_v2.en.md](SPEC_F_EmergentEvolution_v2
 
 | Поколения | Треки генов |
 |---|---|
-| ![Столбцы поколений](../docs/media/ru/evolution-generations.png) | ![Треки генов](../docs/media/ru/evolution-genomes.png) |
+| ![Столбцы поколений](../Docs/media/ru/evolution-generations.png) | ![Треки генов](../Docs/media/ru/evolution-genomes.png) |
 
-![Прогноз](../docs/media/ru/evolution-forecast.png)
+![Прогноз](../Docs/media/ru/evolution-forecast.png)
 
 ---
 
