@@ -3,7 +3,11 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from colony_behavior_profile import load_colony_behavior_profile
-from colony_agent import ChinchillaAgent, WHEEL_RUN_MAX_CONTINUOUS_S
+from colony_agent import (
+    SLEEP_RECOVERY_DURATION_FACTOR,
+    ChinchillaAgent,
+    WHEEL_RUN_MAX_CONTINUOUS_S,
+)
 from config_colony import COLONY_MAX_LIFESPAN_STEPS
 from shared_resources import SharedResources
 
@@ -447,11 +451,16 @@ def test_tc30_sleep_recovery_runs_before_sleep_deprivation_mortality() -> None:
     agent.colony = [agent]
     agent.resources = SharedResources()
     agent.energy = 1.0
-    agent.wakefulness.wakefulness = 0.9502
+    # Recovery on this slice is dt * 22 physiological seconds. Start just
+    # above the 0.95 death line so that slice, applied before mortality,
+    # is what keeps the animal alive.
+    dt = 0.1
+    drop = dt * SLEEP_RECOVERY_DURATION_FACTOR / (8.0 * 60.0 * 60.0)
+    agent.wakefulness.wakefulness = 0.95 + drop * 0.5
     agent.is_sleeping = True
     agent.current_action = "sleep"
 
-    agent.sim_step(0.1)
+    agent.sim_step(dt)
 
     assert agent.mortality_system.is_dead() is False
     assert float(agent.wakefulness.wakefulness) < 0.95

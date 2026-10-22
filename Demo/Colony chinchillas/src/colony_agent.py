@@ -73,6 +73,10 @@ COLONY_ACTIONS = list(COLONY_BEHAVIOR_PROFILE.base_abilities)
 SLEEP_WAKEFULNESS_THRESHOLD = 0.7
 SLEEP_HYSTERESIS = 0.7
 SLEEP_CRITICAL_THRESHOLD = 0.9
+# Historical per-tick floor. Not applied: a fixed physiological slice on
+# every tick made short steps restore energy and Process S faster than a
+# long step covering the same simulation second. Recovery is
+# ``dt * SLEEP_RECOVERY_DURATION_FACTOR``.
 SLEEP_MIN_RECOVERY_DURATION_S = 30.0
 SLEEP_RECOVERY_DURATION_FACTOR = 22.0
 SLEEP_CONSOLIDATION_INTERVAL_S = 900.0
@@ -90,6 +94,10 @@ HUNGER_NEED_THRESHOLD = 0.6
 HUNGER_CRITICAL_THRESHOLD = 0.85
 THIRST_NEED_THRESHOLD = 0.58
 THIRST_CRITICAL_THRESHOLD = 0.82
+# Eat and drink relieve the need before the unmet-need penalty starts.
+# Below availability there is still no relief (the portion rule).
+HUNGER_AVAILABILITY_THRESHOLD = 0.50
+THIRST_AVAILABILITY_THRESHOLD = 0.48
 HUNGER_ACCUMULATION_PER_S = 0.0035
 THIRST_ACCUMULATION_PER_S = 0.0045
 EAT_RELIEF = 0.48
@@ -298,6 +306,10 @@ class ChinchillaAgent(Agent):
         self._wheel_run_started_at: float | None = None
         self._exclusive_action_timer: float = 0.0
         self._metabolism_tick: float = 0.0
+        self._body_step_carry: float = 0.0
+        # Forced sleep continues only after a bout opened by real need
+        # (Process S at onset). A voluntary nap must not trap the animal.
+        self._sleep_entered_by_need: bool = False
         self._sleep_consolidation_accum_s: float = 0.0
         self.unconditioned_reflexes: tuple[UnconditionedReflex, ...] = (
             self.behavior_profile.unconditioned_reflexes
@@ -459,6 +471,13 @@ class ChinchillaAgent(Agent):
         self.sim_time += dt
         self._tick_exclusive_action(dt)
         self._check_offer_timeout()
+        # A need-bout yields once thirst or hunger enters the penalty band,
+        # unless Process S itself is already in the critical band. The animal
+        # has to be awake before this tick's decision, or drink stays impossible.
+        if self._must_wake_to_drink_or_eat() and (
+            self.is_sleeping or self._sleep_entered_by_need
+        ):
+            self._wake_from_sleep()
 
         self._perceive()
         if not self.is_sleeping:
@@ -824,13 +843,13 @@ class ChinchillaAgent(Agent):
         return wakefulness_value >= SLEEP_WAKEFULNESS_THRESHOLD
 
     def _needs_eat_action(self) -> bool:
-        threshold = HUNGER_NEED_THRESHOLD
+        threshold = HUNGER_AVAILABILITY_THRESHOLD
         if self.is_pregnant:
             threshold = max(0.0, threshold - 0.08)
         return _clamp(self.hunger, 0.0, 1.0) >= threshold
 
     def _needs_drink_action(self) -> bool:
-        threshold = THIRST_NEED_THRESHOLD
+        threshold = THIRST_AVAILABILITY_THRESHOLD
         if self.is_pregnant:
             threshold = max(0.0, threshold - 0.08)
         return _clamp(self.thirst, 0.0, 1.0) >= threshold
@@ -864,10 +883,10 @@ class ChinchillaAgent(Agent):
         wakefulness_value = _clamp(float(self.wakefulness.wakefulness), 0.0, 1.0)
         hunger_value = _clamp(self.hunger, 0.0, 1.0)
         thirst_value = _clamp(self.thirst, 0.0, 1.0)
-        wake_resume_threshold = SLEEP_WAKEFULNESS_THRESHOLD * SLEEP_HYSTERESIS
 
-        # If already sleeping and recovery is not complete, keep sleeping.
-        if self.is_sleeping and wakefulness_value >= wake_resume_threshold:
+        # Only a bout opened by real need keeps sleeping. Critical thirst
+        # or hunger clears that bout in ``_should_continue_sleeping``.
+        if self._should_continue_sleeping():
             return "sleep"
 
         # Critical sleep deprivation has absolute priority.
@@ -900,54 +919,99 @@ class ChinchillaAgent(Agent):
             return "explore"
         return normalized
 
+    def _must_wake_to_drink_or_eat(self) -> bool:
+        """A penalty-band thirst or hunger ends a bout. Critical sleep still wins.
+
+        The unmet-need cost stays on during sleep (an unmet need may be
+        fatal). At 0.025 energy per second that cost reaches exhaustion
+        before thirst or hunger hit the higher critical constants, so the
+        bout yields when the penalty starts and the animal can drink or
+        eat. Process S at the sleep-death threshold still keeps the night:
+        waking there would skip recovery and die of sleep deprivation on
+        the same tick.
+        """
+        thirst = _clamp(self.thirst, 0.0, 1.0)
+        hunger = _clamp(self.hunger, 0.0, 1.0)
+        if thirst < THIRST_NEED_THRESHOLD and hunger < HUNGER_NEED_THRESHOLD:
+            return False
+        wake = _clamp(float(self.wakefulness.wakefulness), 0.0, 1.0)
+        return wake < SLEEP_CRITICAL_THRESHOLD
+
+    def _wake_from_sleep(self) -> None:
+        self.is_sleeping = False
+        self._sleep_entered_by_need = False
+        if self.current_action == "sleep":
+            self.current_action = "rest"
+
     def _should_continue_sleeping(self) -> bool:
-        if not self.is_sleeping:
+        if not self.is_sleeping or not self._sleep_entered_by_need:
+            return False
+        if self._must_wake_to_drink_or_eat():
             return False
         wakefulness_value = _clamp(float(self.wakefulness.wakefulness), 0.0, 1.0)
         wake_resume_threshold = SLEEP_WAKEFULNESS_THRESHOLD * SLEEP_HYSTERESIS
         return wakefulness_value >= wake_resume_threshold
 
     def _sleep_recovery_duration_s(self, dt: float) -> float:
+        """Physiological seconds of this slice. Linear in ``dt``.
+
+        ``SLEEP_MIN_RECOVERY_DURATION_S`` is not a per-tick floor. Short
+        steps used to apply that floor on every call, so 1x restored energy
+        and Process S several times faster than 10x over the same
+        simulation second.
+        """
         safe_dt = max(0.0, float(dt))
-        return max(SLEEP_MIN_RECOVERY_DURATION_S, safe_dt * SLEEP_RECOVERY_DURATION_FACTOR)
+        return safe_dt * SLEEP_RECOVERY_DURATION_FACTOR
 
     def _advance_autonomous_body(self, dt: float) -> None:
         """Integrate the body in base steps so UI speed does not change metabolism.
 
         ``autonomous_tick`` spends cost in proportion to ``dt`` but rests once
-        per call. One long 10x tick therefore spends the bout down while a 1x
-        run rests on every short tick. Slices match speed 1. While asleep the
-        bout itself restores energy, and a waking tick must not run the body.
+        per call. Full slices of ``COLONY_BODY_STEP_S`` are applied and the
+        remainder is carried. A short tail used to rest a full time, so the
+        same simulation second restored more energy when it was split into
+        uneven steps. While asleep the bout itself restores energy, and a
+        waking tick must not run the body.
         """
         if self.is_sleeping or getattr(self, "autonomous_runtime", None) is None:
             return
         remaining = _host_dt(dt)
         if remaining <= 0.0:
             return
+        self._body_step_carry += remaining
         step = COLONY_BODY_STEP_S
-        # 0.25 s * speed 10 is 2.5 s, thirty slices. The cap only bounds a
-        # runaway dt; the tail is still applied so time is not dropped.
-        for _ in range(48):
-            if remaining <= 1e-9:
-                return
-            this = step if remaining > step else remaining
-            self.autonomous_tick(this)
-            remaining -= this
-        if remaining > 1e-9:
-            self.autonomous_tick(remaining)
+        guard = 0
+        while self._body_step_carry + 1e-12 >= step:
+            self.autonomous_tick(step)
+            self._body_step_carry -= step
+            guard += 1
+            if guard >= 100000:
+                break
+        if self._body_step_carry < 1e-9:
+            self._body_step_carry = 0.0
 
     def _apply_sleep_recovery(self, dt: float) -> None:
         # A chosen "sleep" before Process S reaches onset is quiet rest.
-        # Running recovery here discharges the drive. Below the resume
-        # threshold the same tick then wakes, so the night never starts.
-        # At speed 1 that cancels accumulation entirely. Onset and an
-        # ongoing bout still enter below.
-        if not (self._should_continue_sleeping() or self._should_sleep_now()):
-            if self.current_action == "sleep":
-                self.is_sleeping = False
-                self.current_action = "rest"
-            elif self._should_wake_now():
-                self.is_sleeping = False
+        # ``_interpret_action`` marks the animal asleep before this runs, so
+        # the continue check cannot treat that mark as a real bout. Only
+        # ``_sleep_entered_by_need`` keeps the night open. Critical thirst
+        # or hunger wakes the animal on this tick.
+        if self._must_wake_to_drink_or_eat():
+            if self.is_sleeping or self.current_action == "sleep" or self._sleep_entered_by_need:
+                self._wake_from_sleep()
+            return
+
+        wake = _clamp(float(self.wakefulness.wakefulness), 0.0, 1.0)
+        at_onset = wake >= SLEEP_WAKEFULNESS_THRESHOLD
+        if at_onset:
+            self._sleep_entered_by_need = True
+
+        in_need_bout = self._sleep_entered_by_need and (
+            self.is_sleeping or self.current_action == "sleep" or at_onset
+        )
+        if not in_need_bout:
+            if self.current_action == "sleep" or self.is_sleeping:
+                self._wake_from_sleep()
             return
 
         self.is_sleeping = True
@@ -973,10 +1037,8 @@ class ChinchillaAgent(Agent):
             self._sleep_consolidation_accum_s -= cycles * SLEEP_CONSOLIDATION_INTERVAL_S
             self.sleep(cycles=cycles, sleep_duration_seconds=0.0)
 
-        if self._should_wake_now():
-            self.is_sleeping = False
-            if self.current_action == "sleep":
-                self.current_action = "rest"
+        if self._should_wake_now() or self._must_wake_to_drink_or_eat():
+            self._wake_from_sleep()
 
     def _seed_habit_bootstrap(self) -> None:
         """Dataset priors are host seeding, not a waking habit update."""
@@ -1145,6 +1207,8 @@ class ChinchillaAgent(Agent):
         self._unstick_position()
 
     def _should_sleep_now(self) -> bool:
+        if self._must_wake_to_drink_or_eat():
+            return False
         return (not self.is_sleeping) and self.wakefulness.wakefulness >= SLEEP_WAKEFULNESS_THRESHOLD
 
     def _should_wake_now(self) -> bool:
@@ -1678,11 +1742,27 @@ class ChinchillaAgent(Agent):
     def _resource_metabolism_step(self, dt: float) -> None:
         if self.resources is None:
             return
-        self._metabolism_tick += dt
-        if self._metabolism_tick < 1.0:
+        try:
+            elapsed = float(dt)
+        except (TypeError, ValueError):
             return
-        self._metabolism_tick = 0.0
+        if not math.isfinite(elapsed) or elapsed <= 0.0:
+            return
+        # Keep the fractional second. Resetting the accumulator to 0 made
+        # hunger and thirst advance once per tick instead of once per second.
+        self._metabolism_tick += elapsed
+        # 0.1 * 10 is just under 1 in binary floats. Without the slack a
+        # 10 s run of 0.1 s steps grows one second less hunger than one
+        # 2.5 s step repeated.
+        while self._metabolism_tick >= 1.0 - 1e-9:
+            self._metabolism_tick -= 1.0
+            if self._metabolism_tick < 0.0:
+                self._metabolism_tick = 0.0
+            self._apply_metabolism_second()
 
+    def _apply_metabolism_second(self) -> None:
+        if self.resources is None:
+            return
         self.hunger = _clamp(self.hunger + HUNGER_ACCUMULATION_PER_S, 0.0, 1.0)
         self.thirst = _clamp(self.thirst + THIRST_ACCUMULATION_PER_S, 0.0, 1.0)
         if self.hunger >= HUNGER_CRITICAL_THRESHOLD:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -125,6 +126,11 @@ class ColonyGUI:
         self.lineage = LineageOverlay(self.runner.death_registry, allow_nonadjacent_parents=True)
         self.swarm_analytics = SwarmAnalyticsOverlay()
         self._right_panel_scroll: int = 0
+        # 1.0 means simulation time is keeping the requested speed.
+        # Sub-stepping can make a slow machine fall behind; the HUD shows it.
+        self.achieved_speed_ratio: float = 1.0
+        self._pace_real_s: float = 0.0
+        self._pace_sim_s: float = 0.0
 
     def run(self) -> None:
         """
@@ -142,6 +148,33 @@ class ColonyGUI:
         self.runner.tick(float(real_dt) * float(self.speed))
         self._adapt_observer_sampling()
         self.observer.observe_tick()
+
+    def note_sim_pace(self, *, real_dt: float, sim_advanced: float) -> None:
+        """Compare simulation advance with the requested speed.
+
+        A window of about half a second of wall time smooths one slow frame.
+        ``achieved_speed_ratio`` is simulation seconds gained divided by
+        ``real_dt * speed``. Below 1 the clock is behind the selected acceleration.
+        """
+        if self.paused:
+            return
+        try:
+            real = float(real_dt)
+            advanced = float(sim_advanced)
+        except (TypeError, ValueError):
+            return
+        if not math.isfinite(real) or real <= 0.0:
+            return
+        if not math.isfinite(advanced) or advanced < 0.0:
+            advanced = 0.0
+        self._pace_real_s += real
+        self._pace_sim_s += advanced
+        if self._pace_real_s < 0.5:
+            return
+        requested = self._pace_real_s * float(self.speed)
+        self.achieved_speed_ratio = 1.0 if requested <= 1e-9 else self._pace_sim_s / requested
+        self._pace_real_s = 0.0
+        self._pace_sim_s = 0.0
 
     def _adapt_observer_sampling(self) -> None:
         """Reduce observer overhead on large populations."""

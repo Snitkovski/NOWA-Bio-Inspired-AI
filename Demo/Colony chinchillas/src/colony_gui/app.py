@@ -700,6 +700,37 @@ def _draw_metric_bar(
     return value_x + value_surface.get_width() + 16
 
 
+def format_speed_status_line(
+    *,
+    speed: float,
+    paused: bool,
+    audio_enabled: bool,
+    achieved_ratio: float = 1.0,
+) -> str:
+    """HUD speed line. A lagging clock shows the speed the sim is actually holding."""
+    show_lag = (not paused) and float(achieved_ratio) < 0.85
+    if show_lag:
+        template = tr(
+            "Скорость: x{speed:.1f} (факт x{actual:.1f})   Пауза: {paused}   Звук: {sound}   "
+            "Управление: SPACE пауза, +/- скорость, M звук, L родословная, A анализ роя, G язык, ESC выход"
+        )
+        return template.format(
+            speed=float(speed),
+            actual=max(0.0, float(speed) * float(achieved_ratio)),
+            paused=tr("да") if paused else tr("нет"),
+            sound=tr("вкл") if audio_enabled else tr("выкл"),
+        )
+    template = tr(
+        "Скорость: x{speed:.1f}   Пауза: {paused}   Звук: {sound}   "
+        "Управление: SPACE пауза, +/- скорость, M звук, L родословная, A анализ роя, G язык, ESC выход"
+    )
+    return template.format(
+        speed=float(speed),
+        paused=tr("да") if paused else tr("нет"),
+        sound=tr("вкл") if audio_enabled else tr("выкл"),
+    )
+
+
 def _draw_stats_panel(
     screen: "pygame.Surface",
     font_small: "pygame.font.Font",
@@ -709,6 +740,7 @@ def _draw_stats_panel(
     speed: float,
     paused: bool,
     audio_enabled: bool,
+    achieved_ratio: float = 1.0,
     diagnostics: dict[str, int | float],
     population_stats: dict[str, Any],
     resources: dict[str, Any],
@@ -796,13 +828,11 @@ def _draw_stats_panel(
             pairs=total_known_pairs,
             bonded=bonded_pairs,
         )
-        line3 = tr(
-            "Скорость: x{speed:.1f}   Пауза: {paused}   Звук: {sound}   "
-            "Управление: SPACE пауза, +/- скорость, M звук, L родословная, A анализ роя, G язык, ESC выход"
-        ).format(
+        line3 = format_speed_status_line(
             speed=speed,
-            paused=tr("да") if paused else tr("нет"),
-            sound=tr("вкл") if audio_enabled else tr("выкл"),
+            paused=paused,
+            audio_enabled=audio_enabled,
+            achieved_ratio=achieved_ratio,
         )
 
         panel.blit(
@@ -1521,6 +1551,7 @@ def run_pygame_demo(
                     gui._right_panel_scroll = max(0, int(gui._right_panel_scroll - event.y * 24))
 
         sim_accumulator += frame_dt
+        sim_time_before = float(getattr(runner, "sim_time", 0.0))
         base_sim_step = _adaptive_sim_step_s(len(state["agents"]))
         sim_step = _apply_sim_load_adaptation(base_sim_step, sim_step_cost_ema_s)
         high_population_mode = len(ordered_agents) >= HIGH_POPULATION_THRESHOLD
@@ -1554,6 +1585,10 @@ def run_pygame_demo(
 
         # Prevent long-stall spiral when frame budget is exceeded.
         sim_accumulator = min(sim_accumulator, sim_step * SIM_ACCUMULATOR_MAX_STEPS)
+        gui.note_sim_pace(
+            real_dt=frame_dt,
+            sim_advanced=float(getattr(runner, "sim_time", sim_time_before)) - sim_time_before,
+        )
 
         layout_refresh_required = False
         if step_count > 0:
@@ -1748,6 +1783,7 @@ def run_pygame_demo(
             speed=float(gui.speed),
             paused=bool(gui.paused),
             audio_enabled=bool(audio_enabled),
+            achieved_ratio=float(getattr(gui, "achieved_speed_ratio", 1.0)),
             diagnostics=diagnostics_cache,
             population_stats=dict(state.get("population_stats", {})),
             resources=dict(state.get("resources", {})),

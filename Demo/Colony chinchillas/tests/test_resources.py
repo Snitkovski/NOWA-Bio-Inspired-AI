@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from colony_agent import ChinchillaAgent
 from simulation_runner import SimulationRunner
 
@@ -27,7 +25,6 @@ def test_tc01_two_agents_basic_survival_loop() -> None:
     assert (runner.resources.food_pellets < 1.0) or (runner.resources.hay < 1.0)
 
 
-@pytest.mark.xfail(strict=False, reason="issue #39: colony unmet-need penalty not dt-invariant")
 def test_tc01_two_agents_survive_300s() -> None:
     runner = SimulationRunner()
     agent_0 = ChinchillaAgent(sex="F")

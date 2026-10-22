@@ -93,7 +93,11 @@ def test_founders_do_not_die_of_exhaustion_at_10x() -> None:
     runner, agents = _founders(seed=2)
     runner.run_for(1600.0, dt=UI_DT_10X)
 
-    assert runner.resources.food_pellets > 0.4
+    # Hunger advances once per simulated second, and eat is available before
+    # the penalty, so the pellet bowl is drawn down further than the old
+    # once-per-tick metabolism. It is still stocked. Hay is the other bowl.
+    assert runner.resources.food_pellets > 0.2
+    assert runner.resources.hay > 0.5
     assert runner.resources.water > 0.4
     assert runner.total_deaths == 0
     for agent in agents:

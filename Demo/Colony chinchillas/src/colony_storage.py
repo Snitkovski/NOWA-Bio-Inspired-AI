@@ -212,6 +212,8 @@ class ColonyStorage:
                 },
                 "exclusive_action_timer": _f(agent._exclusive_action_timer),
                 "metabolism_tick": _f(agent._metabolism_tick),
+                "body_step_carry": _f(getattr(agent, "_body_step_carry", 0.0)),
+                "sleep_entered_by_need": bool(getattr(agent, "_sleep_entered_by_need", False)),
                 "pending_offer": self._serialize_pending_offer(agent.pending_offer),
                 "physiology_as_policy": bool(getattr(agent, "physiology_as_policy", True)),
             },
@@ -295,6 +297,8 @@ class ColonyStorage:
         }
         agent._exclusive_action_timer = _f(runtime.get("exclusive_action_timer", 0.0))
         agent._metabolism_tick = _f(runtime.get("metabolism_tick", 0.0))
+        agent._body_step_carry = _f(runtime.get("body_step_carry", 0.0))
+        agent._sleep_entered_by_need = bool(runtime.get("sleep_entered_by_need", False))
         agent.pending_offer = self._deserialize_pending_offer(runtime.get("pending_offer"))
         if "physiology_as_policy" in runtime:
             agent.physiology_as_policy = bool(runtime.get("physiology_as_policy"))

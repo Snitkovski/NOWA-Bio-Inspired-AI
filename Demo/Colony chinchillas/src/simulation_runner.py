@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import random
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,11 @@ class SimulationRunner:
     """Runs colony simulation without centralized behavior decisions."""
 
     SIM_DT = 0.1
+    # One decision is at most the load-adapted 1x step (``app.SIM_MAX_STEP_S``).
+    # A 10x frame passes ``base * 10`` (up to 2.5 s). Splitting that back to
+    # this interval keeps the decision rate on the 1x clock. Finer nominal
+    # 1x steps (1/12 s) are already under the cap and are not coarsened.
+    MAX_TICK_DT = 0.25
 
     def __init__(
         self,
@@ -77,9 +83,32 @@ class SimulationRunner:
             pass
 
     def tick(self, dt: float) -> None:
-        self.sim_time += dt
+        """Advance every living agent by ``dt`` simulated seconds.
+
+        ``dt`` above ``MAX_TICK_DT`` is an even split of ``ceil(dt / MAX_TICK_DT)``
+        sub-ticks. Each sub-tick is one decision, so 10x does not skip the
+        choices a 1x step of ``MAX_TICK_DT`` would have made. Birth and death
+        counters on this call cover the whole interval.
+        """
         self.births_this_step = 0
         self.deaths_this_step = 0
+        try:
+            remaining = float(dt)
+        except (TypeError, ValueError):
+            remaining = 0.0
+        if not math.isfinite(remaining):
+            remaining = 0.0
+        if remaining <= self.MAX_TICK_DT:
+            self._tick_once(remaining)
+            return
+        steps = int(math.ceil((remaining / self.MAX_TICK_DT) - 1e-12))
+        steps = max(1, steps)
+        step = remaining / float(steps)
+        for _ in range(steps):
+            self._tick_once(step)
+
+    def _tick_once(self, dt: float) -> None:
+        self.sim_time += dt
 
         self.swarm.sync_positions()
         self.swarm.update_signals()
