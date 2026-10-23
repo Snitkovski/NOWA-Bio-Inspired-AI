@@ -14,9 +14,14 @@ burst.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
+
+# The bench paints through SDL's dummy driver: same blit path, no window.
+os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 DEMO_SRC = Path(__file__).resolve().parents[1] / "src"
 if str(DEMO_SRC) not in sys.path:
@@ -29,6 +34,7 @@ from colony_gui.app import (  # noqa: E402
     _adaptive_sim_step_s,
     _apply_sim_load_adaptation,
     build_demo_runner,
+    run_pygame_demo,
 )
 from colony_gui.colony_gui import ColonyGUI  # noqa: E402
 
@@ -108,13 +114,63 @@ def measure(runner, speed: float, wall_s: float) -> dict[str, float]:
     }
 
 
-def format_row(row: dict[str, float]) -> str:
+def measure_gui(runner, speed: float, wall_s: float) -> tuple[dict[str, float], dict[str, float]]:
+    """Drive the real pygame loop, including the render cap, for ``wall_s``."""
+    profile: dict[str, float] = {}
+    sim_start = float(runner.sim_time)
+    wall_start = time.perf_counter()
+    run_pygame_demo(runner=runner, speed=float(speed), wall_s=wall_s, frame_profile=profile)
+    wall = time.perf_counter() - wall_start
+    simulated = float(runner.sim_time) - sim_start
+    loop_wall = float(profile.get("loop_wall_s", 0.0))
+    loop_sim = float(profile.get("sim_advanced_s", simulated))
+    row = {
+        "speed": float(speed),
+        "wall_s": wall,
+        "sim_s": simulated,
+        "achieved": (loop_sim / loop_wall) if loop_wall > 0.0 else 0.0,
+        "hud": float(profile.get("hud", 0.0)),
+        "frames": float(profile.get("paints", 0.0)),
+        "ticks": 0.0,
+        "memory": float(_memory_size(runner)),
+    }
+    return row, profile
+
+
+def format_row(mode: str, row: dict[str, float]) -> str:
     return (
-        f"{row['speed']:.0f}x: achieved {row['achieved']:.2f}x "
+        f"{mode} {row['speed']:.0f}x: achieved {row['achieved']:.2f}x "
         f"(sim {row['sim_s']:.1f}s / wall {row['wall_s']:.1f}s, "
         f"hud x{row['hud']:.2f}, ticks {int(row['ticks'])}, "
-        f"memory {int(row['memory'])})"
+        f"frames {int(row['frames'])}, memory {int(row['memory'])})"
     )
+
+
+def format_profile(profile: dict[str, float]) -> str:
+    """Percent of the paint loop. ``other`` is events plus the wait between steps."""
+    wall = float(profile.get("loop_wall_s", 0.0))
+    if wall <= 0.0:
+        return "profile: no loop time"
+    names = (
+        ("sim", "sim_s"),
+        ("snapshot", "snapshot_s"),
+        ("background", "background_s"),
+        ("agents", "agents_s"),
+        ("labels", "labels_s"),
+        ("stats", "stats_s"),
+        ("panel", "panel_s"),
+        ("flip", "flip_s"),
+    )
+    accounted = 0.0
+    parts = []
+    for label, key in names:
+        value = float(profile.get(key, 0.0))
+        accounted += value
+        parts.append(f"{label} {100.0 * value / wall:.1f}%")
+    other = max(0.0, wall - accounted)
+    parts.append(f"other {100.0 * other / wall:.1f}%")
+    paints = int(profile.get("paints", 0.0))
+    return f"profile paints {paints}: " + ", ".join(parts)
 
 
 def main() -> None:
@@ -122,6 +178,11 @@ def main() -> None:
     parser.add_argument("--agents", type=int, default=4)
     parser.add_argument("--measure-wall", type=float, default=8.0)
     parser.add_argument("--warmup-wall", type=float, default=60.0)
+    parser.add_argument(
+        "--headless-only",
+        action="store_true",
+        help="Skip the pygame loop. The default measures headless and GUI.",
+    )
     args = parser.parse_args()
 
     runner = build_demo_runner(max(1, args.agents))
@@ -133,7 +194,13 @@ def main() -> None:
         flush=True,
     )
     for speed in (1.0, 10.0):
-        print(format_row(measure(runner, speed, args.measure_wall)), flush=True)
+        print(format_row("headless", measure(runner, speed, args.measure_wall)), flush=True)
+    if args.headless_only:
+        return
+    for speed in (1.0, 10.0):
+        row, profile = measure_gui(runner, speed, args.measure_wall)
+        print(format_row("gui", row), flush=True)
+        print(format_profile(profile), flush=True)
 
 
 if __name__ == "__main__":
