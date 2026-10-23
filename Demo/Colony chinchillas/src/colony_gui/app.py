@@ -64,6 +64,11 @@ def _confirm_quit() -> bool:
             except Exception:
                 pass
 MAX_FRAME_DT_S = 0.05
+# Sprite smoothing stays on the short cap above. The simulation clock uses
+# the real frame, otherwise a tick slower than 50ms is mostly discarded and
+# 10x cannot keep up even when the CPU can do the work. Catch-up is still
+# limited by SIM_MAX_CATCHUP_STEPS and SIM_ACCUMULATOR_MAX_STEPS.
+SIM_FRAME_DT_CAP_S = 1.0
 SIM_BASE_STEP_S = 1.0 / 12.0
 SIM_MAX_STEP_S = 0.25
 SIM_MAX_CATCHUP_STEPS = 2
@@ -1472,9 +1477,11 @@ def run_pygame_demo(
 
         if frame_dt_s is not None:
             clock.tick()
-            frame_dt = max(0.0, float(frame_dt_s))
+            raw_frame_dt = max(0.0, float(frame_dt_s))
         else:
-            frame_dt = min(clock.tick(target_fps) / 1000.0, MAX_FRAME_DT_S)
+            raw_frame_dt = max(0.0, clock.tick(target_fps) / 1000.0)
+        frame_dt = min(raw_frame_dt, MAX_FRAME_DT_S)
+        sim_frame_dt = min(raw_frame_dt, SIM_FRAME_DT_CAP_S)
         layout_elapsed_s += frame_dt
         snapshot_elapsed_s += frame_dt
         for event in pygame.event.get():
@@ -1550,7 +1557,7 @@ def run_pygame_demo(
                 if mouse_x >= PANEL_RIGHT_X:
                     gui._right_panel_scroll = max(0, int(gui._right_panel_scroll - event.y * 24))
 
-        sim_accumulator += frame_dt
+        sim_accumulator += sim_frame_dt
         sim_time_before = float(getattr(runner, "sim_time", 0.0))
         base_sim_step = _adaptive_sim_step_s(len(state["agents"]))
         sim_step = _apply_sim_load_adaptation(base_sim_step, sim_step_cost_ema_s)
@@ -1586,7 +1593,7 @@ def run_pygame_demo(
         # Prevent long-stall spiral when frame budget is exceeded.
         sim_accumulator = min(sim_accumulator, sim_step * SIM_ACCUMULATOR_MAX_STEPS)
         gui.note_sim_pace(
-            real_dt=frame_dt,
+            real_dt=raw_frame_dt,
             sim_advanced=float(getattr(runner, "sim_time", sim_time_before)) - sim_time_before,
         )
 

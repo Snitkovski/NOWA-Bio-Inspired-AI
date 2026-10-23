@@ -65,7 +65,14 @@ class NOWAHippocampus:
         self._recent_event_window: List[str] = []
         self._novelty_history: List[float] = []
         self._episode_seq = 0
+        self._episode_seq_ready = False
         self._episodes_by_id: Dict[str, Experience] = {}
+        # Stable bit per feature / context token. Jaccard then is a popcount,
+        # identical to the set formula, without building a set per comparison.
+        self._feature_bits: Dict[str, int] = {}
+        self._token_bits: Dict[str, int] = {}
+        self._nov_ids: Tuple[int, ...] = ()
+        self._nov_valid = False
 
     @staticmethod
     def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:
@@ -236,6 +243,114 @@ class NOWAHippocampus:
             return 0.0
         return float(len(left & right)) / float(len(union))
 
+    @staticmethod
+    def _mask_jaccard(left: int, left_count: int, right: int, right_count: int) -> float:
+        """Set Jaccard for bitmasks whose bits were assigned one-to-one with tokens."""
+        if left == 0 and right == 0:
+            return 1.0
+        inter = (left & right).bit_count()
+        if inter == 0:
+            return 0.0
+        return inter / float(left_count + right_count - inter)
+
+    def _bits_for(self, values, table: Dict[str, int]) -> Tuple[int, int]:
+        mask = 0
+        for value in values:
+            bit = table.get(value)
+            if bit is None:
+                bit = 1 << len(table)
+                table[value] = bit
+            mask |= bit
+        if mask == 0:
+            return 0, 0
+        return mask, mask.bit_count()
+
+    def _stamp_signature(self, sig: SignatureTrace) -> None:
+        """Cache feature and token bitmasks. Re-stamping is exact, not approximate."""
+        features = sig.feature_set or set()
+        sig.feature_mask, sig.feature_count = self._bits_for(features, self._feature_bits)
+        tokens = sig.context_tokens or ()
+        if not isinstance(tokens, tuple):
+            tokens = tuple(str(token) for token in tokens)
+            sig.context_tokens = tokens
+        sig.token_mask, sig.token_count = self._bits_for(tokens, self._token_bits)
+        sig._mask_ready = True
+        # activate() always queries drive (1, 0, 1). Cache that half of the blend.
+        drive = sig.drive_vector
+        dist = math.sqrt((1.0 - drive[0]) ** 2 + drive[1] ** 2 + (1.0 - drive[2]) ** 2)
+        sig._activate_drive_sim = 1.0 / (1.0 + dist)
+        sig._fs_key = None
+        sig._fs_val = 0.0
+        sig._nov_ready = False
+
+    def _ensure_masks(self) -> None:
+        for sig in self.signatures:
+            if not getattr(sig, "_mask_ready", False):
+                self._stamp_signature(sig)
+
+    def _fast_similarity(
+        self,
+        query_mask: int,
+        query_count: int,
+        query_drive: Tuple[float, float, float],
+        query_context: Tuple[float, float, float],
+        query_tokens: Sequence[str],
+        query_token_mask: int,
+        query_token_count: int,
+        sig: SignatureTrace,
+    ) -> float:
+        """Same weights as ``_composite_similarity``, without per-pair allocations."""
+        if not getattr(sig, "_mask_ready", False):
+            self._stamp_signature(sig)
+        feature_sim = self._mask_jaccard(query_mask, query_count, sig.feature_mask, sig.feature_count)
+        drive = sig.drive_vector
+        dist = math.sqrt(
+            (query_drive[0] - drive[0]) ** 2
+            + (query_drive[1] - drive[1]) ** 2
+            + (query_drive[2] - drive[2]) ** 2
+        )
+        drive_sim = 1.0 / (1.0 + dist)
+        stored_tokens = sig.context_tokens or ()
+        if not query_tokens or not stored_tokens:
+            window_sim = 0.0
+        else:
+            set_sim = self._mask_jaccard(
+                query_token_mask, query_token_count, sig.token_mask, sig.token_count
+            )
+            limit = len(query_tokens) if len(query_tokens) < len(stored_tokens) else len(stored_tokens)
+            positional = 0.0
+            for idx in range(limit):
+                if query_tokens[idx] == stored_tokens[idx]:
+                    positional += 1.0
+            max_len = len(query_tokens) if len(query_tokens) > len(stored_tokens) else len(stored_tokens)
+            window_sim = (0.75 * set_sim) + (0.25 * (positional / float(max_len or 1)))
+            if window_sim < 0.0:
+                window_sim = 0.0
+            elif window_sim > 1.0:
+                window_sim = 1.0
+        q_ctx = query_context
+        s_ctx = sig.context_vector
+        time_delta = abs(q_ctx[0] - s_ctx[0])
+        cyc = float(self.cycle_length if self.cycle_length > 1 else 1)
+        time_sim = 1.0 - min(time_delta, cyc) / cyc
+        hash_sim = 1.0 - (abs(q_ctx[1] - s_ctx[1]) / float((1 << 64) - 1))
+        if hash_sim < 0.0:
+            hash_sim = 0.0
+        elif hash_sim > 1.0:
+            hash_sim = 1.0
+        ctx_drive = 1.0 - (abs(q_ctx[2] - s_ctx[2]) / 9.0)
+        if ctx_drive < 0.0:
+            ctx_drive = 0.0
+        elif ctx_drive > 1.0:
+            ctx_drive = 1.0
+        context_sim = (0.30 * time_sim) + (0.15 * hash_sim) + (0.20 * ctx_drive) + (0.35 * window_sim)
+        blended = (0.80 * feature_sim) + (0.15 * drive_sim) + (0.05 * context_sim)
+        if blended < 0.0:
+            return 0.0
+        if blended > 1.0:
+            return 1.0
+        return blended
+
     def _context_window_similarity(
         self,
         query_tokens: Sequence[str],
@@ -285,15 +400,20 @@ class NOWAHippocampus:
         query_context_tokens: Sequence[str],
         stored: SignatureTrace,
     ) -> float:
-        feature_sim = self._jaccard_similarity(query_features, stored.feature_set)
-        drive_sim = self._vector_similarity(query_drive, stored.drive_vector)
-        context_sim = self._context_similarity(
+        query_mask, query_count = self._bits_for(query_features, self._feature_bits)
+        if not isinstance(query_context_tokens, tuple):
+            query_context_tokens = tuple(str(token) for token in (query_context_tokens or ()))
+        token_mask, token_count = self._bits_for(query_context_tokens, self._token_bits)
+        return self._fast_similarity(
+            query_mask,
+            query_count,
+            query_drive,
             query_context,
-            stored.context_vector,
             query_context_tokens,
-            getattr(stored, "context_tokens", ()),
+            token_mask,
+            token_count,
+            stored,
         )
-        return self._clamp(0.80 * feature_sim + 0.15 * drive_sim + 0.05 * context_sim)
     def _append_recent_events(self, ordered_tokens: Sequence[str]) -> None:
         for token in ordered_tokens or []:
             txt = str(token).strip()
@@ -305,8 +425,21 @@ class NOWAHippocampus:
 
     def _ensure_signature_store(self) -> None:
         if not self.experiences:
-            self.signatures = []
+            if self.signatures:
+                self.signatures = []
+                self._nov_valid = False
             return
+
+        # store/decay/enforce keep the two lists paired. Rebuilding them on
+        # every recall walks the whole memory and allocates a new list.
+        if len(self.signatures) == len(self.experiences):
+            aligned = True
+            for exp, sig in zip(self.experiences, self.signatures):
+                if sig.source_experience is not exp:
+                    aligned = False
+                    break
+            if aligned:
+                return
 
         existing_by_experience = {}
         for sig in self.signatures:
@@ -356,39 +489,97 @@ class NOWAHippocampus:
                 if not getattr(found, "context_tokens", None):
                     found.context_tokens = self._build_context_tokens(found.feature_set)
             rebuilt.append(found)
+            self._stamp_signature(found)
         self.signatures = rebuilt
+        self._nov_valid = False
+
+    def _decay_factor_for(self, elapsed: float) -> float:
+        """Multiplicative retention after ``elapsed`` seconds. One factor per stamp."""
+        if elapsed <= 0.0:
+            return 1.0
+        decay_steps = elapsed / self.activation_decay_half_life
+        half_life_factor = 0.5 ** decay_steps
+        decay_rate = self.decay_rate
+        # Half-life remains the primary decay dynamic.
+        # decay_rate is a soft regularizer so collapse is not only the half-life.
+        if decay_rate > 0.0:
+            retention_bias = (1.0 - decay_rate) ** decay_steps
+            decay_factor = (0.90 * half_life_factor) + (0.10 * retention_bias)
+        else:
+            decay_factor = half_life_factor if half_life_factor <= 1.0 else 1.0
+        if decay_factor < 0.0:
+            return 0.0
+        if decay_factor > 1.0:
+            return 1.0
+        return decay_factor
 
     def _apply_decay(self) -> None:
         if not self.signatures:
             return
 
         now = time.time()
+        # One closed-form factor per distinct timestamp. Sharing the factor
+        # does not skip a gap and does not quantize time: weight * factor(elapsed)
+        # is the same number the per-episode formula produces.
+        anchor = self.signatures[0].last_decay_ts
+        factors: Dict[float, float] = {}
+        elapsed_anchor = now - anchor
+        if elapsed_anchor > 0.0:
+            factors[anchor] = self._decay_factor_for(elapsed_anchor)
+        min_weight = 1.0
+        any_elapsed = False
         for sig in self.signatures:
-            elapsed = max(0.0, now - self._safe_float(sig.last_decay_ts, now))
+            ts = sig.last_decay_ts
+            elapsed = now - ts
             if elapsed <= 0.0:
+                weight = sig.activation_weight
+                if weight < min_weight:
+                    min_weight = weight
                 continue
-            decay_steps = elapsed / self.activation_decay_half_life
-            half_life_factor = 0.5 ** decay_steps
-            # Half-life remains the primary decay dynamic.
-            # decay_rate is used as a soft regularizer to avoid overly aggressive collapse.
-            if self.decay_rate > 0.0:
-                retention_bias = (1.0 - self.decay_rate) ** decay_steps
-                decay_factor = self._clamp((0.90 * half_life_factor) + (0.10 * retention_bias), 0.0, 1.0)
-            else:
-                decay_factor = self._clamp(half_life_factor, 0.0, 1.0)
-            sig.activation_weight = self._clamp(sig.activation_weight * decay_factor)
+            any_elapsed = True
+            decay_factor = factors.get(ts)
+            if decay_factor is None:
+                decay_factor = self._decay_factor_for(elapsed)
+                factors[ts] = decay_factor
+            weight = sig.activation_weight * decay_factor
+            if weight < 0.0:
+                weight = 0.0
+            elif weight > 1.0:
+                weight = 1.0
+            sig.activation_weight = weight
 
             exp = sig.source_experience
             if exp is not None:
-                exp.activation_energy = self._clamp(
-                    self._safe_float(getattr(exp, "activation_energy", 1.0), 1.0) * decay_factor
-                )
+                energy = exp.activation_energy * decay_factor
+                if energy < 0.0:
+                    energy = 0.0
+                elif energy > 1.0:
+                    energy = 1.0
+                exp.activation_energy = energy
             sig.last_decay_ts = now
+            if weight < min_weight:
+                min_weight = weight
+
+        # A second recall in the same instant used to rebuild both lists anyway.
+        if not any_elapsed or min_weight >= self.activation_threshold:
+            return
+
+        threshold = self.activation_threshold
+        for exp, sig in zip(self.experiences, self.signatures):
+            if sig.activation_weight >= threshold:
+                continue
+            if int(getattr(exp, "reinforcement_count", 1)) >= 2:
+                continue
+            if self._safe_float(getattr(exp, "stability", 0.0), 0.0) >= 1.0:
+                continue
+            break
+        else:
+            return
 
         keep_exps: List[Experience] = []
         keep_sigs: List[SignatureTrace] = []
         for exp, sig in zip(self.experiences, self.signatures):
-            strong_enough = sig.activation_weight >= self.activation_threshold
+            strong_enough = sig.activation_weight >= threshold
             repeated = int(getattr(exp, "reinforcement_count", 1)) >= 2
             stable = self._safe_float(getattr(exp, "stability", 0.0), 0.0) >= 1.0
             if strong_enough or repeated or stable:
@@ -397,6 +588,7 @@ class NOWAHippocampus:
 
         self.experiences = keep_exps
         self.signatures = keep_sigs
+        self._nov_valid = False
         self._sync_episode_index()
 
     def _ids_in_use(self) -> Set[str]:
@@ -429,24 +621,27 @@ class NOWAHippocampus:
         existing = getattr(exp, "episode_id", None)
         if existing:
             key = str(existing)
-            owner = None
-            for resident in self.experiences:
-                if str(getattr(resident, "episode_id", "")) == key:
-                    owner = resident
-                    break
+            owner = self._episodes_by_id.get(key)
             if owner is None or owner is exp:
+                # A reload can leave the counter behind the ids already stored.
+                if key.startswith("ep-"):
+                    try:
+                        self._episode_seq = max(self._episode_seq, int(key[3:]))
+                    except ValueError:
+                        pass
                 self._episodes_by_id[key] = exp
                 return key
-        used = self._ids_in_use()
-        self._episode_seq = max(int(self._episode_seq), self._highest_episode_seq())
-        episode_id = ""
-        for _ in range(max(1, len(used) + 2)):
-            self._episode_seq += 1
-            candidate = f"ep-{self._episode_seq}"
-            if candidate not in used:
-                episode_id = candidate
-                break
-        if not episode_id:
+        stored_ids = sum(1 for exp in self.experiences if getattr(exp, "episode_id", None))
+        # A reload can zero the counter and drop the index while the episodes
+        # are still in the list. The fast path is only valid when every stored
+        # id is still indexed; otherwise scan, same as a cold hippocampus.
+        if (not self._episode_seq_ready) or stored_ids != len(self._episodes_by_id):
+            self._episode_seq = max(int(self._episode_seq), self._highest_episode_seq())
+            self._sync_episode_index()
+            self._episode_seq_ready = True
+        self._episode_seq += 1
+        episode_id = f"ep-{self._episode_seq}"
+        while episode_id in self._episodes_by_id:
             self._episode_seq += 1
             episode_id = f"ep-{self._episode_seq}"
         exp.episode_id = episode_id
@@ -480,44 +675,251 @@ class NOWAHippocampus:
         self._sync_episode_index()
         return self._episodes_by_id.get(key)
 
+    def _current_novelty_window(self) -> List[SignatureTrace]:
+        if not self.signatures:
+            return []
+        width = self.novelty_window
+        if len(self.signatures) <= width:
+            return self.signatures
+        return self.signatures[-width:]
+
+    def _novelty_recompute_one(self, sig: SignatureTrace, window: Sequence[SignatureTrace]) -> None:
+        max_sim = 0.0
+        arg = 0
+        second = 0.0
+        arg2 = 0
+        left = sig.feature_mask
+        left_count = sig.feature_count
+        jaccard = self._mask_jaccard
+        for other in window:
+            if other is sig:
+                continue
+            sim = jaccard(left, left_count, other.feature_mask, other.feature_count)
+            other_id = id(other)
+            if sim > max_sim:
+                second = max_sim
+                arg2 = arg
+                max_sim = sim
+                arg = other_id
+            elif sim > second:
+                second = sim
+                arg2 = other_id
+        sig._nov_max = max_sim
+        sig._nov_arg = arg
+        sig._nov_max2 = second
+        sig._nov_arg2 = arg2
+        sig._nov_ready = True
+
+    def _novelty_note_pair(self, sig: SignatureTrace, sim: float, other_id: int) -> None:
+        """Fold one still-resident comparison into the cached maximum."""
+        if sim > sig._nov_max:
+            sig._nov_max2 = sig._nov_max
+            sig._nov_arg2 = sig._nov_arg
+            sig._nov_max = sim
+            sig._nov_arg = other_id
+        elif sim > sig._nov_max2:
+            sig._nov_max2 = sim
+            sig._nov_arg2 = other_id
+
+    def _novelty_note_added(self, added: SignatureTrace, window: Sequence[SignatureTrace]) -> None:
+        added_mask = added.feature_mask
+        added_count = added.feature_count
+        added_id = id(added)
+        jaccard = self._mask_jaccard
+        for sig in self.signatures:
+            if sig is added or not getattr(sig, "_nov_ready", False):
+                self._novelty_recompute_one(sig, window)
+                continue
+            sim = jaccard(sig.feature_mask, sig.feature_count, added_mask, added_count)
+            self._novelty_note_pair(sig, sim, added_id)
+
+    def _sync_novelty_cache(self) -> None:
+        """Keep per-episode max Jaccard against the last N signatures.
+
+        The window is the tail of the chronological list (spec: last N
+        episodes). Appending one episode slides that tail by one, so each
+        stored episode needs one new comparison, not a fresh pass over N.
+        """
+        self._ensure_masks()
+        window = self._current_novelty_window()
+        new_ids = tuple(id(sig) for sig in window)
+        old_ids = self._nov_ids
+        if self._nov_valid and new_ids == old_ids:
+            return
+        if self._nov_valid and old_ids and new_ids == old_ids + (new_ids[-1],):
+            self._novelty_note_added(window[-1], window)
+            self._nov_ids = new_ids
+            return
+        if (
+            self._nov_valid
+            and old_ids
+            and len(new_ids) == len(old_ids)
+            and new_ids[:-1] == old_ids[1:]
+        ):
+            dropped_id = old_ids[0]
+            added = window[-1]
+            added_id = id(added)
+            added_mask = added.feature_mask
+            added_count = added.feature_count
+            jaccard = self._mask_jaccard
+            signatures = self.signatures
+            # One comparison per stored episode. Inlined so the capacity slide
+            # is not a Python call per episode. Ties promote the next episode
+            # with the same similarity, which is the one a fresh scan would pick.
+            for sig in signatures:
+                if sig is added or not sig._nov_ready:
+                    self._novelty_recompute_one(sig, window)
+                    continue
+                if sig._nov_arg == dropped_id:
+                    if sig._nov_arg2 and sig._nov_max2 == sig._nov_max and sig._nov_arg2 != dropped_id:
+                        sig._nov_arg = sig._nov_arg2
+                        sig._nov_arg2 = 0
+                        sig._nov_max2 = 0.0
+                    else:
+                        self._novelty_recompute_one(sig, window)
+                        continue
+                sim = jaccard(sig.feature_mask, sig.feature_count, added_mask, added_count)
+                current = sig._nov_max
+                if sim > current:
+                    sig._nov_max2 = current
+                    sig._nov_arg2 = sig._nov_arg
+                    sig._nov_max = sim
+                    sig._nov_arg = added_id
+                elif sim > sig._nov_max2:
+                    sig._nov_max2 = sim
+                    sig._nov_arg2 = added_id
+            self._nov_ids = new_ids
+            self._nov_valid = True
+            return
+        for sig in self.signatures:
+            self._novelty_recompute_one(sig, window)
+        self._nov_ids = new_ids
+        self._nov_valid = True
+
+    def _novelty_from_cached(self, sig: SignatureTrace, scale: float) -> float:
+        base = 1.0 - float(getattr(sig, "_nov_max", 0.0))
+        scaled = base * scale
+        if scaled < 0.0:
+            return 0.0
+        if scaled > 1.0:
+            return 1.0
+        return scaled
+
     def _enforce_capacity(self, protect_id: Optional[str] = None) -> None:
         if len(self.experiences) <= self.max_experiences:
             self.last_evicted = []
             return
 
-        scored = []
-        for exp, sig in zip(self.experiences, self.signatures):
-            novelty = self._novelty_from_recent(sig.feature_set, exclude_signature=sig)
-            novelty_blend = (
-                (1.0 - self.novelty_capacity_bias) * self._safe_float(sig.activation_weight, 0.0)
-            ) + (self.novelty_capacity_bias * novelty)
-            score = (
+        # Drop the lowest scores in place. Rewriting the list in score order
+        # made the next "last N" window the low-score tail instead of the
+        # latest episodes, and forced a full novelty pass on every store.
+        self._sync_novelty_cache()
+        bias = self.novelty_capacity_bias
+        keep_bias = 1.0 - bias
+        overflow = len(self.experiences) - self.max_experiences
+        protected = str(protect_id) if protect_id else ""
+        scale = self.novelty_sensitivity_scale
+        if scale < 0.5:
+            scale = 0.5
+        elif scale > 2.0:
+            scale = 2.0
+        # Higher tuple is kept. Equal scores keep the earlier episode, matching
+        # a stable descending sort. One store overflows by one, so the victim
+        # is a linear minimum rather than a full sort of the memory.
+        def _rank_key(index: int, exp: Experience, sig: SignatureTrace):
+            novelty = self._novelty_from_cached(sig, scale)
+            activation = sig.activation_weight
+            novelty_blend = (keep_bias * activation) + (bias * novelty)
+            return (
                 novelty_blend,
                 novelty,
                 int(getattr(exp, "reinforcement_count", 1)),
-                self._safe_float(getattr(exp, "last_activated", 0.0), 0.0),
+                float(getattr(exp, "last_activated", 0.0) or 0.0),
+                -index,
             )
-            scored.append((score, exp, sig))
 
-        scored.sort(key=lambda item: item[0], reverse=True)
-        protected = str(protect_id) if protect_id else ""
-        kept = []
-        overflow = []
-        if protected:
-            for item in scored:
-                if str(getattr(item[1], "episode_id", "")) == protected:
-                    kept.append(item)
-                else:
-                    overflow.append(item)
-            room = max(0, self.max_experiences - len(kept))
-            kept.extend(overflow[:room])
+        drop_indexes = set()
+        if overflow == 1:
+            experiences = self.experiences
+            signatures = self.signatures
+            worst_key = None
+            worst_index = -1
+            spare_key = None
+            spare_index = -1
+            count = len(experiences)
+            for index in range(count):
+                exp = experiences[index]
+                sig = signatures[index]
+                base = 1.0 - sig._nov_max
+                novelty = base * scale
+                if novelty < 0.0:
+                    novelty = 0.0
+                elif novelty > 1.0:
+                    novelty = 1.0
+                blend = (keep_bias * sig.activation_weight) + (bias * novelty)
+                key = (
+                    blend,
+                    novelty,
+                    exp.reinforcement_count,
+                    exp.last_activated,
+                    -index,
+                )
+                if protected and exp.episode_id == protected:
+                    if spare_key is None or key < spare_key:
+                        spare_key = key
+                        spare_index = index
+                    continue
+                if worst_key is None or key < worst_key:
+                    worst_key = key
+                    worst_index = index
+            if worst_index >= 0:
+                drop_indexes.add(worst_index)
+            elif spare_index >= 0:
+                drop_indexes.add(spare_index)
         else:
-            kept = scored[: self.max_experiences]
-        kept_ids = {id(item[1]) for item in kept}
-        self.last_evicted = [item[1] for item in scored if id(item[1]) not in kept_ids]
-        self.experiences = [item[1] for item in kept]
-        self.signatures = [item[2] for item in kept]
-        self._sync_episode_index()
+            ranked = []
+            for index, (exp, sig) in enumerate(zip(self.experiences, self.signatures)):
+                ranked.append((_rank_key(index, exp, sig), index, exp))
+            ranked.sort(reverse=True)
+            for item in reversed(ranked):
+                if len(drop_indexes) >= overflow:
+                    break
+                exp = item[2]
+                if protected and str(getattr(exp, "episode_id", "")) == protected:
+                    continue
+                drop_indexes.add(item[1])
+            if len(drop_indexes) < overflow:
+                for item in reversed(ranked):
+                    if len(drop_indexes) >= overflow:
+                        break
+                    drop_indexes.add(item[1])
+        self.last_evicted = []
+        if len(drop_indexes) == 1:
+            index = next(iter(drop_indexes))
+            exp = self.experiences[index]
+            self.last_evicted.append(exp)
+            episode_id = getattr(exp, "episode_id", None)
+            if episode_id and self._episodes_by_id.get(str(episode_id)) is exp:
+                del self._episodes_by_id[str(episode_id)]
+            del self.experiences[index]
+            del self.signatures[index]
+        else:
+            keep_exps = []
+            keep_sigs = []
+            for index, (exp, sig) in enumerate(zip(self.experiences, self.signatures)):
+                if index in drop_indexes:
+                    self.last_evicted.append(exp)
+                    episode_id = getattr(exp, "episode_id", None)
+                    if episode_id and self._episodes_by_id.get(str(episode_id)) is exp:
+                        del self._episodes_by_id[str(episode_id)]
+                    continue
+                keep_exps.append(exp)
+                keep_sigs.append(sig)
+            self.experiences = keep_exps
+            self.signatures = keep_sigs
+        # Cache still describes the pre-removal tail. Resync slides it when
+        # the dropped episode was inside the window, and is a no-op otherwise.
+        self._sync_novelty_cache()
 
     def _build_query_signature(
         self, current_signature, consequence=None, intensity: float = 1.0
@@ -628,6 +1030,7 @@ class NOWAHippocampus:
             source_experience=exp,
             last_decay_ts=time.time(),
         )
+        self._stamp_signature(sig)
         self.signatures.append(sig)
         self._append_recent_events(path_obj.signature())
         self._enforce_capacity(protect_id=str(getattr(exp, "episode_id", "") or ""))
@@ -642,8 +1045,21 @@ class NOWAHippocampus:
 
         best_similarity = -1.0
         best_sig: Optional[SignatureTrace] = None
+        query_mask, query_count = self._bits_for(query_features, self._feature_bits)
+        if not isinstance(query_tokens, tuple):
+            query_tokens = tuple(str(token) for token in (query_tokens or ()))
+        token_mask, token_count = self._bits_for(query_tokens, self._token_bits)
         for sig in self.signatures:
-            sim = self._composite_similarity(query_features, query_drive, query_context, query_tokens, sig)
+            sim = self._fast_similarity(
+                query_mask,
+                query_count,
+                query_drive,
+                query_context,
+                query_tokens,
+                token_mask,
+                token_count,
+                sig,
+            )
             if sim > best_similarity:
                 best_similarity = sim
                 best_sig = sig
@@ -669,6 +1085,8 @@ class NOWAHippocampus:
             )
             best_sig.context_vector = self._encode_context_vector(best_sig.feature_set, best_sig.drive_vector, time.time())
             best_sig.context_tokens = self._build_context_tokens(best_sig.feature_set)
+            self._stamp_signature(best_sig)
+            self._nov_valid = False
             self._append_recent_events(list(query_features))
             return exp
 
@@ -701,28 +1119,124 @@ class NOWAHippocampus:
             now,
             context_tokens=query_tokens,
         )
+        query_mask, query_count = self._bits_for(context_features, self._feature_bits)
+        token_mask, token_count = self._bits_for(query_tokens, self._token_bits)
+        threshold = self.activation_similarity_threshold
+        self._ensure_masks()
 
+        # Same blend as _fast_similarity. Context similarity is at most 1, so a
+        # feature+drive upper bound below the threshold cannot be a match.
+        # The bound stays off the per-pair call so the scan is one Python loop.
+        qd0, qd1, qd2 = query_drive
+        qc0, qc1, qc2 = query_context
+        qlen = len(query_tokens)
+        cyc = float(self.cycle_length if self.cycle_length > 1 else 1)
+        hash_span = float((1 << 64) - 1)
+        jaccard = self._mask_jaccard
+        sqrt = math.sqrt
+        early_limit = threshold - 1e-12
+        use_cached_drive = qd0 == 1.0 and qd1 == 0.0 and qd2 == 1.0
         matches = []
         for exp, sig in zip(self.experiences, self.signatures):
-            similarity = self._composite_similarity(context_features, query_drive, query_context, query_tokens, sig)
-            if similarity >= self.activation_similarity_threshold:
+            if sig._fs_key == query_mask:
+                feature_sim = sig._fs_val
+            else:
+                feature_sim = jaccard(query_mask, query_count, sig.feature_mask, sig.feature_count)
+                sig._fs_key = query_mask
+                sig._fs_val = feature_sim
+            if use_cached_drive:
+                drive_sim = sig._activate_drive_sim
+            else:
+                drive = sig.drive_vector
+                dist = sqrt(
+                    (qd0 - drive[0]) ** 2 + (qd1 - drive[1]) ** 2 + (qd2 - drive[2]) ** 2
+                )
+                drive_sim = 1.0 / (1.0 + dist)
+            if (0.80 * feature_sim) + (0.15 * drive_sim) + 0.05 < early_limit:
+                continue
+            stored_tokens = sig.context_tokens or ()
+            if not query_tokens or not stored_tokens:
+                window_sim = 0.0
+            else:
+                set_sim = jaccard(token_mask, token_count, sig.token_mask, sig.token_count)
+                slen = len(stored_tokens)
+                limit = qlen if qlen < slen else slen
+                positional = 0.0
+                for idx in range(limit):
+                    if query_tokens[idx] == stored_tokens[idx]:
+                        positional += 1.0
+                max_len = qlen if qlen > slen else slen
+                window_sim = (0.75 * set_sim) + (0.25 * (positional / float(max_len or 1)))
+                if window_sim < 0.0:
+                    window_sim = 0.0
+                elif window_sim > 1.0:
+                    window_sim = 1.0
+            s_ctx = sig.context_vector
+            time_delta = qc0 - s_ctx[0]
+            if time_delta < 0.0:
+                time_delta = -time_delta
+            time_sim = 1.0 - (time_delta if time_delta < cyc else cyc) / cyc
+            hash_delta = qc1 - s_ctx[1]
+            if hash_delta < 0.0:
+                hash_delta = -hash_delta
+            hash_sim = 1.0 - (hash_delta / hash_span)
+            if hash_sim < 0.0:
+                hash_sim = 0.0
+            elif hash_sim > 1.0:
+                hash_sim = 1.0
+            ctx_delta = qc2 - s_ctx[2]
+            if ctx_delta < 0.0:
+                ctx_delta = -ctx_delta
+            ctx_drive = 1.0 - (ctx_delta / 9.0)
+            if ctx_drive < 0.0:
+                ctx_drive = 0.0
+            elif ctx_drive > 1.0:
+                ctx_drive = 1.0
+            context_sim = (0.30 * time_sim) + (0.15 * hash_sim) + (0.20 * ctx_drive) + (0.35 * window_sim)
+            similarity = (0.80 * feature_sim) + (0.15 * drive_sim) + (0.05 * context_sim)
+            if similarity < 0.0:
+                similarity = 0.0
+            elif similarity > 1.0:
+                similarity = 1.0
+            if similarity >= threshold:
                 exp.last_activated = now
-                exp.activation_energy = self._clamp(max(self._safe_float(exp.activation_energy, 0.0), similarity))
-                sig.activation_weight = self._safe_float(exp.activation_energy, sig.activation_weight)
+                energy = exp.activation_energy
+                if similarity > energy:
+                    energy = similarity
+                if energy < 0.0:
+                    energy = 0.0
+                elif energy > 1.0:
+                    energy = 1.0
+                exp.activation_energy = energy
+                sig.activation_weight = energy
                 matches.append((similarity, exp))
 
         if not matches:
-            for exp, sig in sorted(
-                zip(self.experiences, self.signatures),
-                key=lambda item: self._jaccard_similarity(context_features, item[1].feature_set),
-                reverse=True,
-            ):
-                similarity = self._jaccard_similarity(context_features, sig.feature_set)
+            ranked = []
+            for exp, sig in zip(self.experiences, self.signatures):
+                if not getattr(sig, "_mask_ready", False):
+                    self._stamp_signature(sig)
+                ranked.append(
+                    (
+                        self._mask_jaccard(query_mask, query_count, sig.feature_mask, sig.feature_count),
+                        exp,
+                        sig,
+                    )
+                )
+            ranked.sort(key=lambda item: item[0], reverse=True)
+            for similarity, exp, sig in ranked:
                 if similarity <= 0.0:
-                    continue
+                    break
                 exp.last_activated = now
-                exp.activation_energy = self._clamp(max(self._safe_float(exp.activation_energy, 0.0), similarity))
-                sig.activation_weight = self._safe_float(exp.activation_energy, sig.activation_weight)
+                energy = exp.activation_energy
+                if similarity > energy:
+                    energy = similarity
+                if energy < 0.0:
+                    energy = 0.0
+                elif energy > 1.0:
+                    energy = 1.0
+                exp.activation_energy = energy
+                sig.activation_weight = energy
                 matches.append((similarity, exp))
                 if len(matches) >= self.top_k_recall:
                     break
@@ -738,13 +1252,18 @@ class NOWAHippocampus:
         recent = self.signatures[-self.novelty_window :]
         if not recent:
             return 1.0
+        query_mask, query_count = self._bits_for(query_features, self._feature_bits)
         max_similarity = 0.0
         any_compared = False
         for sig in recent:
             if exclude_signature is not None and sig is exclude_signature:
                 continue
+            if not getattr(sig, "_mask_ready", False):
+                self._stamp_signature(sig)
             any_compared = True
-            max_similarity = max(max_similarity, self._jaccard_similarity(query_features, sig.feature_set))
+            similarity = self._mask_jaccard(query_mask, query_count, sig.feature_mask, sig.feature_count)
+            if similarity > max_similarity:
+                max_similarity = similarity
         if not any_compared:
             base = 1.0
         else:
@@ -793,9 +1312,22 @@ class NOWAHippocampus:
         self._apply_decay()
 
         query_features, query_drive, query_context, _, query_tokens = self._build_query_signature(current_signature)
+        query_mask, query_count = self._bits_for(query_features, self._feature_bits)
+        if not isinstance(query_tokens, tuple):
+            query_tokens = tuple(str(token) for token in (query_tokens or ()))
+        token_mask, token_count = self._bits_for(query_tokens, self._token_bits)
         similarity_entries: List[Tuple[float, SignatureTrace]] = []
         for sig in self.signatures:
-            sim = self._composite_similarity(query_features, query_drive, query_context, query_tokens, sig)
+            sim = self._fast_similarity(
+                query_mask,
+                query_count,
+                query_drive,
+                query_context,
+                query_tokens,
+                token_mask,
+                token_count,
+                sig,
+            )
             if sim > 0.0:
                 similarity_entries.append((sim, sig))
 

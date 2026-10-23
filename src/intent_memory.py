@@ -194,10 +194,14 @@ class IntentMemory:
         exact = self._signature_text("|".join(features))
         legacy = self._legacy_context_signature(context)
         pressure: Dict[str, float] = {}
-        
-        # Обновить recency для всех traces и активировать релевантные
+        now = time.time()
+        half_life = self.recency_half_life if self.recency_half_life else 1.0
+        inv_half = -1.0 / half_life
+
+        # Recency is 2**(-age/half_life) from the trace timestamp. One clock
+        # read covers the whole table.
         for trace_key, trace in self.traces.items():
-            trace.update_recency(self.recency_half_life)
+            trace.recency = 2.0 ** ((now - trace.timestamp) * inv_half)
             weight = self._trace_match_weight(trace, features, exact, legacy)
             if weight <= 0.0:
                 continue

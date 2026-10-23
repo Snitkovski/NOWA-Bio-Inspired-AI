@@ -391,21 +391,23 @@ class Agent:
         # Get active experiences and patterns
         hip_exps = self.hippocampus.activate(context_events)
         ctx_patterns = self.cortex.activate(context_events)
-        pending_recall = self._recall_impulses_from_experiences(hip_exps)
-        if decision_only and pending_recall:
+        if decision_only:
             try:
-                self.affective_space.step(
-                    recall_impulses=pending_recall,
-                    time_elapsed=max(0.05, float(step_elapsed or 1.0)),
-                    wakefulness=getattr(self.wakefulness, "wakefulness", 0.0),
-                )
-                self._project_legacy_affect_from_affective_space(blend=1.0)
+                recall_vector = self.affective_space.constrained_recall_from_experiences(hip_exps)
+                if recall_vector:
+                    self.affective_space.step(
+                        recall_vector=recall_vector,
+                        time_elapsed=max(0.05, float(step_elapsed or 1.0)),
+                        wakefulness=getattr(self.wakefulness, "wakefulness", 0.0),
+                    )
+                    self._project_legacy_affect_from_affective_space(blend=1.0)
+                else:
+                    self._pending_recall_impulses = []
             except Exception:
                 pass
-        elif not decision_only:
-            self._pending_recall_impulses = pending_recall
         else:
-            self._pending_recall_impulses = []
+            pending_recall = self._recall_impulses_from_experiences(hip_exps)
+            self._pending_recall_impulses = pending_recall
         stable_repetition = any(
             int(getattr(exp, "reinforcement_count", 0)) >= 2 for exp in list(hip_exps or [])
         )
