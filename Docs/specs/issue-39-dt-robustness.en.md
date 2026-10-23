@@ -180,7 +180,65 @@ After correct once-per-second metabolism and earlier eat availability, seed 2 at
 
 ---
 
-## 7. Out of scope / open questions
+## 7. Performance at 10x
+
+Commit `df816c895d561b2ea4b719be59b763bfb284e55d` (PR #48). Behavioral correctness at 10× was already fixed by items A–E; the colony was still slow because **each sub-tick runs one full decision per chinchilla**, and a full hippocampus (capacity 1024) on every decision scanned every signature, scored eviction, decayed every trace, and summed recall impulse per activated episode. Rendering was already once per frame; pygame never ranked in the top 20 under cProfile.
+
+**Principle:** biological fidelity is preserved — no sampling, no coarser decay, no shortcut eviction; sleep consolidation and two-tier plasticity unchanged; item B unchanged; no GPU; `src/` stays stdlib-only. `MAX_TICK_DT` remains 0.25; capacity remains 1024; `activate` and `store` still run on every decision.
+
+### Profiling before and after (4 vCPU, 4 founders, noisy)
+
+| Run | Before | After |
+| --- | --- | --- |
+| Headless `tick(2.5)` (~800 memories) | **2.5–2.7×** (20 sim s / 8.1 s wall) | **6.66×** (15.0 sim s / 2.253 s; ticks 345–398 ms; holding 10× needs ≤250 ms/tick) |
+| GUI `bench_speed.py`, 10×, 8 s | **5.10×** sim while HUD read **×10.0** (50 ms frame cap discarded stall time) | **8.09×** (sim 65.8 s / wall 8.1 s; HUD **×8.70**; 27 ticks; memory 1024) |
+| GUI `bench_speed.py`, 1×, 8 s | — | **0.98×** (sim 7.8 s / wall 8.0 s; HUD ×1.00; 33 ticks) |
+
+Before: cProfile on 10 sim s at ~840 memories took 12.7 s wall; top cumulative costs included `activate` 5.3 s, affective `step` 2.8 s, `commit` 2.4 s, context similarity 2.2 s, `store` 1.8 s, decay 1.6 s, signature rebuild 1.4 s. At capacity the profiler showed the eviction cliff (`store` / `enforce` / novelty / `activate`).
+
+After (hippocampus 1024/1024): one profiled `tick(2.5)` 0.824 s wall (inflated vs ~0.35–0.40 s unprofiled). Cumulative: `Agent.step` 0.40 s, `commit` 0.31 s, `store` 0.18 s, `activate` 0.15 s, `enforce` 0.11 s, body 0.10 s, novelty 0.09 s, decay 0.09 s, recall 0.07 s.
+
+### Root cause (demo host × memory core)
+
+Sub-ticking (item A) fixed decision *rate* but multiplied work: a 2.5 s frame becomes ten 0.25 s sub-ticks × four agents × full `Agent.step` each. The dominant cost was hippocampus maintenance and recall on every decision, not pygame.
+
+### Equivalence-preserving optimizations
+
+| Area | File(s) | Change |
+| --- | --- | --- |
+| Feature scan | `src/hippocampus.py` | Bitmask Jaccard (`_mask_jaccard`) matches set Jaccard; per-query feature similarity cache; `activate` uses drive `(1, 0, 1)` with drive similarity stored on the signature; **safe threshold pruning** skips a signature only when `0.80 × feature + 0.15 × drive + 0.05` is already below threshold (upper bound — context ≤ 1) |
+| Decay | `src/hippocampus.py` | `_decay_factor_for`: same blend `0.90 × 0.5**(elapsed/half_life) + 0.10 × (1−decay_rate)**(elapsed/half_life)`, clamped 0..1; **one factor per distinct `last_decay_ts`**; applied on every decay call — a 2.5 s gap is `factor(2.5)`, not ten `factor(0.25)` products; prune walk only when a weight can fall under activation threshold |
+| Eviction | `src/hippocampus.py` | Same score (novelty blend, novelty, reinforcement, last activation, stable index); chronological order; overflow of one episode uses linear minimum → **same victim as full sort**; incremental novelty window; runner-up promoted only on equal similarity |
+| Recall | `src/hippocampus.py`, `src/affective_space.py` | One impulse per activated trace, same per-impulse and L2 caps; `constrained_recall_from_experiences` sums in **one pass** for `decision_only`; core axis tuples cached on impulse and trace |
+| Intent recency | `src/intent_memory.py` | Still `2**(-age/half_life)`; one `time.time()` per table |
+| Selector | `src/selector.py` | Caches action names on episode (real tuple only — `Mock` not treated as cache) |
+| Agent ids | `src/agent.py` | Episode ids O(1) when index complete; rebuilt after reload clears index |
+| HUD clock | `Demo/Colony chinchillas/src/colony_gui/app.py` | `SIM_FRAME_DT_CAP_S = 1.0` credits real frame time to sim accumulator; sprite smoothing still `MAX_FRAME_DT_S = 0.05`; `note_sim_pace` uses raw frame so HUD cannot show 10× while discarding slow-tick wall time |
+
+**Bench:** `Demo/Colony chinchillas/tools/bench_speed.py` replays GUI catch-up pacing.
+
+### Verification
+
+- **Equivalence:** `tests/test_memory_speed_equivalence.py` — closed-form decay (including that one 2.5 s gap ≠ product of ten 0.25 s factors), `activate` vs full similarity scan, eviction vs full score sort, recall vs one impulse per episode, same actions / episode state / affect for load 1× step (`dt = 0.25`) vs 10× frame split into ten such steps.
+- **Full suite:** `python -m pytest -q` — **1924 passed, 11 skipped** (~14 min 47 s after these edits). Colony `test_colony_dt_invariance.py`: 16 passed.
+
+### Rejected options (would change results)
+
+| Option | Why rejected | Expected gain on reference VM |
+| --- | --- | --- |
+| Skip decay when gap &lt; `1e-4` of half-life (~0.36 s at 3600 s) | Energy and eviction weights change | Decay ~76 ms tottime inside one profiled `tick(2.5)` |
+| Top-k recall or drop traces | Hundreds of 1024 episodes match above 0.20 on colony queries; decisions would change | Recall+affect ~100–200 ms / 10 sim s (early); one-pass recall ~74 ms cumulative on one `tick(2.5)` |
+| Skip zero feature-overlap signatures | Threshold 0.20 reachable from drive+context alone (`0.15 + 0.05`); safe bound fired on 0/1024 | No measured saving |
+| Oldest-only eviction or capped novelty scan | Different dropped episode | Enforce + novelty ~0.11 s + ~0.09 s on one `tick(2.5)` |
+| Collapse body slices into one `autonomous_tick(dt)` | Rest and energy change, including unmet-need cost (item B) | Body path ~0.10 s cumulative on same tick |
+| GPU (torch / cupy) | Not a numeric kernel; launch overhead; new dependency forbidden in `src/` | None expected |
+| Raise `MAX_TICK_DT`, skip `activate`/`store`, lower capacity, share one `Agent` | Decision rate or who learns changes | Would remove most per-decision cost; not measured as an option |
+
+A machine that sustains `tick(2.5)` ≤ 250 ms wall can hold requested 10×; the reference VM at full hippocampus does not reliably sustain 10×.
+
+---
+
+## 8. Out of scope / open questions
 
 - Food or `rest` restoring energy; low-energy bias toward rest/sleep (demo design).
 - Core physiological bias scale vs BG `pressure_vector` (separate measurement).
