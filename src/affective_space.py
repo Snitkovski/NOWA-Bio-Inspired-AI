@@ -254,8 +254,12 @@ class EmotionalImpulse:
         object.__setattr__(self, "source", source)
         object.__setattr__(self, "intensity", _clamp(self.intensity, 0.0, 1.0))
         object.__setattr__(self, "vector", dict(self.vector or {}))
+        core = self._build_core_vector()
+        object.__setattr__(self, "_core_vector", core)
+        object.__setattr__(self, "_core_values", tuple(core[axis] for axis in AXES))
+        object.__setattr__(self, "_core_magnitude", _vector_l1_mean_abs(core))
 
-    def to_core_vector(self) -> Dict[str, float]:
+    def _build_core_vector(self) -> Dict[str, float]:
         raw = _zero_vector()
         for key, value in (self.vector or {}).items():
             if key in AXES:
@@ -270,8 +274,58 @@ class EmotionalImpulse:
         gain = _clamp(self.intensity, 0.0, 1.0)
         return {axis: _clamp(raw[axis] * gain, -1.0, 1.0) for axis in AXES}
 
+    def to_core_vector(self) -> Dict[str, float]:
+        core = self._core_vector
+        if core is None:
+            values = self._core_values
+            core = {AXES[index]: values[index] for index in range(len(AXES))}
+            object.__setattr__(self, "_core_vector", core)
+        return core
+
     def magnitude(self) -> float:
-        return _vector_l1_mean_abs(self.to_core_vector())
+        return self._core_magnitude
+
+    @classmethod
+    def from_core(
+        cls,
+        core: Dict[str, float],
+        magnitude: float,
+        intensity: float,
+        source: str = "memory",
+        vector: Optional[Dict[str, float]] = None,
+    ) -> "EmotionalImpulse":
+        """Build an impulse whose core vector is already the canonical one."""
+        values = tuple(float(core.get(axis, 0.0)) for axis in AXES)
+        return cls.from_values(values, magnitude, intensity, source=source, vector=vector, core=core)
+
+    @classmethod
+    def from_values(
+        cls,
+        values: Tuple[float, ...],
+        magnitude: float,
+        intensity: float,
+        source: str = "memory",
+        vector: Optional[Dict[str, float]] = None,
+        core: Optional[Dict[str, float]] = None,
+        raw: Optional[Tuple[float, ...]] = None,
+    ) -> "EmotionalImpulse":
+        """Build an impulse from canonical axis values without re-reading a snapshot."""
+        impulse = object.__new__(cls)
+        if vector is None and core is not None:
+            shown = dict(core)
+        elif vector is None:
+            shown = {AXES[index]: values[index] for index in range(len(AXES))}
+        else:
+            # Recall keeps the snapshot by reference. The scaled copy is a new dict.
+            shown = vector if raw is not None else dict(vector)
+        object.__setattr__(impulse, "vector", shown)
+        object.__setattr__(impulse, "intensity", intensity)
+        object.__setattr__(impulse, "source", source)
+        object.__setattr__(impulse, "_core_values", values)
+        object.__setattr__(impulse, "_core_vector", core)
+        object.__setattr__(impulse, "_core_magnitude", magnitude)
+        object.__setattr__(impulse, "_raw_values", raw)
+        return impulse
 
 
 @dataclass
@@ -292,6 +346,23 @@ class EmotionalTrace:
         self.intensity = _clamp(self.intensity, 0.0, 1.0)
         self.decay_rate = max(0.0, float(self.decay_rate or 0.0))
         self.timestamp = float(self.timestamp or time.time())
+        self._raw_axes = self._snapshot_raw_axes(self.snapshot_vector)
+
+    @staticmethod
+    def _snapshot_raw_axes(snapshot: Dict[str, float]) -> Dict[str, float]:
+        """Pre-intensity axis sum. Scaling by intensity matches EmotionalImpulse."""
+        raw = _zero_vector()
+        for key, value in (snapshot or {}).items():
+            if key in AXES:
+                raw[key] += _clamp(value, -1.0, 1.0)
+                continue
+            mapped = _LEGACY_VECTOR_MAP.get(key)
+            if not mapped:
+                continue
+            val_legacy = _clamp(value, -1.0, 1.0)
+            for axis, weight in mapped.items():
+                raw[axis] += val_legacy * float(weight)
+        return raw
 
     def decayed_intensity(self, now: Optional[float] = None) -> float:
         ts_now = float(now if now is not None else time.time())
@@ -301,10 +372,27 @@ class EmotionalTrace:
     def to_impulse(self, k: float = 0.25, now: Optional[float] = None) -> EmotionalImpulse:
         gain = _clamp(k, 0.1, 0.4)
         decayed = self.decayed_intensity(now=now)
-        return EmotionalImpulse(
-            vector=dict(self.snapshot_vector or {}),
-            intensity=_clamp(gain * decayed, 0.0, 1.0),
-            source="memory",
+        intensity = _clamp(gain * decayed, 0.0, 1.0)
+        raw = self._raw_axes
+        values = []
+        raw_values = []
+        magnitude_sum = 0.0
+        for axis in AXES:
+            base = raw[axis]
+            raw_values.append(base)
+            value = base * intensity
+            if value < -1.0:
+                value = -1.0
+            elif value > 1.0:
+                value = 1.0
+            values.append(value)
+            magnitude_sum += value if value >= 0.0 else -value
+        return EmotionalImpulse.from_values(
+            tuple(values),
+            magnitude_sum / float(len(AXES) or 1),
+            intensity,
+            vector=self.snapshot_vector,
+            raw=tuple(raw_values),
         )
 
 
@@ -529,14 +617,18 @@ class AffectiveSpace:
 
     @staticmethod
     def _sum_impulses(impulses: Iterable[EmotionalImpulse]) -> Tuple[Dict[str, float], List[float]]:
-        total = _zero_vector()
+        width = len(AXES)
+        acc = [0.0] * width
         magnitudes: List[float] = []
         for impulse in impulses:
-            vec = impulse.to_core_vector()
-            magnitudes.append(_vector_l1_mean_abs(vec))
-            for axis in AXES:
-                total[axis] += float(vec.get(axis, 0.0))
-        return total, magnitudes
+            values = getattr(impulse, "_core_values", None)
+            if not values:
+                vec = impulse.to_core_vector()
+                values = tuple(float(vec.get(axis, 0.0)) for axis in AXES)
+            magnitudes.append(impulse.magnitude() if hasattr(impulse, "magnitude") else _vector_l1_mean_abs(impulse.to_core_vector()))
+            for index in range(width):
+                acc[index] += values[index]
+        return {AXES[index]: acc[index] for index in range(width)}, magnitudes
 
     @staticmethod
     def _scale_vector(vector: Dict[str, float], scale: float) -> Dict[str, float]:
@@ -564,30 +656,40 @@ class AffectiveSpace:
                 constrained.append(impulse)
                 continue
             scale = per_impulse_cap / mag
+            new_intensity = _clamp(float(impulse.intensity) * scale, 0.0, 1.0)
+            raw_values = getattr(impulse, "_raw_values", None)
+            if raw_values:
+                scaled_values = []
+                magnitude_sum = 0.0
+                for base in raw_values:
+                    value = base * new_intensity
+                    if value < -1.0:
+                        value = -1.0
+                    elif value > 1.0:
+                        value = 1.0
+                    scaled_values.append(value)
+                    magnitude_sum += value if value >= 0.0 else -value
+                constrained.append(
+                    EmotionalImpulse.from_values(
+                        tuple(scaled_values),
+                        magnitude_sum / float(len(AXES) or 1),
+                        new_intensity,
+                        source=impulse.source,
+                        vector=dict(impulse.vector or {}),
+                        raw=raw_values,
+                    )
+                )
+                continue
             constrained.append(
                 EmotionalImpulse(
                     vector=dict(impulse.vector or {}),
-                    intensity=_clamp(float(impulse.intensity) * scale, 0.0, 1.0),
+                    intensity=new_intensity,
                     source=impulse.source,
                 )
             )
 
         recall_vector, _ = self._sum_impulses(constrained)
-
-        # Total recall share <= 40% of total.
-        ext_norm = _vector_l2_norm(external_vector)
-        rec_norm = _vector_l2_norm(recall_vector)
-        if rec_norm <= 0.0:
-            return recall_vector
-
-        if ext_norm > 0.0:
-            max_recall_norm = (2.0 / 3.0) * ext_norm
-        else:
-            max_recall_norm = 0.3
-
-        if rec_norm > max_recall_norm > 0.0:
-            recall_vector = self._scale_vector(recall_vector, max_recall_norm / rec_norm)
-        return recall_vector
+        return self._cap_recall_norm(recall_vector, external_vector)
 
     def create_trace(self, intensity: float = 1.0, decay_rate: float = 0.05, timestamp: Optional[float] = None) -> EmotionalTrace:
         return EmotionalTrace(
@@ -596,6 +698,94 @@ class AffectiveSpace:
             timestamp=float(timestamp if timestamp is not None else time.time()),
             decay_rate=max(0.0, float(decay_rate)),
         )
+
+    def constrained_recall_from_experiences(
+        self,
+        experiences,
+        *,
+        mean_external: float = 0.0,
+        external_vector: Optional[Dict[str, float]] = None,
+        k: float = 0.25,
+        now: Optional[float] = None,
+    ) -> Dict[str, float]:
+        """Sum recall traces with the same per-impulse and total caps as ``step``.
+
+        One pass, no impulse object per episode. The result is the recall
+        vector ``step`` would have produced from ``trace.to_impulse`` calls.
+        """
+        reference_external = max(0.0, float(mean_external))
+        if reference_external <= 0.0:
+            reference_external = max(0.0, float(self.last_external_mean_impulse))
+        per_impulse_cap = 0.3 * reference_external if reference_external > 0.0 else 0.15
+        gain = _clamp(k, 0.1, 0.4)
+        ts_now = float(now if now is not None else time.time())
+        width = len(AXES)
+        acc = [0.0] * width
+        any_trace = False
+        for exp in experiences:
+            trace = getattr(exp, "emotional_trace", None)
+            if not isinstance(trace, EmotionalTrace):
+                continue
+            any_trace = True
+            dt = ts_now - float(trace.timestamp)
+            if dt < 0.0:
+                dt = 0.0
+            decayed = trace.intensity * math.exp(-trace.decay_rate * dt)
+            if decayed < 0.0:
+                decayed = 0.0
+            elif decayed > 1.0:
+                decayed = 1.0
+            intensity = gain * decayed
+            if intensity < 0.0:
+                intensity = 0.0
+            elif intensity > 1.0:
+                intensity = 1.0
+            raw = trace._raw_axes
+            values = []
+            magnitude_sum = 0.0
+            for axis in AXES:
+                value = raw[axis] * intensity
+                if value < -1.0:
+                    value = -1.0
+                elif value > 1.0:
+                    value = 1.0
+                values.append(value)
+                magnitude_sum += value if value >= 0.0 else -value
+            mag = magnitude_sum / float(width or 1)
+            if mag > per_impulse_cap > 0.0:
+                new_intensity = intensity * (per_impulse_cap / mag)
+                if new_intensity < 0.0:
+                    new_intensity = 0.0
+                elif new_intensity > 1.0:
+                    new_intensity = 1.0
+                values = []
+                for axis in AXES:
+                    value = raw[axis] * new_intensity
+                    if value < -1.0:
+                        value = -1.0
+                    elif value > 1.0:
+                        value = 1.0
+                    values.append(value)
+            for index in range(width):
+                acc[index] += values[index]
+        if not any_trace:
+            return None
+        recall_vector = {AXES[index]: acc[index] for index in range(width)}
+        external = external_vector if external_vector is not None else _zero_vector()
+        return self._cap_recall_norm(recall_vector, external)
+
+    def _cap_recall_norm(self, recall_vector: Dict[str, float], external_vector: Dict[str, float]) -> Dict[str, float]:
+        ext_norm = _vector_l2_norm(external_vector)
+        rec_norm = _vector_l2_norm(recall_vector)
+        if rec_norm <= 0.0:
+            return recall_vector
+        if ext_norm > 0.0:
+            max_recall_norm = (2.0 / 3.0) * ext_norm
+        else:
+            max_recall_norm = 0.3
+        if rec_norm > max_recall_norm > 0.0:
+            return self._scale_vector(recall_vector, max_recall_norm / rec_norm)
+        return recall_vector
 
     def recall_trace(self, trace: EmotionalTrace, k: float = 0.25, now: Optional[float] = None) -> EmotionalImpulse:
         if not isinstance(trace, EmotionalTrace):
@@ -797,6 +987,7 @@ class AffectiveSpace:
         inputs: Optional[Dict[str, float]] = None,
         external_impulses: Optional[Any] = None,
         recall_impulses: Optional[Any] = None,
+        recall_vector: Optional[Dict[str, float]] = None,
         internal_impulses: Optional[Any] = None,
         time_elapsed: float = 1.0,
         wakefulness: float = 0.0,
@@ -830,11 +1021,14 @@ class AffectiveSpace:
         if mean_external > 0.0:
             self.last_external_mean_impulse = _clamp(mean_external, 0.0, 1.0)
 
-        rec_vector = self._apply_recall_constraints(
-            recall_impulses=rec_list,
-            mean_external=mean_external,
-            external_vector=ext_vector,
-        )
+        if recall_vector is not None:
+            rec_vector = {axis: float(recall_vector.get(axis, 0.0)) for axis in AXES}
+        else:
+            rec_vector = self._apply_recall_constraints(
+                recall_impulses=rec_list,
+                mean_external=mean_external,
+                external_vector=ext_vector,
+            )
         int_vector, _ = self._sum_impulses(int_list)
         combined_impulse = {
             axis: float(ext_vector.get(axis, 0.0)) + float(rec_vector.get(axis, 0.0)) + float(int_vector.get(axis, 0.0))

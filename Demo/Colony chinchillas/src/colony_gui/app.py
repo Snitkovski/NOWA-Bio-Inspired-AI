@@ -64,6 +64,11 @@ def _confirm_quit() -> bool:
             except Exception:
                 pass
 MAX_FRAME_DT_S = 0.05
+# Sprite smoothing stays on the short cap above. The simulation clock uses
+# the real frame, otherwise a tick slower than 50ms is mostly discarded and
+# 10x cannot keep up even when the CPU can do the work. Catch-up is still
+# limited by SIM_MAX_CATCHUP_STEPS and SIM_ACCUMULATOR_MAX_STEPS.
+SIM_FRAME_DT_CAP_S = 1.0
 SIM_BASE_STEP_S = 1.0 / 12.0
 SIM_MAX_STEP_S = 0.25
 SIM_MAX_CATCHUP_STEPS = 2
@@ -700,6 +705,37 @@ def _draw_metric_bar(
     return value_x + value_surface.get_width() + 16
 
 
+def format_speed_status_line(
+    *,
+    speed: float,
+    paused: bool,
+    audio_enabled: bool,
+    achieved_ratio: float = 1.0,
+) -> str:
+    """HUD speed line. A lagging clock shows the speed the sim is actually holding."""
+    show_lag = (not paused) and float(achieved_ratio) < 0.85
+    if show_lag:
+        template = tr(
+            "Скорость: x{speed:.1f} (факт x{actual:.1f})   Пауза: {paused}   Звук: {sound}   "
+            "Управление: SPACE пауза, +/- скорость, M звук, L родословная, A анализ роя, G язык, ESC выход"
+        )
+        return template.format(
+            speed=float(speed),
+            actual=max(0.0, float(speed) * float(achieved_ratio)),
+            paused=tr("да") if paused else tr("нет"),
+            sound=tr("вкл") if audio_enabled else tr("выкл"),
+        )
+    template = tr(
+        "Скорость: x{speed:.1f}   Пауза: {paused}   Звук: {sound}   "
+        "Управление: SPACE пауза, +/- скорость, M звук, L родословная, A анализ роя, G язык, ESC выход"
+    )
+    return template.format(
+        speed=float(speed),
+        paused=tr("да") if paused else tr("нет"),
+        sound=tr("вкл") if audio_enabled else tr("выкл"),
+    )
+
+
 def _draw_stats_panel(
     screen: "pygame.Surface",
     font_small: "pygame.font.Font",
@@ -709,6 +745,7 @@ def _draw_stats_panel(
     speed: float,
     paused: bool,
     audio_enabled: bool,
+    achieved_ratio: float = 1.0,
     diagnostics: dict[str, int | float],
     population_stats: dict[str, Any],
     resources: dict[str, Any],
@@ -796,13 +833,11 @@ def _draw_stats_panel(
             pairs=total_known_pairs,
             bonded=bonded_pairs,
         )
-        line3 = tr(
-            "Скорость: x{speed:.1f}   Пауза: {paused}   Звук: {sound}   "
-            "Управление: SPACE пауза, +/- скорость, M звук, L родословная, A анализ роя, G язык, ESC выход"
-        ).format(
+        line3 = format_speed_status_line(
             speed=speed,
-            paused=tr("да") if paused else tr("нет"),
-            sound=tr("вкл") if audio_enabled else tr("выкл"),
+            paused=paused,
+            audio_enabled=audio_enabled,
+            achieved_ratio=achieved_ratio,
         )
 
         panel.blit(
@@ -1442,9 +1477,11 @@ def run_pygame_demo(
 
         if frame_dt_s is not None:
             clock.tick()
-            frame_dt = max(0.0, float(frame_dt_s))
+            raw_frame_dt = max(0.0, float(frame_dt_s))
         else:
-            frame_dt = min(clock.tick(target_fps) / 1000.0, MAX_FRAME_DT_S)
+            raw_frame_dt = max(0.0, clock.tick(target_fps) / 1000.0)
+        frame_dt = min(raw_frame_dt, MAX_FRAME_DT_S)
+        sim_frame_dt = min(raw_frame_dt, SIM_FRAME_DT_CAP_S)
         layout_elapsed_s += frame_dt
         snapshot_elapsed_s += frame_dt
         for event in pygame.event.get():
@@ -1520,7 +1557,8 @@ def run_pygame_demo(
                 if mouse_x >= PANEL_RIGHT_X:
                     gui._right_panel_scroll = max(0, int(gui._right_panel_scroll - event.y * 24))
 
-        sim_accumulator += frame_dt
+        sim_accumulator += sim_frame_dt
+        sim_time_before = float(getattr(runner, "sim_time", 0.0))
         base_sim_step = _adaptive_sim_step_s(len(state["agents"]))
         sim_step = _apply_sim_load_adaptation(base_sim_step, sim_step_cost_ema_s)
         high_population_mode = len(ordered_agents) >= HIGH_POPULATION_THRESHOLD
@@ -1554,6 +1592,10 @@ def run_pygame_demo(
 
         # Prevent long-stall spiral when frame budget is exceeded.
         sim_accumulator = min(sim_accumulator, sim_step * SIM_ACCUMULATOR_MAX_STEPS)
+        gui.note_sim_pace(
+            real_dt=raw_frame_dt,
+            sim_advanced=float(getattr(runner, "sim_time", sim_time_before)) - sim_time_before,
+        )
 
         layout_refresh_required = False
         if step_count > 0:
@@ -1748,6 +1790,7 @@ def run_pygame_demo(
             speed=float(gui.speed),
             paused=bool(gui.paused),
             audio_enabled=bool(audio_enabled),
+            achieved_ratio=float(getattr(gui, "achieved_speed_ratio", 1.0)),
             diagnostics=diagnostics_cache,
             population_stats=dict(state.get("population_stats", {})),
             resources=dict(state.get("resources", {})),

@@ -263,29 +263,57 @@ class ActionSelector:
         """Energy-weighted mean of episode reward for each recalled action."""
         sums = {action: 0.0 for action in self.actions}
         weights = {action: 0.0 for action in self.actions}
-        for exp in list(hippocampal_exps or []):
+        for exp in hippocampal_exps or ():
+            outcome = getattr(exp, "reward", 0.0)
+            intensity = getattr(exp, "intensity", 0.0)
+            activation = getattr(exp, "activation_energy", 0.0)
             try:
-                outcome = _clamp(getattr(exp, "reward", 0.0), -1.0, 1.0)
-                intensity = _clamp(getattr(exp, "intensity", 0.0), 0.0, 2.0) / 2.0
-                activation = _clamp(getattr(exp, "activation_energy", 0.0), 0.0, 1.0)
-            except Exception:
+                outcome_v = float(outcome)
+                intensity_v = float(intensity)
+                activation_v = float(activation)
+            except (TypeError, ValueError):
                 continue
-            energy = intensity * activation
+            if outcome_v < -1.0:
+                outcome_v = -1.0
+            elif outcome_v > 1.0:
+                outcome_v = 1.0
+            if intensity_v < 0.0:
+                intensity_v = 0.0
+            elif intensity_v > 2.0:
+                intensity_v = 2.0
+            if activation_v < 0.0:
+                activation_v = 0.0
+            elif activation_v > 1.0:
+                activation_v = 1.0
+            energy = (intensity_v / 2.0) * activation_v
             if energy <= 1e-12:
                 continue
-            events = getattr(getattr(exp, "path", None), "events", None) or []
-            seen = set()
-            for event in events:
-                try:
-                    if getattr(getattr(event, "event_type", None), "value", "") != "action":
+            action_names = getattr(exp, "_recall_actions", None)
+            if not isinstance(action_names, tuple):
+                found = []
+                seen = set()
+                events = getattr(getattr(exp, "path", None), "events", None)
+                if not isinstance(events, (list, tuple)):
+                    events = ()
+                for event in events:
+                    event_type = getattr(event, "event_type", None)
+                    if getattr(event_type, "value", "") != "action":
                         continue
-                    action_name = str(event.name).split(":", 1)[-1]
+                    token = getattr(event, "name", "")
+                    action_name = str(token).split(":", 1)[-1] if token else ""
+                    if not action_name or action_name in seen:
+                        continue
+                    seen.add(action_name)
+                    found.append(action_name)
+                action_names = tuple(found)
+                try:
+                    exp._recall_actions = action_names
                 except Exception:
+                    pass
+            for action_name in action_names:
+                if action_name not in sums:
                     continue
-                if action_name not in sums or action_name in seen:
-                    continue
-                seen.add(action_name)
-                sums[action_name] += outcome * energy
+                sums[action_name] += outcome_v * energy
                 weights[action_name] += energy
         means = {}
         for action_name, weight in weights.items():

@@ -933,6 +933,7 @@ for _ru, _en in {
     "Время: {time}   Агентов: {n} (самок: {f}, самцов: {m})   Средний возраст: {age}": "Time: {time}   Agents: {n} (females: {f}, males: {m})   Mean age: {age}",
     "Половозрелые: самки {f}, самцы {m}   Эструс (самки): {estrus}   Беременные: {preg}   Рождений/смертей: {births}/{deaths}   Связи/крепкие пары: {pairs}/{bonded}": "Mature: females {f}, males {m}   Estrus (females): {estrus}   Pregnant: {preg}   Births/deaths: {births}/{deaths}   Bonds/strong pairs: {pairs}/{bonded}",
     "Скорость: x{speed:.1f}   Пауза: {paused}   Звук: {sound}   Управление: SPACE пауза, +/- скорость, M звук, L родословная, A анализ роя, G язык, ESC выход": "Speed: x{speed:.1f}   Pause: {paused}   Sound: {sound}   Controls: SPACE pause, +/- speed, M sound, L lineage, A swarm analysis, G language, ESC quit",
+    "Скорость: x{speed:.1f} (факт x{actual:.1f})   Пауза: {paused}   Звук: {sound}   Управление: SPACE пауза, +/- скорость, M звук, L родословная, A анализ роя, G язык, ESC выход": "Speed: x{speed:.1f} (actual x{actual:.1f})   Pause: {paused}   Sound: {sound}   Controls: SPACE pause, +/- speed, M sound, L lineage, A swarm analysis, G language, ESC quit",
     "Стресс": "Stress",
     "Энергия": "Energy",
     "Сплоченность": "Cohesion",
