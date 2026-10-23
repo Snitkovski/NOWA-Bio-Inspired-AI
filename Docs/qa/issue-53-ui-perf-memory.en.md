@@ -1,6 +1,6 @@
 # QA issue #53 — colony UI rate and episode memory
 
-Branch: `team/issue-53-ui-perf-memory` @ `dbc351b` (code under test; this note is the next commit).
+Branch: `team/issue-53-ui-perf-memory`. Round 1 checked `dbc351b`. Round 2 checked `4945e24` (this note is the next commit).
 PR: https://github.com/burlakovmb/NOWA-Bio-Inspired-AI/pull/55
 Issue: https://github.com/burlakovmb/NOWA-Bio-Inspired-AI/issues/53
 Baseline: `main` @ `c3bbd62` (merge-base, PR #48).
@@ -11,11 +11,9 @@ Machine: Python 3.12.3, pygame 2.6.1, pytest 9.1.1. Not the machine behind the ~
 
 ## Verdict
 
-**FAIL**
+**PASS** (round 2, `4945e24`). Round 1 failed on the `main` pickle load. That load now works. The missing spec pair was not re-scored.
 
-Fresh runs match `main` when the clock is held still: actions, positions, episode features, rewards, recall, decay, eviction, and one sleep are the same, capacity stays 1024, `MAX_TICK_DT` stays 0.25, and an unmet need still spends energy. Same-version `copy`, `deepcopy`, and pickle round-trip. The full suite is green.
-
-A core save written on `main` does not open on this branch (`AttributeError` on `Path`). That is a broken upgrade of `AgentStorage`. Colony JSON saves do not store episodes and are outside this failure.
+Round 1, for the record: fresh runs match `main` when the clock is held still: actions, positions, episode features, rewards, recall, decay, eviction, and one sleep are the same, capacity stays 1024, `MAX_TICK_DT` stays 0.25, and an unmet need still spends energy. Same-version `copy`, `deepcopy`, and pickle round-trip. The full suite was green. A core save written on `main` did not open (`AttributeError` on `Path`). Colony JSON saves do not store episodes and were outside that failure.
 
 ## Coverage
 
@@ -24,14 +22,14 @@ A core save written on `main` does not open on this branch (`AttributeError` on 
 | Biology not simplified; subticks and `MAX_TICK_DT=0.25` kept | Pass |
 | `tick_history` trimmed to 1; no reader of older ticks | Pass |
 | `__slots__` writes, same-version pickle / copy / deepcopy | Pass |
-| Load of a `main` pickle on this branch | **Fail** |
+| Load of a `main` pickle on this branch | **Pass** in round 2 (failed in round 1) |
 | 9 agents, seed 7, 1x step 0.25 s and step 2.5 s vs `main` | Pass (frozen clock, identical hash) |
 | `abs=1e-4` on the colony test | Justified for the wall-clock gap the test measures |
 | Each chinchilla is its own `Agent` | Pass |
 | SDL dummy: language, card click, pause, +/- speed, panel cache | Pass |
 | Mouse-wheel scroll under SDL dummy | Driver cannot move the pointer; the same handler scrolls on display `:1` |
 | `bench_speed.py --agents 9` on `main` and the branch | Measured |
-| `python3 -m pytest -q` | **1930 passed, 11 skipped, 26 warnings**, exit 0, 1422.72 s |
+| `python3 -m pytest -q` | Round 1: **1930 passed, 11 skipped, 26 warnings**, exit 0, 1422.72 s. Round 2: **1 failed, 1932 passed, 11 skipped**, exit 1; the failure is the unseeded hay check below |
 | `test_founders_do_not_die_of_exhaustion_at_10x` (hay about 0.5) | Did not fail on this run |
 
 ### 1. Biology and the 1x / 2.5 s clock
@@ -106,6 +104,8 @@ Warmup stops at a full hippocampus or 60 s. Both filled 1024/1024 at sim 258 s (
 
 ### [MAJOR] A core pickle from `main` does not load
 
+Closed in round 2 (`4945e24`). Kept here as the round 1 record.
+
 Steps:
 
 1. On `main` (`c3bbd62`), build an `Agent`, `hip.store` one path (`ctx:nest`, `action:go`), `AgentStorage.save_agent` to `from_main.pkl`.
@@ -137,6 +137,36 @@ The issue acceptance asks for `Docs/specs/` `.en.md` / `.ru.md`. The branch diff
 
 Peak RSS is 78280 KiB lower on the branch (−25.5%). Headless 1x matches. Headless 10x is 2.64x → 2.86x on this VM. GUI 10x stays simulation-bound (7 paints, 98.5% sim) and is not close to the headless 2.86x of the same run. These are not the PR's 4.47x / 3.76x / 191 MiB figures; those were a different measurement.
 
+## Round 2
+
+Code: `4945e24`. Adds `__setstate__` for `Event`, `Path`, `Experience`, `EmotionalTrace`, `SignatureTrace`, and `NOWAHippocampus`, plus `tests/fixtures/agent_from_main_c3bbd62.pkl` and `tests/test_main_pickle_compat.py`. Product code was not edited in this pass. The spec gap from round 1 was left alone.
+
+### 1. Save on `main`, load on this branch
+
+Not the fixture. On `main` (`c3bbd62`), three `Agent.step` calls, then `AgentStorage.save_agent` to a new file (17736 bytes). On this branch, `load_agent` into a fresh agent:
+
+- Three episodes come back with the same paths, rewards, intensities, activation, episode ids, and trace intensities as the save: `(nest, tag:0, action:rest)` reward 0.2 trace 0.2 `ep-1`; `(bowl, tag:1, action:rest)` reward -0.1 trace 0.1 `ep-2`; `(wheel, tag:2, action:go)` reward 0.4 trace 0.4 `ep-3`. Paths stay frozen.
+- `AgentStorage` still writes experiences only, so `signatures` is empty until the first recall. `activate(["nest", "tag:0"])` rebuilds three signatures aligned with those episodes and returns the nest episode. `to_impulse` on the restored traces returns 0.05, 0.025, and 0.1.
+- `step` returns `stop`. `sleep(cycles=1)` returns a dict with `cycles == 1`.
+
+The round 1 `AttributeError: 'Path' object has no attribute '__dict__'` does not reproduce.
+
+### 2. Trajectories
+
+Same protocol as round 1. Nine agents, seed 7, `PYTHONHASHSEED=0`, `time.time` fixed at 1_700_000_000, 60 s. Final-state SHA-256:
+
+`c8f1d7e6770e7d715cd4aff8a71054b2bef3b16dd702050372be862de4ef8b90`
+
+That hash is the same on this branch and on `main`, for `dt=0.25` (1x) and for `dt=2.5` (10x). Max abs delta is 0.
+
+### 3. Full pytest
+
+`python3 -u -m pytest -q --tb=line` on `4945e24`: **1 failed, 1932 passed, 11 skipped, 26 warnings**, 1334.20 s, exit 1.
+
+The failure is `Demo/Colony chinchillas/tests/test_fix_colony_no_rest.py::test_founders_do_not_die_of_exhaustion_at_10x`: `runner.resources.hay` was 0.48459999999996595, and the test wants it above 0.5. The next run of that test alone passed. The run after that failed with hay 0.32739999999996894. On `main`, two runs passed (hay 0.518799999999968 and 0.6765999999999784).
+
+The test builds founders without `agent_id` or `rng_seed`. `ChinchillaAgent` then takes `uuid.uuid4()` and an unseeded `random.Random()`, so the bowl level is not a single number. The three tests in `tests/test_main_pickle_compat.py` are among the 1932 passes (round 1 had 1930 passes). The frozen-clock trajectory hash did not move, so this red line is not a regression of `4945e24` and is not filed as a new defect.
+
 ## Recommendations
 
 1. Give `Path` (and any slotted type that pickle already persisted) a `__getstate__` / `__setstate__` that accepts the old `__dict__` payload, then load a `main` `AgentStorage` file in a test.
@@ -146,4 +176,4 @@ Peak RSS is 78280 KiB lower on the branch (−25.5%). Headless 1x matches. Headl
 
 ## Release readiness
 
-Not ready. Correctness against `main` and the suite are in place. Shipping cuts off existing core pickle saves until they load, or until that break is an explicit, documented decision.
+Round 2 closes the pickle break. A `main` `AgentStorage` file loads, and the frozen-clock 1x / 10x hash is still the round 1 hash. The one red pytest line is an unseeded colony bowl check that also passes on the next run; it is not a defect of `4945e24`.
