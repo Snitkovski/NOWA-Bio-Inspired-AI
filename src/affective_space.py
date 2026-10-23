@@ -397,6 +397,48 @@ class EmotionalTrace:
             raw=tuple(raw_values),
         )
 
+    def __getstate__(self):
+        return {
+            "snapshot_vector": dict(self.snapshot_vector or {}),
+            "intensity": self.intensity,
+            "timestamp": self.timestamp,
+            "decay_rate": self.decay_rate,
+            "_raw_axes": dict(self._raw_axes),
+        }
+
+    def __setstate__(self, state):
+        """Accept a main ``__dict__`` or the slotted ``(None, slot_dict)`` payload."""
+        from experience import _pickle_state_dict
+
+        payload = _pickle_state_dict(state)
+        snapshot = payload.get("snapshot_vector", {})
+        try:
+            snapshot = dict(snapshot or {})
+        except (TypeError, ValueError):
+            snapshot = {}
+        try:
+            intensity = float(payload.get("intensity", 1.0))
+        except (TypeError, ValueError):
+            intensity = 1.0
+        try:
+            timestamp = float(payload.get("timestamp", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            timestamp = 0.0
+        try:
+            decay_rate = float(payload.get("decay_rate", 0.05) or 0.0)
+        except (TypeError, ValueError):
+            decay_rate = 0.05
+        object.__setattr__(self, "snapshot_vector", snapshot)
+        object.__setattr__(self, "intensity", _clamp(intensity, 0.0, 1.0))
+        object.__setattr__(self, "timestamp", timestamp)
+        object.__setattr__(self, "decay_rate", max(0.0, decay_rate))
+        raw = payload.get("_raw_axes")
+        if not isinstance(raw, dict) or any(axis not in raw for axis in AXES):
+            raw = self._snapshot_raw_axes(snapshot)
+        else:
+            raw = dict(raw)
+        object.__setattr__(self, "_raw_axes", raw)
+
 
 @dataclass
 class AffectiveSpace:
