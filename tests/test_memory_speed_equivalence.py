@@ -6,6 +6,7 @@ gap, a full eviction sort, and one impulse per recalled episode.
 """
 
 import math
+import pickle
 import random
 
 import pytest
@@ -268,3 +269,55 @@ def test_decisions_and_memory_match_at_1x_and_10x_step(monkeypatch):
     assert fast_memory == slow_memory
     assert fast_affect == slow_affect
     assert len(slow_memory) == len(contexts)
+
+
+def test_same_seed_repeats_the_same_trajectory(monkeypatch):
+    """Dense episode storage must not change a seeded waking trajectory."""
+    for module in ("hippocampus", "affective_space", "intent_memory", "agent", "experience", "sleep"):
+        monkeypatch.setattr(f"{module}.time.time", lambda: 1_700_000_000.0)
+
+    def once():
+        random.seed(11)
+        agent = _build_agent()
+        actions = []
+        for index in range(8):
+            actions.append(
+                agent.step(
+                    context_events=["nest", f"tag:{index % 3}"],
+                    reward=0.1 * (index % 2),
+                    novelty=0.2,
+                    conflict=0.0,
+                    intensity=1.0,
+                    dt=0.25,
+                )
+            )
+        hip = agent.hippocampus
+        memory = [
+            (tuple(exp.path.signature()), round(float(sig.activation_weight), 8), exp.episode_id)
+            for exp, sig in zip(hip.experiences, hip.signatures)
+        ]
+        affect = tuple(round(float(agent.affective_space.axes[axis]), 8) for axis in AXES)
+        return actions, memory, affect
+
+    assert once() == once()
+
+
+def test_slotted_episode_and_trace_roundtrip_without_changing_recall(monkeypatch):
+    monkeypatch.setattr("hippocampus.time.time", lambda: 1_700_000_000.0)
+    monkeypatch.setattr("experience.time.time", lambda: 1_700_000_000.0)
+    monkeypatch.setattr("affective_space.time.time", lambda: 1_700_000_000.0)
+    hip = NOWAHippocampus(max_experiences=8)
+    hip.store(_path("ctx:nest", "action:go"), intensity=0.7, reward=0.3)
+    original = hip.experiences[0]
+    original.emotional_trace = AffectiveSpace().create_trace(intensity=0.6)
+    restored = pickle.loads(pickle.dumps(original))
+    assert restored.path.signature() == original.path.signature()
+    assert restored.reward == original.reward
+    assert restored.activation_energy == original.activation_energy
+    assert restored.emotional_trace.to_impulse(now=1_700_000_000.0).intensity == pytest.approx(
+        original.emotional_trace.to_impulse(now=1_700_000_000.0).intensity
+    )
+    left = Event("ctx:nest", EventType.CONTEXT)
+    right = Event("ctx:nest", EventType.CONTEXT)
+    assert left.name is right.name
+    assert left == right

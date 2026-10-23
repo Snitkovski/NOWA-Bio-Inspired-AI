@@ -1,3 +1,4 @@
+import sys
 import time
 from typing import List, Tuple
 from enum import Enum
@@ -13,9 +14,14 @@ class EventType(Enum):
 
 class Event:
     """Immutable event with timestamp and magnitude"""
-    
+
+    __slots__ = ("name", "event_type", "magnitude", "timestamp", "_frozen")
+
     def __init__(self, name: str, event_type: EventType = EventType.CONTEXT, 
                  magnitude: float = 1.0, timestamp: float = None):
+        if isinstance(name, str) and len(name) <= 80:
+            # Repeated context tokens share one str. Unique long names stay unpinned.
+            name = sys.intern(name)
         self.name = name
         self.event_type = event_type
         self.magnitude = magnitude  # Интенсивность события
@@ -25,6 +31,14 @@ class Event:
     def freeze(self):
         """Сделать событие неизменяемым"""
         self._frozen = True
+
+    def __getstate__(self):
+        return {slot: getattr(self, slot) for slot in self.__slots__}
+
+    def __setstate__(self, state):
+        # Restore through object.__setattr__ so a frozen flag cannot reject the load.
+        for slot in self.__slots__:
+            object.__setattr__(self, slot, state[slot])
 
     def __setattr__(self, name, value):
         # Позволяем установить _frozen
@@ -50,7 +64,9 @@ class Event:
 
 class Path:
     """Immutable sequence of events that forms an experience"""
-    
+
+    __slots__ = ("events", "_frozen")
+
     def __init__(self, events: List[Event] = None):
         self.events = tuple(events) if events else ()
         self._frozen = False
@@ -102,7 +118,94 @@ class Experience:
     - activation_energy: current activation in hippocampus
     - stability: consolidation level to cortex
     """
-    
+
+    # Fixed fields replace a per-episode __dict__. Optional names stay unset
+    # until a writer assigns them, so hasattr keeps its previous meaning.
+    __slots__ = (
+        "path",
+        "consequence",
+        "intensity",
+        "encoding_strength",
+        "reward",
+        "causal_depth",
+        "timestamp",
+        "first_seen",
+        "last_activated",
+        "reinforcement_count",
+        "activation_energy",
+        "stability",
+        "_recall_actions",
+        "_sleep_consolidation_score",
+        "_sleep_variance_gate",
+        "acetylcholine_mean_snapshot",
+        "acetylcholine_snapshot",
+        "action_stability",
+        "affect_gain_at_encoding",
+        "arousal",
+        "causality_score",
+        "confirmation_count",
+        "consolidated",
+        "consolidated_revision",
+        "consolidated_reward",
+        "consolidation_probability",
+        "consolidation_weight",
+        "context_events",
+        "decided_action",
+        "emotional_salience",
+        "emotional_trace",
+        "encoded_at",
+        "episode_id",
+        "episode_step",
+        "error_likelihood",
+        "executed_action",
+        "expectation_confidence_score",
+        "expectation_stability_score",
+        "expected_reward_mean",
+        "expected_reward_var",
+        "feedback_rating",
+        "labile_contribution",
+        "neuromodulator_snapshot",
+        "next_experience",
+        "novelty",
+        "novelty_score",
+        "outcome_revision",
+        "overridden",
+        "override_source",
+        "prediction_shock_flag",
+        "prediction_shock_score",
+        "replay_action_id",
+        "replay_count_sleep",
+        "replay_importance",
+        "replay_priority",
+        "replay_salience",
+        "shock_replay_boost",
+        "stability_flag",
+        "state_distance",
+        "state_estimate_variance",
+        "td_abs_snapshot",
+        "td_applied_delta",
+        "td_committed_reward",
+        "td_error_snapshot",
+        "td_history_snapshot",
+        "td_mean_snapshot",
+        "td_outcome_committed",
+        "td_prior_value",
+        "td_sign_snapshot",
+        "td_variance_snapshot",
+        "trajectory_id",
+        "two_tier_replay_priority",
+        "value_next_context_events",
+        "value_next_state_snapshot",
+        "value_state_key",
+        "value_state_snapshot",
+        "value_terminal",
+        "warriner_word",
+        "warriner_valence_norm",
+        "warriner_arousal_norm",
+        "warriner_dominance_norm",
+        "warriner_seed_events",
+    )
+
     def __init__(
         self,
         path: Path,

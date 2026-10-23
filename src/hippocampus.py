@@ -5,14 +5,22 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import hashlib
 import math
+import sys
 import time
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from experience import Event, EventType, Experience, Path
 
 
-@dataclass
+@dataclass(slots=True)
 class SignatureTrace:
+    """One hippocampal trace. Biological fields compare; scan caches do not.
+
+    Masks and novelty runners are the same numbers a fresh scan would
+    produce. They are stored on the trace so a decision does not rebuild them,
+    and they are not part of equality.
+    """
+
     feature_set: Set[str]
     drive_vector: Tuple[float, float, float]
     context_vector: Tuple[float, float, float]
@@ -23,6 +31,19 @@ class SignatureTrace:
     reward_signal: float = 0.0
     source_experience: Optional[Experience] = None
     last_decay_ts: float = field(default_factory=time.time)
+    feature_mask: int = field(default=0, compare=False, repr=False)
+    feature_count: int = field(default=0, compare=False, repr=False)
+    token_mask: int = field(default=0, compare=False, repr=False)
+    token_count: int = field(default=0, compare=False, repr=False)
+    _mask_ready: bool = field(default=False, compare=False, repr=False)
+    _activate_drive_sim: float = field(default=0.0, compare=False, repr=False)
+    _fs_key: Optional[int] = field(default=None, compare=False, repr=False)
+    _fs_val: float = field(default=0.0, compare=False, repr=False)
+    _nov_ready: bool = field(default=False, compare=False, repr=False)
+    _nov_max: float = field(default=0.0, compare=False, repr=False)
+    _nov_arg: int = field(default=0, compare=False, repr=False)
+    _nov_max2: float = field(default=0.0, compare=False, repr=False)
+    _nov_arg2: int = field(default=0, compare=False, repr=False)
 
 
 class NOWAHippocampus:
@@ -123,10 +144,13 @@ class NOWAHippocampus:
 
     def _sanitize_features(self, features: Iterable[str]) -> Set[str]:
         out: Set[str] = set()
+        intern = sys.intern
         for feature in features or []:
             token = str(feature).strip()
             if token:
-                out.add(token)
+                # One shared str per token. The bit table already retains the
+                # vocabulary for the life of the hippocampus.
+                out.add(intern(token) if len(token) <= 80 else token)
         return out
 
     def _extract_features_from_path(self, path: Path, consequence=None) -> Set[str]:

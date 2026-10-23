@@ -328,7 +328,7 @@ class EmotionalImpulse:
         return impulse
 
 
-@dataclass
+@dataclass(slots=True)
 class EmotionalTrace:
     """
     Stored emotional memory snapshot.
@@ -340,6 +340,8 @@ class EmotionalTrace:
     intensity: float = 1.0
     timestamp: float = field(default_factory=time.time)
     decay_rate: float = 0.05
+    # Precomputed axis sum. Not part of equality; rebuilt in __post_init__.
+    _raw_axes: Dict[str, float] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         self.snapshot_vector = dict(self.snapshot_vector or {})

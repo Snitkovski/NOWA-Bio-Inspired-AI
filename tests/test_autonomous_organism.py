@@ -552,6 +552,19 @@ class TestAutonomousOrganismSpec(unittest.TestCase):
         self.assertAlmostEqual(float(seen.get("drives_before", {}).get("social_drive", 0.0)), 0.23, places=6)
         self.assertEqual(str(seen.get("drives_source", "")), "live_snapshot")
 
+    def test_18_tick_history_keeps_latest_and_full_count(self):
+        clock = ClockStub()
+        agent, _affect, _memory = self._build_agent(clock=clock)
+        returned = []
+        for index in range(5):
+            clock.advance(0.2)
+            returned.append(agent.organism_step(0.2))
+        self.assertEqual(len(returned), 5)
+        self.assertEqual(len(agent.tick_history), 1)
+        self.assertEqual(agent.tick_history[-1], returned[-1])
+        self.assertEqual(int(agent.snapshot()["tick_count"]), 5)
+        self.assertEqual(float(agent.tick_history[-1]["dt_input"]), 0.2)
+
 
 if __name__ == "__main__":
     unittest.main()
