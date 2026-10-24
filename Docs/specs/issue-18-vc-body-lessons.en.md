@@ -1,9 +1,9 @@
 # Body layer — lessons filed under the situation
 
-Russian: [NOWA_Body_Lessons.ru.md](NOWA_Body_Lessons.ru.md)
+Russian: [issue-18-vc-body-lessons.ru.md](issue-18-vc-body-lessons.ru.md)
 
 Modules (`Demo/Virtual company/src/nowa_body/`): `feedback_loop.py`, `runtime.py` (`BusinessAgentRuntime`, a subclass of the platform runtime), `strict_binder.py`, `business_event_encoder.py`. Stdlib only.
-Related: #18 (feedback quantization), [Docs/architecture/two-tier-plasticity.en.md](../../../Docs/architecture/two-tier-plasticity.en.md).
+Related: #18 (feedback quantization), [Docs/architecture/two-tier-plasticity.en.md](../architecture/two-tier-plasticity.en.md).
 
 The core is not changed: neither the cognitive modules nor the platform body layer `src/mcp_body/`. The employee extends the platform classes (`BusinessAgentRuntime`, `SchemaBinder`, `GenericEncoder`, `ProposedAction`) in the demo. The mechanisms below are domain-free; whether any of them belongs in `mcp_body` is the maintainer's decision.
 

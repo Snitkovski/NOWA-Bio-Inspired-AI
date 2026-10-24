@@ -1,9 +1,9 @@
 # Body layer — business limits declared by a role
 
-Russian: [NOWA_Business_Limits.ru.md](NOWA_Business_Limits.ru.md)
+Russian: [issue-59-vc-business-limits.ru.md](issue-59-vc-business-limits.ru.md)
 
 Module: `Demo/Virtual company/src/nowa_body/business_limits.py` (stdlib only), wired into the employee's `BusinessAgentRuntime` (`nowa_body/runtime.py`, a subclass of the platform runtime).
-Related: [NOWA_Body_Lessons.en.md](NOWA_Body_Lessons.en.md) (the "wait" lesson goes through `teach`).
+Related: [issue-18-vc-body-lessons.en.md](issue-18-vc-body-lessons.en.md) (the "wait" lesson goes through `teach`).
 
 The core (`src/`, including the platform body layer `mcp_body`) is not changed.
 
@@ -58,7 +58,7 @@ Limits run in config order; a clip is seen by the next limit; the first block st
 - **Clipped:** the call goes on with the reduced quantity; the result carries `limit_clipped: [names]`.
 - **Shortage episode.** The first block of a limit opens an episode: one lesson "wait" (`teach(context, wait_and_monitor, lesson_reward, consequence)`) if `lesson_reward > 0`, and one notice to the host (`limit_notifier({limit, reason, tool_id, params, available, cost, summary})`). Later blocks of the same episode are silent. The episode closes when a call passes the limit or the available amount grows above the amount at the first block. An unreadable limit (`limit_unknown`) opens no episode. A failing notifier does not break the cycle.
 
-The lesson goes through the same path as approval feedback ([NOWA_Body_Lessons.en.md](NOWA_Body_Lessons.en.md)): a hippocampal episode and a labile tag; stable values change only in sleep.
+The lesson goes through the same path as approval feedback ([issue-18-vc-body-lessons.en.md](issue-18-vc-body-lessons.en.md)): a hippocampal episode and a labile tag; stable values change only in sleep.
 
 Why one lesson per episode: a lesson per blocked tick (tens per shortage) tilts the mind toward waiting in every situation, including those where acting is right (measured on the Virtual company buyer: day-30 probe 82 with a lesson per block, 87 with one per episode, 5 seeds, core before #13).
 

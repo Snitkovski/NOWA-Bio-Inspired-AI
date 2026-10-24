@@ -1,9 +1,9 @@
 # Слой тела — уроки, записанные под ситуацию
 
-English: [NOWA_Body_Lessons.en.md](NOWA_Body_Lessons.en.md)
+English: [issue-18-vc-body-lessons.en.md](issue-18-vc-body-lessons.en.md)
 
 Модули (`Demo/Virtual company/src/nowa_body/`): `feedback_loop.py`, `runtime.py` (`BusinessAgentRuntime`, подкласс runtime платформы), `strict_binder.py`, `business_event_encoder.py`. Только stdlib.
-Связано: #18 (квантование отзыва), [Docs/architecture/two-tier-plasticity.ru.md](../../../Docs/architecture/two-tier-plasticity.ru.md).
+Связано: #18 (квантование отзыва), [Docs/architecture/two-tier-plasticity.ru.md](../architecture/two-tier-plasticity.ru.md).
 
 Ядро не меняется: ни когнитивные модули, ни слой тела платформы `src/mcp_body/`. Сотрудник расширяет классы платформы (`BusinessAgentRuntime`, `SchemaBinder`, `GenericEncoder`, `ProposedAction`) в демо. Механизмы ниже не зависят от домена; нужен ли какой-то из них в `mcp_body`, решает мейнтейнер.
 

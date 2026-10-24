@@ -6,7 +6,7 @@ English: [issue-13-demo-virtual-company.en.md](issue-13-demo-virtual-company.en.
 Ядро `src/` под сотрудника не перенастраивается. Правила хоста: [Docs/architecture/two-tier-plasticity.ru.md](../architecture/two-tier-plasticity.ru.md).
 Нормативная спецификация ядра: [issue-13-two-tier-plasticity.ru.md](issue-13-two-tier-plasticity.ru.md).
 Другие хосты, взятые за образец: [issue-13-demo-colony.ru.md](issue-13-demo-colony.ru.md), [issue-13-demo-tamagochi.ru.md](issue-13-demo-tamagochi.ru.md).
-Уроки тела, на которые опирается этап: [NOWA_Body_Lessons.ru.md](../../Demo/Virtual%20company/Docs/NOWA_Body_Lessons.ru.md).
+Уроки тела, на которые опирается этап: [issue-18-vc-body-lessons.ru.md](issue-18-vc-body-lessons.ru.md).
 
 ---
 
@@ -51,7 +51,7 @@ Runtime передаёт `dt` в `step(..., decision_only=True, dt=dt)`, есл�
 
 ## 5. Инициализация и загрузка
 
-- Сиды роли (`HippocampusSeeder`) пишут эпизоды гиппокампа — это состояние, а не стабильный уровень (см. [NOWA_Body_Lessons.ru.md](../../Demo/Virtual%20company/Docs/NOWA_Body_Lessons.ru.md) §5). Тесты в строгом режиме не дают `WakingLearningError` при создании и засеве.
+- Сиды роли (`HippocampusSeeder`) пишут эпизоды гиппокампа — это состояние, а не стабильный уровень (см. [issue-18-vc-body-lessons.ru.md](issue-18-vc-body-lessons.ru.md) §5). Тесты в строгом режиме не дают `WakingLearningError` при создании и засеве.
 - Чекпойнт ума (`save_mind` / `load_mind`, `AgentStorage`) загружается в строгом режиме, лабильная метка, записанная до `save_mind`, есть после `load_mind`.
 
 ## 6. Проверка
