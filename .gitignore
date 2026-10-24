@@ -210,3 +210,6 @@ __marimo__/
 .serena/cache/
 .serena/logs/
 .serena/project.local.yml
+
+# Colony chinchillas — runtime logs (runner, GUI saves, tests)
+Demo/Colony chinchillas/logs/
