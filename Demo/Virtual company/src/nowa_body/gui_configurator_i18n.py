@@ -66,6 +66,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "emp.memory": "Memory: checkpoint {when} · {n} episodes",
         "emp.stale": "Roles changed after start — restart the employee to pick up the new YAML.",
         "emp.approval": "Approval queue",
+        "emp.alerts": "Not sent: business limits ({n})",
+        "emp.alerts_clear": "Clear",
+        "emp.alerts_badge": "⚠ not sent: {n}",
+        "emp.alert_line": "{at}  {limit}: {summary} — {reason}",
+        "emp.alert_reason.nothing_left": "nothing left",
+        "emp.alert_reason.over_available": "not enough for one unit (left {available})",
         "emp.approve": "Approve",
         "emp.reject": "Reject",
         "emp.edit_params": "Edit params",
@@ -718,6 +724,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "successful MCP write; a write reaches Drive only after Approve (or when that "
             "tool has approval turned off and the session was started after the save).\n"
             "\n"
+            "Not sent: business limits\n"
+            "A role can declare business limits, such as a budget. A write that does not fit "
+            "never reaches the approval queue or Drive. The card shows it in orange, once per "
+            "shortage (not on every tick), with the reason and the amount left; the list shows "
+            "a count. This is for a person to act on, e.g. allocate budget. Alerts are kept "
+            "across Stop and Start. Clear hides the seen alerts; it changes nothing in the "
+            "mind or in Drive.\n"
+            "\n"
             "Tick versus sleep\n"
             "Tick is how often the employee looks at the world. Sleep is how often experience "
             "is consolidated. Sleeping on every tick will break learning.\n"
@@ -787,6 +801,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "emp.memory": "Память: checkpoint {when} · {n} эпизодов",
         "emp.stale": "Роли изменены после старта — рестартните сотрудника, чтобы подхватить новый YAML.",
         "emp.approval": "Очередь одобрения",
+        "emp.alerts": "Не отправлено: бизнес-лимиты ({n})",
+        "emp.alerts_clear": "Очистить",
+        "emp.alerts_badge": "⚠ не отправлено: {n}",
+        "emp.alert_line": "{at}  {limit}: {summary} — {reason}",
+        "emp.alert_reason.nothing_left": "денег не осталось",
+        "emp.alert_reason.over_available": "не хватает даже на единицу (осталось {available})",
         "emp.approve": "Одобрить",
         "emp.reject": "Отклонить",
         "emp.edit_params": "Править params",
@@ -1453,6 +1473,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "и сотрудник не перезапущен. Журнал тиков пишет выбранное действие, а не "
             "успешную запись в MCP: в Drive вызов уходит только после «Одобрить» (или если "
             "у тула снято одобрение и сессия стартовала уже после сохранения).\n"
+            "\n"
+            "Не отправлено: бизнес-лимиты\n"
+            "Роль может объявить бизнес-лимиты, например бюджет. WRITE, который в них не "
+            "укладывается, не попадает ни в очередь одобрения, ни в Drive. Карточка показывает "
+            "его оранжевым один раз на эпизод нехватки (не на каждом тике), с причиной и "
+            "остатком; в списке виден счётчик. Это сигнал человеку, например выделить бюджет. "
+            "Предупреждения сохраняются между Стоп и Старт. «Очистить» убирает просмотренные предупреждения и ничего не меняет ни в разуме, "
+            "ни в Drive.\n"
             "\n"
             "Тик и сон\n"
             "Тик — как часто сотрудник смотрит на мир. Сон — как часто он закрепляет опыт. "

@@ -1,6 +1,20 @@
 role_id: procurement
 display_name: Procurement Manager
 event_classifier: nowa_roles.procurement.event_classifier:classify_procurement_events
+# Rules of the body, not of judgement: an order never spends money that is
+# not there. A too-large order is shrunk to what the budget allows; with
+# nothing left it is not sent, and the buyer files "here, wait".
+business_limits:
+- name: budget
+  tools:
+  - mcp__drivemcp__create_purchase_order
+  available: results.mcp__drivemcp__get_budget.remaining
+  cost:
+    qty_param: qty
+    unit_price: results.mcp__drivemcp__get_suppliers.suppliers.{supplier_id}.unit_price
+  on_exceed: clip
+  lesson_reward: 0.6
+  consequence: budget_protected
 token_rules:
   generic_tokens: false
 mcp_capabilities:

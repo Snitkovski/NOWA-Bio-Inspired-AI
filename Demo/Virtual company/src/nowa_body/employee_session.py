@@ -124,6 +124,9 @@ class EmployeeSession:
         self.last_start_seeded = False
         self.tick_index = 0
         self.log: Deque[str] = deque(maxlen=200)
+        # Writes a business limit kept from the ERP, one per shortage episode:
+        # what a person (the supervisor) has to act on, e.g. allocate budget.
+        self.alerts: Deque[Dict[str, Any]] = deque(maxlen=50)
         self.snapshots: Deque[Dict[str, Any]] = deque(maxlen=50)
         self.last_sensor_at: Optional[datetime] = None
         self.composed: Optional[Any] = None
@@ -325,6 +328,8 @@ class EmployeeSession:
             sensor_refresh_interval_s=float(self.config.sensor_refresh_interval_s),
             simulated_tick_seconds=float(self.config.tick_interval_s),
             event_classifier=classifier,
+            business_limits=list(composed.business_limits or []),
+            limit_notifier=self._notify_limit,
             param_bindings=dict(composed.param_bindings or {}),
             field_aliases=dict(composed.field_aliases or {}),
         )
@@ -364,6 +369,17 @@ class EmployeeSession:
                 self.tick_index = int(sidecar.get("tick_index") or 0)
             except (TypeError, ValueError):
                 self.tick_index = 0
+            # A shortage that outlived the stop is the same shortage: no new
+            # lesson and no new alert for it after a restart.
+            for name, opened_at in dict(sidecar.get("limit_shortages") or {}).items():
+                try:
+                    runtime._limit_shortages[str(name)] = float(opened_at)
+                except (TypeError, ValueError):
+                    continue
+            self.alerts.clear()
+            self.alerts.extend(
+                item for item in sidecar.get("alerts") or [] if isinstance(item, dict)
+            )
         runtime.register_organs_on_agent()
         self.agent = agent
         self.runtime = runtime
@@ -426,6 +442,16 @@ class EmployeeSession:
             result = {"status": "unknown", "value": result}
         self._append_log(self._format_write_log(tool_id, result))
         return result
+
+    def _notify_limit(self, notice: Dict[str, Any]) -> None:
+        notice = dict(notice)
+        notice["at"] = self._now().isoformat(timespec="seconds")
+        self.alerts.append(notice)
+        line = f"limit {notice.get('limit')} blocked {notice.get('summary') or notice.get('tool_id')}"
+        line += f" reason={notice.get('reason')}"
+        if notice.get("available") is not None:
+            line += f" available={notice.get('available')}"
+        self._append_log(line)
 
     @staticmethod
     def _format_write_log(tool_id: str, result: Dict[str, Any]) -> str:
@@ -551,6 +577,10 @@ class EmployeeSession:
                     ),
                     "sleep": self._sleep_sidecar(),
                     "tick_index": self.tick_index,
+                    "alerts": list(self.alerts),
+                    "limit_shortages": dict(
+                        getattr(self.runtime, "_limit_shortages", None) or {}
+                    ),
                     "stopped_at": iso_now(),
                     "role_fingerprint": self._fingerprint,
                     "role_ids": list(self.config.role_ids),
@@ -641,6 +671,7 @@ class EmployeeSession:
             "pending_n": len(pending),
             "tick_index": self.tick_index,
             "log": list(self.log),
+            "alerts": list(self.alerts),
             "episodes": episodes,
             "n_read": n_read,
             "n_write": n_write,
