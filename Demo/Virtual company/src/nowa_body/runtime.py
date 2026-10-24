@@ -9,17 +9,21 @@ core:
 * ``teach`` files a lesson that is not the latest step (body lessons, a
   mentor, history) through ``feedback_loop.store_lesson``;
 * a strict binding that finds nothing (``StrictSchemaBinder``) is filed as
-  "here, waiting was right".
+  "here, waiting was right";
+* host time goes to the core as ``dt`` on every cycle and sleep goes through
+  ``Agent.sleep()`` (two-tier plasticity, #13).
 
-``_run_decision_cycle`` follows the platform one step by step; a change
-there has to be mirrored here.
+``_run_decision_cycle`` and ``run_cycle`` follow the platform ones step by
+step; a change there has to be mirrored here.
 
 Deprecated host kwarg ``motor_adapter`` is ignored.
 """
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional
 
 from ._compat import ensure_core_src_on_path
@@ -79,8 +83,43 @@ class BusinessAgentRuntime(PlatformAgentRuntime):
             event_classifier=event_classifier,
             **host_compat,
         )
+        # Two-tier host contract: the core gets elapsed host time as ``dt``
+        # on every cycle and stable memory changes only in ``Agent.sleep``.
+        self._last_cycle_at: Optional[datetime] = None
+        self.sleep_cycles = 1
 
-    def _run_decision_cycle(self, observations: Dict[str, Any]) -> dict:
+    def run_cycle(
+        self,
+        observations: Dict[str, Any],
+        *,
+        now: Optional[datetime] = None,
+    ) -> dict:
+        """Pure pipeline pass on a given observation snapshot (tests / sandbox)."""
+        now = now or datetime.now()
+        result = self._run_decision_cycle(observations or {}, dt=self._host_dt(now))
+        self._accumulate_wakefulness()
+        scheduler = self.sleep_scheduler
+        if scheduler is not None and hasattr(scheduler, "should_sleep"):
+            should_sleep, reason = scheduler.should_sleep(self.agent, now=now)
+            if should_sleep:
+                if self._sleep_agent():
+                    mark = getattr(scheduler, "mark_slept", None)
+                    if callable(mark):
+                        try:
+                            mark(now=now)
+                        except TypeError:
+                            mark()
+                    result["slept"] = True
+                    result["sleep_reason"] = reason
+                else:
+                    result["slept"] = False
+            else:
+                result.setdefault("slept", False)
+        else:
+            result.setdefault("slept", False)
+        return result
+
+    def _run_decision_cycle(self, observations: Dict[str, Any], dt: float = 0.0) -> dict:
         self._ingest_observations(observations)
         context_events, read_impulses = self._build_context(observations)
         apply_impulses(
@@ -90,12 +129,19 @@ class BusinessAgentRuntime(PlatformAgentRuntime):
         )
 
         step_fn = getattr(self.agent, "step", None)
+        advance = getattr(self.agent, "advance_time", None)
         if callable(step_fn):
-            if self._accepts_decision_only(step_fn):
-                action_intent = step_fn(context_events, decision_only=True)
-            else:
-                action_intent = step_fn(context_events)
+            kwargs: Dict[str, Any] = {}
+            if self._accepts_kwarg(step_fn, "decision_only"):
+                kwargs["decision_only"] = True
+            if self._accepts_kwarg(step_fn, "dt", via_var_keyword=False):
+                kwargs["dt"] = float(dt)
+            elif callable(advance):
+                advance(float(dt))
+            action_intent = step_fn(context_events, **kwargs)
         else:
+            if callable(advance):
+                advance(float(dt))
             action_intent = WAIT_AND_MONITOR
         tool_id = self._intent_to_tool_id(action_intent)
 
@@ -207,6 +253,56 @@ class BusinessAgentRuntime(PlatformAgentRuntime):
             float(reward),
             consequence=consequence,
         )
+
+    def _host_dt(self, now: datetime) -> float:
+        """Host seconds since the previous cycle; the core never reads the wall clock.
+
+        A simulated tick length wins (it is what the host says a tick is);
+        otherwise the gap between the cycles' own clocks.
+        """
+        previous, self._last_cycle_at = self._last_cycle_at, now
+        if self.simulated_tick_seconds is not None:
+            return max(0.0, float(self.simulated_tick_seconds))
+        if previous is None:
+            return 0.0
+        return max(0.0, (now - previous).total_seconds())
+
+    def _sleep_agent(self) -> bool:
+        """Consolidate through ``Agent.sleep``: capture, habits, then replay.
+
+        ``sleep_manager.sleep_cycle`` alone replays Q but skips the
+        once-per-night capture of the Go/NoGo tags and habits; it is kept
+        only for agents without ``sleep`` (lab stubs).
+        """
+        sleep = getattr(self.agent, "sleep", None)
+        if callable(sleep) and getattr(self.agent, "sleep_manager", None) is not None:
+            result = sleep(cycles=int(self.sleep_cycles))
+            return not (isinstance(result, dict) and result.get("error"))
+        sleep_fn = getattr(getattr(self.agent, "sleep_manager", None), "sleep_cycle", None)
+        if callable(sleep_fn):
+            sleep_fn()
+            return True
+        return False
+
+    @staticmethod
+    def _accepts_kwarg(
+        step_fn: Callable[..., Any], name: str, via_var_keyword: bool = True
+    ) -> bool:
+        """``via_var_keyword=False``: a ``**kwargs`` wrapper does not prove the
+        wrapped call takes ``name`` (host time then goes through ``advance_time``)."""
+        try:
+            parameters = inspect.signature(step_fn).parameters
+        except (TypeError, ValueError):
+            return False
+        for param in parameters.values():
+            if param.kind is inspect.Parameter.VAR_KEYWORD and via_var_keyword:
+                return True
+            if param.name == name and param.kind in (
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+            ):
+                return True
+        return False
 
 
 __all__ = [

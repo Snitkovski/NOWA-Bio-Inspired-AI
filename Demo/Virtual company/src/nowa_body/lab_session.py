@@ -28,7 +28,7 @@ from nowa_body.role_config import (
     resolve_event_classifier,
 )
 from nowa_body.runtime import BusinessAgentRuntime
-from nowa_body.sleep_scheduler import SleepScheduler
+from nowa_body.sleep_scheduler import SleepScheduler, configure_plasticity
 from nowa_body.tool_registry import MCPToolRegistry
 
 STOCK_TOOL = "mcp__drivemcp__get_stock_levels"
@@ -232,16 +232,23 @@ class GuidedAgent:
             inner_ws = getattr(inner, "wakefulness", None)
         object.__setattr__(self, "wakefulness_state", PressureKnob(inner_ws))
 
-    def step(self, context_events, decision_only=True):
+    def step(self, context_events, decision_only=True, dt=None):
+        inner = object.__getattribute__(self, "_inner")
         forced = str(getattr(self, "force_action", "") or "").strip()
         if forced and forced != FORCE_AUTO:
+            # A forced action skips the mind, not the host clock.
+            advance = getattr(inner, "advance_time", None)
+            if dt is not None and callable(advance):
+                advance(float(dt))
             return forced
-        inner = object.__getattribute__(self, "_inner")
         step_fn = getattr(inner, "step", None)
         if not callable(step_fn):
             return "wait_and_monitor"
+        kwargs = {"decision_only": decision_only}
+        if dt is not None:
+            kwargs["dt"] = dt
         try:
-            return step_fn(context_events, decision_only=decision_only)
+            return step_fn(context_events, **kwargs)
         except TypeError:
             return step_fn(context_events)
 
@@ -358,6 +365,14 @@ def world_for_scenario(scenario: str, write_status: str = WRITE_ACCEPTED) -> Lab
     )
 
 
+def lab_scheduler(settings: LabSettings) -> SleepScheduler:
+    return SleepScheduler(
+        circadian_window=settings.circadian_window,
+        fatigue_threshold=settings.fatigue_threshold,
+        min_ticks_between_sleep=int(settings.min_ticks_between_sleep),
+    )
+
+
 def _create_core_agent(agent_id: str, rng: random.Random) -> Optional[Any]:
     ensure_core_src_on_path()
     try:
@@ -377,6 +392,7 @@ def create_lab_agent(settings: LabSettings) -> GuidedAgent:
     backend = "core" if inner is not None else "stub"
     if inner is None:
         inner = LabStubAgent(settings.agent_id)
+    configure_plasticity(inner, lab_scheduler(settings), float(settings.seconds_per_tick))
     agent = GuidedAgent(inner)
     agent.backend = backend
     agent.force_action = settings.force_action
@@ -467,11 +483,8 @@ class BodyLabSession:
         self.client.register(MockMCPTool(NEEDS_TOOL, lambda _p: replenishment_needs(self.world)))
         self.client.register(MockMCPTool(ORDER_TOOL, self._write_order))
 
-        scheduler = SleepScheduler(
-            circadian_window=self.settings.circadian_window,
-            fatigue_threshold=self.settings.fatigue_threshold,
-            min_ticks_between_sleep=int(self.settings.min_ticks_between_sleep),
-        )
+        scheduler = lab_scheduler(self.settings)
+        configure_plasticity(self.agent, scheduler, float(self.settings.seconds_per_tick))
         self.runtime = BusinessAgentRuntime(
             agent=self.agent,
             tool_registry=self.registry,
