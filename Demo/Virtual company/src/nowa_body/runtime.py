@@ -11,7 +11,9 @@ core:
 * a strict binding that finds nothing (``StrictSchemaBinder``) is filed as
   "here, waiting was right";
 * host time goes to the core as ``dt`` on every cycle and sleep goes through
-  ``Agent.sleep()`` (two-tier plasticity, #13).
+  ``Agent.sleep()`` (two-tier plasticity, #13);
+* role-declared business limits are checked after binding, before the
+  approval gate (``business_limits``).
 
 ``_run_decision_cycle`` and ``run_cycle`` follow the platform ones step by
 step; a change there has to be mirrored here.
@@ -37,6 +39,7 @@ from mcp_body.runtime import BIND_FAIL_IMPULSE_INTENSITY, WAIT_AND_MONITOR  # no
 from mcp_body.runtime import BusinessAgentRuntime as PlatformAgentRuntime  # noqa: E402
 
 from .business_event_encoder import BusinessEventEncoder  # noqa: E402
+from .business_limits import apply_limits, available_amount, parse_business_limits  # noqa: E402
 from .feedback_loop import apply_feedback_to_agent, store_lesson  # noqa: E402
 from .strict_binder import StrictSchemaBinder  # noqa: E402
 
@@ -52,7 +55,7 @@ class ContextualProposedAction(ProposedAction):
 
 
 class BusinessAgentRuntime(PlatformAgentRuntime):
-    """One ``run_cycle(observations)`` is observe → decide → bind → gate → feedback."""
+    """One ``run_cycle(observations)`` is observe → decide → bind → limits → gate → feedback."""
 
     def __init__(
         self,
@@ -67,6 +70,8 @@ class BusinessAgentRuntime(PlatformAgentRuntime):
         param_bindings: Optional[Dict[str, Any]] = None,
         field_aliases: Optional[Dict[str, Any]] = None,
         event_classifier: Optional[Callable[..., Any]] = None,
+        business_limits: Any = None,
+        limit_notifier: Optional[Callable[[Dict[str, Any]], None]] = None,
         **host_compat: Any,
     ) -> None:
         super().__init__(
@@ -83,6 +88,17 @@ class BusinessAgentRuntime(PlatformAgentRuntime):
             event_classifier=event_classifier,
             **host_compat,
         )
+        # Role-declared business limits: checked after binding,
+        # before the approval gate. Accepts raw config rows or parsed limits.
+        self.business_limits = (
+            parse_business_limits(business_limits)
+            if business_limits and isinstance(business_limits[0], dict)
+            else list(business_limits or [])
+        )
+        # Open shortage episodes: limit name -> amount available at the first
+        # block. One lesson and one host notice per episode, not per tick.
+        self._limit_shortages: Dict[str, float] = {}
+        self.limit_notifier = limit_notifier
         # Two-tier host contract: the core gets elapsed host time as ``dt``
         # on every cycle and stable memory changes only in ``Agent.sleep``.
         self._last_cycle_at: Optional[datetime] = None
@@ -204,6 +220,44 @@ class BusinessAgentRuntime(PlatformAgentRuntime):
                 "strict_miss": strict_miss or "",
             }
 
+        self._close_refilled_shortages()
+        params, limit_checks = apply_limits(
+            self.business_limits, capability.tool_id, dict(params), self.world_state
+        )
+        for check in limit_checks:
+            if not check.blocked:
+                self._limit_shortages.pop(check.name, None)
+        blocked = next((check for check in limit_checks if check.blocked), None)
+        if blocked is not None:
+            limit = next(item for item in self.business_limits if item.name == blocked.name)
+            # An unreadable limit is not a shortage: no lesson, no episode.
+            new_episode = (
+                blocked.reason != "limit_unknown"
+                and blocked.name not in self._limit_shortages
+            )
+            if new_episode:
+                self._limit_shortages[blocked.name] = float(blocked.available or 0.0)
+                if limit.lesson_reward > 0:
+                    self.teach(
+                        context_events,
+                        WAIT_AND_MONITOR,
+                        limit.lesson_reward,
+                        consequence=limit.consequence,
+                    )
+                self._notify_limit(blocked, capability.tool_id, params)
+            return {
+                "action_type": tool_id,
+                "tool_id": tool_id,
+                "proposed": None,
+                "slept": False,
+                "context_events": context_events,
+                "waited": True,
+                "limit_blocked": blocked.name,
+                "limit_reason": blocked.reason,
+                "limit_episode_start": new_episode,
+            }
+        clipped = [check.name for check in limit_checks if check.verdict == "clipped"]
+
         proposed = ContextualProposedAction(
             action_id=new_action_id(),
             agent_id=self._agent_id(observations),
@@ -229,6 +283,7 @@ class BusinessAgentRuntime(PlatformAgentRuntime):
             "slept": False,
             "context_events": context_events,
             "waited": False,
+            **({"limit_clipped": clipped} if clipped else {}),
         }
 
     def _apply_feedback(self, record: Any) -> None:
@@ -253,6 +308,34 @@ class BusinessAgentRuntime(PlatformAgentRuntime):
             float(reward),
             consequence=consequence,
         )
+
+    def _close_refilled_shortages(self) -> None:
+        """A grown available amount ends a shortage episode even if no call tried it."""
+        for limit in self.business_limits:
+            opened_at = self._limit_shortages.get(limit.name)
+            if opened_at is None:
+                continue
+            available = available_amount(limit, self.world_state)
+            if available is not None and available > opened_at:
+                del self._limit_shortages[limit.name]
+
+    def _notify_limit(self, check: Any, tool_id: str, params: Dict[str, Any]) -> None:
+        """Tell the host (and through it a person) that a write was not sent."""
+        notify = self.limit_notifier
+        if not callable(notify):
+            return
+        try:
+            notify({
+                "limit": check.name,
+                "reason": check.reason,
+                "tool_id": tool_id,
+                "params": dict(params or {}),
+                "available": check.available,
+                "cost": check.cost,
+                "summary": summarize_call(tool_id, params),
+            })
+        except Exception:
+            return
 
     def _host_dt(self, now: datetime) -> float:
         """Host seconds since the previous cycle; the core never reads the wall clock.
