@@ -1,9 +1,9 @@
 # Слой тела — бизнес-лимиты, объявленные ролью
 
-English: [NOWA_Business_Limits.en.md](NOWA_Business_Limits.en.md)
+English: [issue-59-vc-business-limits.en.md](issue-59-vc-business-limits.en.md)
 
 Модуль: `Demo/Virtual company/src/nowa_body/business_limits.py` (только stdlib), подключён в `BusinessAgentRuntime` сотрудника (`nowa_body/runtime.py`, подкласс runtime платформы).
-Связано: [NOWA_Body_Lessons.ru.md](NOWA_Body_Lessons.ru.md) (урок «ждать» идёт через `teach`).
+Связано: [issue-18-vc-body-lessons.ru.md](issue-18-vc-body-lessons.ru.md) (урок «ждать» идёт через `teach`).
 
 Ядро (`src/`, включая слой тела платформы `mcp_body`) не меняется.
 
@@ -58,7 +58,7 @@ business_limits:
 - **Урезание:** вызов идёт с уменьшенным количеством; в результате — `limit_clipped: [имена]`.
 - **Эпизод нехватки.** Первый блок лимита открывает эпизод: один урок «ждать» (`teach(context, wait_and_monitor, lesson_reward, consequence)`), если `lesson_reward > 0`, и одно уведомление хосту (`limit_notifier({limit, reason, tool_id, params, available, cost, summary})`). Следующие блоки того же эпизода молчат. Эпизод закрывается, когда вызов проходит лимит или доступная сумма выросла выше суммы при первом блоке. Нечитаемый лимит (`limit_unknown`) эпизода не открывает. Ошибка уведомителя не ломает такт.
 
-Урок идёт тем же путём, что и отзыв об одобрении ([NOWA_Body_Lessons.ru.md](NOWA_Body_Lessons.ru.md)): эпизод гиппокампа и лабильная метка; стабильные значения меняются только во сне.
+Урок идёт тем же путём, что и отзыв об одобрении ([issue-18-vc-body-lessons.ru.md](issue-18-vc-body-lessons.ru.md)): эпизод гиппокампа и лабильная метка; стабильные значения меняются только во сне.
 
 Почему один урок на эпизод: урок на каждый заблокированный такт (десятки за одну нехватку) склоняет ум ждать во всех ситуациях, в том числе там, где правильно действовать (замер на закупщике Virtual company: проба на день 30 — 82 при уроке на каждый блок, 87 при одном на эпизод, 5 зёрен, ядро до #13).
 

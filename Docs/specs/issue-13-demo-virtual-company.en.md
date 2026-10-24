@@ -6,7 +6,7 @@ Stage: adapt the employee host of `Demo/Virtual company` to the merged core (PRs
 The core in `src/` is not retuned for the employee. Host rules: [Docs/architecture/two-tier-plasticity.en.md](../architecture/two-tier-plasticity.en.md).
 Normative core spec: [issue-13-two-tier-plasticity.en.md](issue-13-two-tier-plasticity.en.md).
 Other hosts, used as the pattern: [issue-13-demo-colony.en.md](issue-13-demo-colony.en.md), [issue-13-demo-tamagochi.en.md](issue-13-demo-tamagochi.en.md).
-Body lessons used here: [NOWA_Body_Lessons.en.md](../../Demo/Virtual%20company/Docs/NOWA_Body_Lessons.en.md).
+Body lessons used here: [issue-18-vc-body-lessons.en.md](issue-18-vc-body-lessons.en.md).
 
 ---
 
@@ -51,7 +51,7 @@ When `SleepScheduler.should_sleep` says so, the runtime calls `Agent.sleep(cycle
 
 ## 5. Initialization and load
 
-- Role seeds (`HippocampusSeeder`) write hippocampal episodes, which are state, not the stable tier (see [NOWA_Body_Lessons.en.md](../../Demo/Virtual%20company/Docs/NOWA_Body_Lessons.en.md) §5). Strict-mode tests raise no `WakingLearningError` on spawn + seed.
+- Role seeds (`HippocampusSeeder`) write hippocampal episodes, which are state, not the stable tier (see [issue-18-vc-body-lessons.en.md](issue-18-vc-body-lessons.en.md) §5). Strict-mode tests raise no `WakingLearningError` on spawn + seed.
 - The mind checkpoint (`save_mind` / `load_mind`, `AgentStorage`) loads in strict mode, and a labile tag written before `save_mind` is present after `load_mind`.
 
 ## 6. Check
