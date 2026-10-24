@@ -31,6 +31,13 @@ except Exception:  # pragma: no cover - optional dependency
 _LANG_BUTTONS: dict[str, Any] = {}
 
 
+def _profile_add(frame_profile: dict[str, float] | None, key: str, started: float) -> None:
+    """Add elapsed seconds to a bench profile. A missing profile is a no-op."""
+    if frame_profile is None:
+        return
+    frame_profile[key] = float(frame_profile.get(key, 0.0)) + (time.perf_counter() - started)
+
+
 def _confirm_quit() -> bool:
     """Show a native confirmation dialog asking whether to quit.
 
@@ -69,6 +76,10 @@ MAX_FRAME_DT_S = 0.05
 # 10x cannot keep up even when the CPU can do the work. Catch-up is still
 # limited by SIM_MAX_CATCHUP_STEPS and SIM_ACCUMULATOR_MAX_STEPS.
 SIM_FRAME_DT_CAP_S = 1.0
+# Interactive drawing rate. Sim substeps are not tied to this: a slow 10x
+# tick keeps simulating, and a render happens on this cadence. Headless
+# capture (frame_dt_s / max_frames / on_frame) still paints every iteration.
+RENDER_FPS_CAP = 30
 SIM_BASE_STEP_S = 1.0 / 12.0
 SIM_MAX_STEP_S = 0.25
 SIM_MAX_CATCHUP_STEPS = 2
@@ -216,6 +227,74 @@ def _ru_action(value: Any) -> str:
     return str(value or "")
 
 
+def _right_panel_cache_token(
+    living_agents_data: list[dict[str, Any]],
+    dead_memorials: list[Any],
+    selected_agent_id: str | None,
+    scroll_offset: int,
+) -> tuple:
+    """Identity of the right-hand cards. Unchanged inputs reuse the surface."""
+    cards = []
+    for item in living_agents_data:
+        cards.append(
+            (
+                str(item.get("agent_id", "")),
+                str(item.get("name", "")),
+                str(item.get("sex", "")),
+                str(item.get("age_category", "")),
+                str(item.get("action", "")),
+                round(_clamp01(item.get("stress", 0.0)), 2),
+                round(_clamp01(item.get("energy", 1.0)), 2),
+            )
+        )
+    memorials = []
+    for memorial in list(dead_memorials)[:MAX_DEAD_CARDS]:
+        memorials.append(
+            (
+                str(getattr(memorial, "agent_id", "")),
+                str(getattr(memorial, "name", "")),
+                str(getattr(memorial, "sex", "")),
+                str(getattr(memorial, "cause_of_death", "")),
+                round(float(getattr(memorial, "age_at_death", 0.0) or 0.0), 1),
+                int(getattr(memorial, "total_offspring", 0) or 0),
+            )
+        )
+    return (get_language(), int(scroll_offset), selected_agent_id, tuple(cards), tuple(memorials))
+
+
+def _stats_panel_cache_token(
+    *,
+    sim_time_text: str,
+    speed: float,
+    paused: bool,
+    audio_enabled: bool,
+    achieved_ratio: float,
+    diagnostics: dict[str, int | float],
+    population_stats: dict[str, Any],
+    resources: dict[str, Any],
+) -> tuple:
+    def _frozen(mapping: dict) -> tuple:
+        items = []
+        for key in sorted(mapping.keys(), key=str):
+            value = mapping[key]
+            if isinstance(value, float):
+                value = round(value, 3)
+            items.append((str(key), value))
+        return tuple(items)
+
+    return (
+        get_language(),
+        str(sim_time_text),
+        round(float(speed), 3),
+        bool(paused),
+        bool(audio_enabled),
+        round(float(achieved_ratio), 2),
+        _frozen(diagnostics),
+        _frozen(population_stats),
+        _frozen(resources),
+    )
+
+
 def _draw_right_panel(
     screen: "pygame.Surface",
     font: "pygame.font.Font",
@@ -226,6 +305,7 @@ def _draw_right_panel(
     name_registry: Any | None = None,
     selected_agent_id: str | None,
     scroll_offset: int,
+    surface_cache: dict | None = None,
 ) -> list[tuple["pygame.Rect", str]]:
     """
     Draw right-side cards for living and deceased agents.
@@ -234,6 +314,20 @@ def _draw_right_panel(
     """
     import pygame  # type: ignore
 
+    global _LANG_BUTTONS
+    token = _right_panel_cache_token(
+        living_agents_data,
+        dead_memorials,
+        selected_agent_id,
+        scroll_offset,
+    )
+    if surface_cache is not None:
+        cached_surface = surface_cache.get("surface")
+        if surface_cache.get("token") == token and cached_surface is not None:
+            screen.blit(cached_surface, surface_cache["origin"])
+            _LANG_BUTTONS = surface_cache["buttons"]
+            return surface_cache["hits"]
+
     panel_rect = pygame.Rect(PANEL_RIGHT_X, 0, PANEL_RIGHT_W, screen.get_height())
     panel = pygame.Surface((panel_rect.width, panel_rect.height), pygame.SRCALPHA)
     panel.fill((244, 237, 226, 240))
@@ -241,7 +335,6 @@ def _draw_right_panel(
 
     card_hit_areas: list[tuple[pygame.Rect, str]] = []
 
-    global _LANG_BUTTONS
     living_count = len(living_agents_data)
     title = tr("КОЛОНИЯ ({n} живых)").format(n=living_count)
     panel.blit(font.render(title, True, (35, 28, 20)), (10, 10))
@@ -368,6 +461,12 @@ def _draw_right_panel(
 
             card_hit_areas.append((card_rect.move(panel_rect.x, panel_rect.y), agent_id))
 
+    if surface_cache is not None:
+        surface_cache["token"] = token
+        surface_cache["surface"] = panel
+        surface_cache["origin"] = panel_rect.topleft
+        surface_cache["hits"] = card_hit_areas
+        surface_cache["buttons"] = dict(placed)
     screen.blit(panel, panel_rect.topleft)
     return card_hit_areas
 
@@ -749,9 +848,25 @@ def _draw_stats_panel(
     diagnostics: dict[str, int | float],
     population_stats: dict[str, Any],
     resources: dict[str, Any],
+    surface_cache: dict | None = None,
 ) -> None:
     """Draw one consolidated status panel below cage with readable metrics."""
     try:
+        token = _stats_panel_cache_token(
+            sim_time_text=sim_time_text,
+            speed=speed,
+            paused=paused,
+            audio_enabled=audio_enabled,
+            achieved_ratio=achieved_ratio,
+            diagnostics=diagnostics,
+            population_stats=population_stats,
+            resources=resources,
+        )
+        if surface_cache is not None:
+            cached_surface = surface_cache.get("surface")
+            if surface_cache.get("token") == token and cached_surface is not None:
+                screen.blit(cached_surface, surface_cache["origin"])
+                return
         if len(text_surface_cache) > 2048:
             text_surface_cache.clear()
 
@@ -928,6 +1043,10 @@ def _draw_stats_panel(
             (8, 86),
         )
 
+        if surface_cache is not None:
+            surface_cache["token"] = token
+            surface_cache["surface"] = panel
+            surface_cache["origin"] = panel_rect.topleft
         screen.blit(panel, panel_rect.topleft)
     except Exception:
         return
@@ -1382,19 +1501,33 @@ def run_pygame_demo(
     max_frames: int | None = None,
     frame_dt_s: float | None = None,
     on_frame: Any | None = None,
+    runner: Any | None = None,
+    speed: float | None = None,
+    wall_s: float | None = None,
+    frame_profile: dict[str, float] | None = None,
 ) -> int:
     """Start interactive pygame demo loop.
 
     ``max_frames``, ``frame_dt_s`` and ``on_frame`` are for headless capture.
-    Leave them unset for the interactive window.
+    Leave them unset for the interactive window. ``runner`` reuses a colony
+    (the speed bench passes a warmed one). ``speed`` overrides the GUI
+    default. ``wall_s`` stops the loop after that many wall seconds.
+    ``frame_profile`` receives seconds spent in simulation and in each
+    paint stage. It is for the speed bench; the live window leaves it unset.
     """
     if not PYGAME_AVAILABLE:
         raise RuntimeError(
             "pygame is not installed. Install it first: pip install pygame"
         )
 
-    runner = build_demo_runner(agent_count=agent_count)
+    if runner is None:
+        runner = build_demo_runner(agent_count=agent_count)
     gui = ColonyGUI(runner)
+    if speed is not None:
+        gui.speed = float(speed)
+    wall_deadline = None
+    if wall_s is not None:
+        wall_deadline = time.perf_counter() + max(0.05, float(wall_s))
 
     pygame.init()
     audio_available = False
@@ -1467,7 +1600,24 @@ def run_pygame_demo(
 
     running = True
     frame_i = 0
+    loop_mark = time.perf_counter()
+    since_render = 0.0
+    drawn_once = False
+    state_dirty = False
+    # Skipped paints still advance sprites by the summed frame time.
+    visual_elapsed_s = 0.0
+    sim_cpu_s = 0.0
+    paint_count = 0
+    loop_wall_s = 0.0
+    sim_at_loop: float | None = None
+    right_surface_cache: dict[str, Any] = {}
+    stats_surface_cache: dict[str, Any] = {}
+    # Capture and tests paint every iteration. The live window draws on
+    # RENDER_FPS_CAP and can run several sim steps between those paints.
+    capture_every_frame = frame_dt_s is not None or on_frame is not None or max_frames is not None
     while running:
+        if wall_deadline is not None and time.perf_counter() >= wall_deadline:
+            break
         current_agent_count = len(ordered_agents)
         target_fps = gui.FPS
         if current_agent_count >= VERY_HIGH_POPULATION_THRESHOLD:
@@ -1478,12 +1628,20 @@ def run_pygame_demo(
         if frame_dt_s is not None:
             clock.tick()
             raw_frame_dt = max(0.0, float(frame_dt_s))
-        else:
+        elif capture_every_frame:
             raw_frame_dt = max(0.0, clock.tick(target_fps) / 1000.0)
+        else:
+            now_wall = time.perf_counter()
+            raw_frame_dt = max(0.0, now_wall - loop_mark)
+            loop_mark = now_wall
         frame_dt = min(raw_frame_dt, MAX_FRAME_DT_S)
         sim_frame_dt = min(raw_frame_dt, SIM_FRAME_DT_CAP_S)
         layout_elapsed_s += frame_dt
         snapshot_elapsed_s += frame_dt
+        visual_elapsed_s += frame_dt
+        if sim_at_loop is None:
+            sim_at_loop = float(getattr(runner, "sim_time", 0.0))
+            loop_wall_s = time.perf_counter()
         for event in pygame.event.get():
             if gui.swarm_analytics.visible:
                 consumed = gui.swarm_analytics.handle_event(event)
@@ -1575,6 +1733,7 @@ def run_pygame_demo(
             else:
                 sim_step_cost_ema_s = (sim_step_cost_ema_s * 0.9) + (tick_cost_s * 0.1)
             sim_accumulator -= batched_dt
+            sim_cpu_s += tick_cost_s
             step_count = 1
         else:
             while sim_accumulator >= sim_step and step_count < SIM_MAX_CATCHUP_STEPS:
@@ -1586,6 +1745,7 @@ def run_pygame_demo(
                 else:
                     sim_step_cost_ema_s = (sim_step_cost_ema_s * 0.9) + (tick_cost_s * 0.1)
                 sim_accumulator -= sim_step
+                sim_cpu_s += tick_cost_s
                 step_count += 1
             if step_count >= SIM_MAX_CATCHUP_STEPS:
                 sim_accumulator = min(sim_accumulator, sim_step)
@@ -1597,8 +1757,32 @@ def run_pygame_demo(
             sim_advanced=float(getattr(runner, "sim_time", sim_time_before)) - sim_time_before,
         )
 
-        layout_refresh_required = False
         if step_count > 0:
+            state_dirty = True
+        since_render += raw_frame_dt
+        render_interval = 1.0 / float(RENDER_FPS_CAP)
+        draw_now = (
+            capture_every_frame
+            or (not drawn_once)
+            or since_render + 1e-12 >= render_interval
+        )
+        if not draw_now:
+            # The accumulator is wall time. Speed is applied inside _sim_tick.
+            if frame_dt_s is None and sim_accumulator < sim_step:
+                wait_for_step_s = max(0.0, sim_step - sim_accumulator)
+                wait_for_paint_s = max(0.0, render_interval - since_render)
+                delay_s = min(wait_for_step_s, wait_for_paint_s, 0.005)
+                if delay_s > 0.0005:
+                    time.sleep(delay_s)
+            continue
+        since_render = 0.0
+        drawn_once = True
+        paint_count += 1
+        paint_dt = visual_elapsed_s
+        visual_elapsed_s = 0.0
+
+        layout_refresh_required = False
+        if state_dirty:
             refresh_due = True
             if high_population_mode:
                 refresh_period_s = HIGH_POP_LAYOUT_REFRESH_PERIOD_S
@@ -1606,11 +1790,14 @@ def run_pygame_demo(
                     refresh_period_s = VERY_HIGH_POP_LAYOUT_REFRESH_PERIOD_S
                 refresh_due = snapshot_elapsed_s >= refresh_period_s
             if refresh_due:
+                stage_mark = time.perf_counter()
                 gui._update_snapshot()
                 state = gui.get_render_state()
+                _profile_add(frame_profile, "snapshot_s", stage_mark)
                 ordered_agents = list(state["agents"])
                 layout_refresh_required = True
                 snapshot_elapsed_s = 0.0
+                state_dirty = False
 
         current_births = int(getattr(runner, "total_births", lineage_births_seen))
         current_deaths = int(getattr(runner, "total_deaths", lineage_deaths_seen))
@@ -1622,7 +1809,9 @@ def run_pygame_demo(
         if gui.lineage.visible and gui.lineage._needs_rebuild:
             gui.lineage.rebuild(runner.agents, gui._generation_index_map)
 
+        stage_mark = time.perf_counter()
         screen.blit(static_scene, (0, 0))
+        _profile_add(frame_profile, "background_s", stage_mark)
 
         if layout_refresh_required:
             active_agent_ids = {
@@ -1688,7 +1877,7 @@ def run_pygame_demo(
             layout_elapsed_s = 0.0
 
         render_agent_count = len(ordered_agents)
-        diagnostics_elapsed_s += frame_dt
+        diagnostics_elapsed_s += paint_dt
         diagnostics_refresh_period_s = DIAGNOSTICS_REFRESH_PERIOD_S
         if render_agent_count >= VERY_HIGH_POPULATION_THRESHOLD:
             diagnostics_refresh_period_s = VERY_HIGH_POP_PANEL_REFRESH_PERIOD_S
@@ -1705,6 +1894,8 @@ def run_pygame_demo(
         if show_names and render_agent_count >= HIGH_POPULATION_THRESHOLD:
             name_stride = max(1, math.ceil(render_agent_count / HIGH_POP_LABEL_BUDGET))
 
+        agents_mark = time.perf_counter()
+        labels_s = 0.0
         for agent_idx, agent in enumerate(ordered_agents):
             agent_id = str(agent["agent_id"])
             target_x, target_y = visual_targets.get(agent_id, agent["render_pos"])
@@ -1716,7 +1907,7 @@ def run_pygame_demo(
                 current_y=current_y,
                 target_x=float(target_x),
                 target_y=float(target_y),
-                dt=frame_dt,
+                dt=paint_dt,
             )
             smoothed_positions[agent_id] = [current_x, current_y]
 
@@ -1732,7 +1923,7 @@ def run_pygame_demo(
             if rendered_animation.get(agent_id) != animation_id:
                 rendered_animation[agent_id] = animation_id
                 animation_time[agent_id] = 0.0
-            animation_time[agent_id] = float(animation_time.get(agent_id, 0.0)) + frame_dt
+            animation_time[agent_id] = float(animation_time.get(agent_id, 0.0)) + paint_dt
 
             clip = _load_sprite_clip(
                 sprite_manifest=sprite_manifest,
@@ -1750,6 +1941,7 @@ def run_pygame_demo(
                 screen.blit(frame, rect.topleft)
 
             if show_names and (name_stride <= 1 or (agent_idx % name_stride) == 0):
+                label_mark = time.perf_counter()
                 name_surface = _get_cached_text_surface(
                     name_surface_cache,
                     font,
@@ -1758,6 +1950,7 @@ def run_pygame_demo(
                 )
                 name_rect = name_surface.get_rect(center=(int(center_x), int(center_y) - 58))
                 screen.blit(name_surface, name_rect.topleft)
+                labels_s += time.perf_counter() - label_mark
 
             if audio_enabled and (not gui.paused):
                 sfx_id = agent.get("sfx_id") or ACTION_SFX.get(action)
@@ -1781,7 +1974,12 @@ def run_pygame_demo(
                 runner=getattr(gui, "runner", None),
                 now_s=frame_now_s,
             )
+        if frame_profile is not None:
+            agent_spent = time.perf_counter() - agents_mark
+            frame_profile["labels_s"] = float(frame_profile.get("labels_s", 0.0)) + labels_s
+            frame_profile["agents_s"] = float(frame_profile.get("agents_s", 0.0)) + max(0.0, agent_spent - labels_s)
 
+        stage_mark = time.perf_counter()
         _draw_stats_panel(
             screen=screen,
             font_small=font_small,
@@ -1794,7 +1992,9 @@ def run_pygame_demo(
             diagnostics=diagnostics_cache,
             population_stats=dict(state.get("population_stats", {})),
             resources=dict(state.get("resources", {})),
+            surface_cache=stats_surface_cache,
         )
+        _profile_add(frame_profile, "stats_s", stage_mark)
 
         registry = getattr(runner, "death_registry", None)
         if registry is not None:
@@ -1802,6 +2002,7 @@ def run_pygame_demo(
         else:
             dead_memorials = []
         name_registry = getattr(runner, "birth_registry", None)
+        stage_mark = time.perf_counter()
         card_hit_areas = _draw_right_panel(
             screen,
             font,
@@ -1811,7 +2012,9 @@ def run_pygame_demo(
             name_registry=name_registry,
             selected_agent_id=gui.inspector.agent_id if gui.inspector.visible else None,
             scroll_offset=int(gui._right_panel_scroll),
+            surface_cache=right_surface_cache,
         )
+        _profile_add(frame_profile, "panel_s", stage_mark)
         if gui.lineage.visible:
             gui.lineage.draw(screen, font, font_small)
         if gui.inspector.visible:
@@ -1821,7 +2024,9 @@ def run_pygame_demo(
                 gui.swarm_analytics.refresh(runner, gui.observer, gui._generation_index_map)
             gui.swarm_analytics.draw(screen, font, font_small, font_mono)
 
+        stage_mark = time.perf_counter()
         pygame.display.flip()
+        _profile_add(frame_profile, "flip_s", stage_mark)
         if on_frame is not None:
             on_frame(screen)
         if max_frames is not None:
@@ -1829,6 +2034,18 @@ def run_pygame_demo(
             if frame_i >= max_frames:
                 running = False
 
+    if frame_profile is not None:
+        frame_profile["sim_s"] = float(sim_cpu_s)
+        frame_profile["paints"] = float(paint_count)
+        frame_profile["loop_wall_s"] = (
+            0.0 if sim_at_loop is None else max(0.0, time.perf_counter() - loop_wall_s)
+        )
+        frame_profile["sim_advanced_s"] = (
+            0.0
+            if sim_at_loop is None
+            else max(0.0, float(getattr(runner, "sim_time", 0.0)) - sim_at_loop)
+        )
+        frame_profile["hud"] = float(getattr(gui, "achieved_speed_ratio", 0.0)) * float(gui.speed)
     try:
         if audio_available and pygame.mixer.get_init() is not None:
             pygame.mixer.stop()

@@ -5,14 +5,29 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import hashlib
 import math
+import sys
 import time
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-from experience import Event, EventType, Experience, Path
+from experience import (
+    Event,
+    EventType,
+    Experience,
+    Path,
+    _intern_token_collection,
+    _pickle_state_dict,
+)
 
 
-@dataclass
+@dataclass(slots=True)
 class SignatureTrace:
+    """One hippocampal trace. Biological fields compare; scan caches do not.
+
+    Masks and novelty runners are the same numbers a fresh scan would
+    produce. They are stored on the trace so a decision does not rebuild them,
+    and they are not part of equality.
+    """
+
     feature_set: Set[str]
     drive_vector: Tuple[float, float, float]
     context_vector: Tuple[float, float, float]
@@ -23,6 +38,84 @@ class SignatureTrace:
     reward_signal: float = 0.0
     source_experience: Optional[Experience] = None
     last_decay_ts: float = field(default_factory=time.time)
+    feature_mask: int = field(default=0, compare=False, repr=False)
+    feature_count: int = field(default=0, compare=False, repr=False)
+    token_mask: int = field(default=0, compare=False, repr=False)
+    token_count: int = field(default=0, compare=False, repr=False)
+    _mask_ready: bool = field(default=False, compare=False, repr=False)
+    _activate_drive_sim: float = field(default=0.0, compare=False, repr=False)
+    _fs_key: Optional[int] = field(default=None, compare=False, repr=False)
+    _fs_val: float = field(default=0.0, compare=False, repr=False)
+    _nov_ready: bool = field(default=False, compare=False, repr=False)
+    _nov_max: float = field(default=0.0, compare=False, repr=False)
+    _nov_arg: int = field(default=0, compare=False, repr=False)
+    _nov_max2: float = field(default=0.0, compare=False, repr=False)
+    _nov_arg2: int = field(default=0, compare=False, repr=False)
+
+    def __getstate__(self):
+        state = {}
+        for name in self.__slots__:
+            try:
+                state[name] = getattr(self, name)
+            except AttributeError:
+                continue
+        return state
+
+    def __setstate__(self, state):
+        """Accept a main dataclass ``__dict__`` or a slotted payload.
+
+        Scan caches did not exist on main. Missing ones take the empty
+        defaults and the next recall rebuilds the masks.
+        """
+        payload = _pickle_state_dict(state)
+        defaults = {
+            "context_tokens": (),
+            "activation_weight": 1.0,
+            "repetition_count": 1,
+            "reward_signal": 0.0,
+            "source_experience": None,
+            "last_decay_ts": 0.0,
+            "feature_mask": 0,
+            "feature_count": 0,
+            "token_mask": 0,
+            "token_count": 0,
+            "_mask_ready": False,
+            "_activate_drive_sim": 0.0,
+            "_fs_key": None,
+            "_fs_val": 0.0,
+            "_nov_ready": False,
+            "_nov_max": 0.0,
+            "_nov_arg": 0,
+            "_nov_max2": 0.0,
+            "_nov_arg2": 0,
+            "feature_set": set(),
+            "drive_vector": (0.0, 0.0, 0.0),
+            "context_vector": (0.0, 0.0, 0.0),
+            "timestamp": 0.0,
+        }
+        for name in self.__slots__:
+            if name in payload:
+                value = payload[name]
+            elif name in defaults:
+                value = defaults[name]
+                if isinstance(value, set):
+                    value = set(value)
+            else:
+                continue
+            if name in {"feature_set", "context_tokens"}:
+                value = _intern_token_collection(value)
+            if name == "feature_set" and not isinstance(value, set):
+                value = set(value or ())
+            elif name == "context_tokens" and not isinstance(value, tuple):
+                value = tuple(value or ())
+            elif name in {"drive_vector", "context_vector"}:
+                try:
+                    value = tuple(float(item) for item in value)
+                except (TypeError, ValueError):
+                    value = (0.0, 0.0, 0.0)
+                if len(value) != 3:
+                    value = (0.0, 0.0, 0.0)
+            object.__setattr__(self, name, value)
 
 
 class NOWAHippocampus:
@@ -74,6 +167,19 @@ class NOWAHippocampus:
         self._nov_ids: Tuple[int, ...] = ()
         self._nov_valid = False
 
+    def __getstate__(self):
+        return dict(self.__dict__)
+
+    def __setstate__(self, state):
+        """Accept the ``__dict__`` main wrote and a slotted ``(dict, slots)`` pair.
+
+        The hippocampus itself has no slots. Nested episodes and traces do,
+        and their own ``__setstate__`` runs before this one.
+        """
+        payload = _pickle_state_dict(state)
+        self.__dict__.clear()
+        self.__dict__.update(payload)
+
     @staticmethod
     def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:
         return max(lo, min(hi, float(value)))
@@ -123,10 +229,13 @@ class NOWAHippocampus:
 
     def _sanitize_features(self, features: Iterable[str]) -> Set[str]:
         out: Set[str] = set()
+        intern = sys.intern
         for feature in features or []:
             token = str(feature).strip()
             if token:
-                out.add(token)
+                # One shared str per token. The bit table already retains the
+                # vocabulary for the life of the hippocampus.
+                out.add(intern(token) if len(token) <= 80 else token)
         return out
 
     def _extract_features_from_path(self, path: Path, consequence=None) -> Set[str]:

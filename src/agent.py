@@ -5032,6 +5032,8 @@ class Agent:
             tick_count = max(0, int(state.get("tick_count", 0) or 0))
             self._autonomous_tick_count_offset = tick_count
             runtime.tick_history = []
+            # Saved count lives in the offset. The retained tail starts empty.
+            runtime._completed_ticks = 0
             return True
         except Exception:
             return False

@@ -11,6 +11,11 @@ from simulation_utility import compute_drive_utility_components
 from basal_ganglia import NO_ACTION
 
 
+# GUI and diagnostics read the latest organism tick. Older ticks repeat
+# state that the drive and energy systems already hold. The counter below
+# stays equal to the number of steps, which snapshot reports as tick_count.
+TICK_HISTORY_RETAIN = 1
+
 DRIVE_NAMES: Tuple[str, ...] = (
     "curiosity",
     "social_drive",
@@ -1089,6 +1094,9 @@ class AutonomousOrganismAgent:
         )
 
         self.tick_history: List[Dict[str, Any]] = []
+        # Inspectors read the latest tick. The count is every organism step,
+        # including ticks that were dropped from the retained tail.
+        self._completed_ticks = 0
         self.failure_log: List[Dict[str, Any]] = []
         self._deadlock_ticks = 0
         self._dt_min = 0.05
@@ -1583,7 +1591,11 @@ class AutonomousOrganismAgent:
             "energy_update": dict(energy_update),
             "energy_snapshot": self.energy_system.snapshot(),
         }
+        self._completed_ticks = int(getattr(self, "_completed_ticks", 0)) + 1
         self.tick_history.append(tick)
+        extra = len(self.tick_history) - TICK_HISTORY_RETAIN
+        if extra > 0:
+            del self.tick_history[:extra]
 
         try:
             self._verify_invariants(tick)
@@ -1605,7 +1617,7 @@ class AutonomousOrganismAgent:
             "energy": self.energy_system.snapshot(),
             "agent_mode": self.agent_mode,
             "regulation": dict(self._last_regulation),
-            "tick_count": len(self.tick_history),
+            "tick_count": max(int(getattr(self, "_completed_ticks", 0)), len(self.tick_history)),
             "failures": list(self.failure_log),
             "speech": self.speech_governor.snapshot(),
         }
